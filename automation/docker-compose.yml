@@ -1,0 +1,68 @@
+# n8n Local Self-Hosted Setup for Clue Marketing Automation
+# Why: Provides visual workflow automation for Reddit market analysis
+# and other marketing automations without code changes.
+
+version: '3.8'
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: clue-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Basic Configuration
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      
+      # Timezone (adjust as needed)
+      - GENERIC_TIMEZONE=Asia/Kolkata
+      - TZ=Asia/Kolkata
+      
+      # Security - Change in production!
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=clue-n8n-local
+      
+      # Execution settings
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168  # 7 days in hours
+      
+      # Allow loading from files
+      - N8N_TEMPLATES_ENABLED=true
+    volumes:
+      # Persist n8n data
+      - n8n_data:/home/node/.n8n
+      # Mount workflows for easy import/export
+      - ./workflows:/home/node/workflows:ro
+    networks:
+      - clue-automation
+
+  # Optional: PostgreSQL for production-grade persistence
+  # Uncomment if you need more robust data storage
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: clue-n8n-db
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_USER=n8n
+  #     - POSTGRES_PASSWORD=n8n-local-password
+  #     - POSTGRES_DB=n8n
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - clue-automation
+
+volumes:
+  n8n_data:
+    name: clue-n8n-data
+  # postgres_data:
+  #   name: clue-n8n-postgres
+
+networks:
+  clue-automation:
+    name: clue-automation-network
+
