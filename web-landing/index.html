@@ -103,6 +103,134 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
+    
+    /* ===== PARALLAX BLOBS ===== */
+    .parallax-blob {
+      will-change: transform;
+      transition: transform 0.1s ease-out;
+    }
+    
+    /* ===== SCROLL REVEAL ANIMATIONS ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Staggered reveal for children */
+    .reveal-stagger > * {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-stagger.revealed > *:nth-child(1) { transition-delay: 0ms; }
+    .reveal-stagger.revealed > *:nth-child(2) { transition-delay: 80ms; }
+    .reveal-stagger.revealed > *:nth-child(3) { transition-delay: 160ms; }
+    .reveal-stagger.revealed > *:nth-child(4) { transition-delay: 240ms; }
+    .reveal-stagger.revealed > *:nth-child(5) { transition-delay: 320ms; }
+    .reveal-stagger.revealed > *:nth-child(6) { transition-delay: 400ms; }
+    .reveal-stagger.revealed > *:nth-child(7) { transition-delay: 480ms; }
+    .reveal-stagger.revealed > *:nth-child(8) { transition-delay: 560ms; }
+    .reveal-stagger.revealed > * {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Scale reveal for cards */
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-scale.revealed {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    /* ===== SUBTLE HOVER EFFECTS ===== */
+    .hover-lift {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                  box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px -8px rgba(32, 20, 46, 0.12);
+    }
+    
+    /* Subtle glow on hover */
+    .hover-glow {
+      transition: box-shadow 0.4s ease;
+    }
+    .hover-glow:hover {
+      box-shadow: 0 0 40px -10px rgba(208, 189, 244, 0.5);
+    }
+    
+    /* ===== FLOATING CARD ANIMATION ===== */
+    @keyframes subtle-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .float-card {
+      animation: subtle-float 4s ease-in-out infinite;
+    }
+    .float-card-delayed {
+      animation: subtle-float 4s ease-in-out infinite;
+      animation-delay: -2s;
+    }
+    
+    /* ===== SHIMMER EFFECT ===== */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer {
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    
+    /* ===== PULSE GLOW ===== */
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(184, 227, 214, 0.4); }
+      50% { box-shadow: 0 0 20px 4px rgba(184, 227, 214, 0.2); }
+    }
+    .pulse-glow {
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    
+    /* ===== GRADIENT BORDER ===== */
+    .gradient-border {
+      position: relative;
+    }
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 2px;
+      background: linear-gradient(135deg, #D0BDF4 0%, #B8E3D6 50%, #E8974F 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .gradient-border:hover::before {
+      opacity: 1;
+    }
   </style>
 </head>
 <body class="bg-bg-cream text-text-main antialiased overflow-x-hidden">
@@ -135,16 +263,16 @@
 
   <!-- Hero Section -->
   <header class="relative min-h-screen pt-32 pb-20 px-6 overflow-hidden">
-    <!-- Decorative Blobs -->
-    <div class="absolute -top-20 -right-20 w-80 h-80 bg-accent-peach/30 rounded-[4rem] rotate-12 blur-3xl animate-float pointer-events-none"></div>
-    <div class="absolute top-1/3 -left-20 w-64 h-64 bg-accent-blue/40 rounded-full blur-3xl animate-float-reverse pointer-events-none"></div>
-    <div class="absolute bottom-20 right-1/4 w-96 h-96 bg-accent-purple/30 rounded-[5rem] -rotate-12 blur-3xl animate-float pointer-events-none"></div>
-    <div class="absolute bottom-40 -left-10 w-48 h-48 bg-accent-mint/50 rounded-full blur-2xl animate-float-reverse pointer-events-none"></div>
+    <!-- Decorative Blobs with Parallax -->
+    <div class="parallax-blob absolute -top-20 -right-20 w-80 h-80 bg-accent-peach/30 rounded-[4rem] rotate-12 blur-3xl animate-float pointer-events-none" data-speed="0.05"></div>
+    <div class="parallax-blob absolute top-1/3 -left-20 w-64 h-64 bg-accent-blue/40 rounded-full blur-3xl animate-float-reverse pointer-events-none" data-speed="0.03"></div>
+    <div class="parallax-blob absolute bottom-20 right-1/4 w-96 h-96 bg-accent-purple/30 rounded-[5rem] -rotate-12 blur-3xl animate-float pointer-events-none" data-speed="0.04"></div>
+    <div class="parallax-blob absolute bottom-40 -left-10 w-48 h-48 bg-accent-mint/50 rounded-full blur-2xl animate-float-reverse pointer-events-none" data-speed="0.02"></div>
 
     <div class="max-w-5xl mx-auto relative z-10">
-      <div class="text-center max-w-3xl mx-auto mb-16">
+      <div class="text-center max-w-3xl mx-auto mb-16 reveal" data-delay="0">
         <!-- Badge -->
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-mint/40 text-sm font-semibold text-primary mb-8">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-mint/40 text-sm font-semibold text-primary mb-8 pulse-glow">
           <span class="material-symbols-outlined text-lg">favorite</span>
           Built for chronic life
         </div>
@@ -163,7 +291,7 @@
         </p>
 
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="#cta" class="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-primary/90 text-white text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+          <a href="#cta" class="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-primary/90 text-white text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 hover-glow">
             Start a 20-second check-in
             <span class="material-symbols-outlined">arrow_forward</span>
           </a>
@@ -174,8 +302,8 @@
       </div>
 
       <!-- Hero Visual Card -->
-      <div class="relative max-w-4xl mx-auto">
-        <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-soft border border-primary/5">
+      <div class="relative max-w-4xl mx-auto reveal-scale" data-delay="200">
+        <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-soft border border-primary/5 hover-lift">
           <!-- Mock App Interface -->
           <div class="flex flex-col md:flex-row gap-6">
             <!-- Quick Entry Preview -->
@@ -233,8 +361,8 @@
           </div>
         </div>
 
-        <!-- Floating Stats -->
-        <div class="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-card border border-primary/5 hidden md:block">
+        <!-- Floating Stats with Animation -->
+        <div class="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-card border border-primary/5 hidden md:block float-card hover-lift">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-xl bg-accent-mint/30 flex items-center justify-center">
               <span class="material-symbols-outlined text-teal-700">timer</span>
@@ -246,7 +374,7 @@
           </div>
         </div>
 
-        <div class="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-card border border-primary/5 hidden md:block">
+        <div class="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-card border border-primary/5 hidden md:block float-card-delayed hover-lift">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-xl bg-accent-purple/30 flex items-center justify-center">
               <span class="material-symbols-outlined text-purple-700">description</span>
@@ -263,10 +391,10 @@
 
   <!-- Personal Assistant Section -->
   <section id="assistant" class="py-24 px-6 bg-gradient-to-b from-bg-cream to-white relative overflow-hidden">
-    <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="parallax-blob absolute top-0 right-0 w-[600px] h-[600px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none" data-speed="0.02"></div>
 
     <div class="max-w-6xl mx-auto relative z-10">
-      <div class="text-center max-w-2xl mx-auto mb-16">
+      <div class="text-center max-w-2xl mx-auto mb-16 reveal">
         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/20 text-sm font-semibold text-primary mb-6">
           <span class="material-symbols-outlined text-lg">smart_toy</span>
           Your Personal Assistant
@@ -280,7 +408,7 @@
 
       <div class="grid md:grid-cols-2 gap-8 mb-12">
         <!-- What it does -->
-        <div class="bg-white rounded-[2rem] p-8 shadow-soft border border-primary/5">
+        <div class="bg-white rounded-[2rem] p-8 shadow-soft border border-primary/5 reveal hover-lift gradient-border">
           <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-accent-peach/30 flex items-center justify-center">
               <span class="material-symbols-outlined text-accent-peach">auto_awesome</span>
@@ -313,7 +441,7 @@
         </div>
 
         <!-- Why it feels personal -->
-        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-mint/10 rounded-[2rem] p-8 border border-accent-purple/20">
+        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-mint/10 rounded-[2rem] p-8 border border-accent-purple/20 reveal hover-lift" data-delay="150">
           <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
               <span class="material-symbols-outlined text-primary">favorite</span>
@@ -347,12 +475,12 @@
 
   <!-- Quick Check-ins Section -->
   <section id="quick-checkins" class="py-24 px-6 bg-white relative overflow-hidden">
-    <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="parallax-blob absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-3xl pointer-events-none" data-speed="0.03"></div>
 
     <div class="max-w-6xl mx-auto relative z-10">
       <div class="grid md:grid-cols-2 gap-12 items-center">
         <!-- Content -->
-        <div>
+        <div class="reveal">
           <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-blue/20 text-sm font-semibold text-primary mb-6">
             <span class="material-symbols-outlined text-lg">bolt</span>
             Quick Check-ins
@@ -411,8 +539,8 @@
         </div>
 
         <!-- Visual -->
-        <div class="relative">
-          <div class="bg-bg-cream rounded-[2.5rem] p-8 shadow-soft border border-primary/5">
+        <div class="relative reveal-scale" data-delay="200">
+          <div class="bg-bg-cream rounded-[2.5rem] p-8 shadow-soft border border-primary/5 hover-lift">
             <!-- Quick Entry Mock -->
             <div class="bg-white rounded-3xl p-6 shadow-card mb-6">
               <p class="text-sm font-semibold text-text-muted mb-4">How's your energy today?</p>
@@ -456,13 +584,13 @@
 
   <!-- Flare Mode Section -->
   <section id="flare-mode" class="py-24 px-6 bg-gradient-to-b from-white to-accent-rose/10 relative overflow-hidden">
-    <div class="absolute top-1/2 right-0 w-[400px] h-[400px] bg-accent-peach/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="parallax-blob absolute top-1/2 right-0 w-[400px] h-[400px] bg-accent-peach/10 rounded-full blur-3xl pointer-events-none" data-speed="0.025"></div>
 
     <div class="max-w-6xl mx-auto relative z-10">
       <div class="grid md:grid-cols-2 gap-12 items-center">
         <!-- Visual -->
-        <div class="order-2 md:order-1">
-          <div class="bg-white rounded-[2.5rem] p-8 shadow-soft border border-accent-rose/20">
+        <div class="order-2 md:order-1 reveal-scale" data-delay="200">
+          <div class="bg-white rounded-[2.5rem] p-8 shadow-soft border border-accent-rose/20 hover-lift">
             <!-- Flare Mode Interface -->
             <div class="flex items-center justify-between mb-6">
               <div class="flex items-center gap-3">
@@ -514,7 +642,7 @@
         </div>
 
         <!-- Content -->
-        <div class="order-1 md:order-2">
+        <div class="order-1 md:order-2 reveal">
           <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-rose/30 text-sm font-semibold text-primary mb-6">
             <span class="material-symbols-outlined text-lg">local_fire_department</span>
             Flare Mode
@@ -573,10 +701,10 @@
 
   <!-- History Section -->
   <section id="history" class="py-24 px-6 bg-white relative overflow-hidden">
-    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="parallax-blob absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-3xl pointer-events-none" data-speed="0.02"></div>
 
     <div class="max-w-6xl mx-auto relative z-10">
-      <div class="text-center max-w-2xl mx-auto mb-16">
+      <div class="text-center max-w-2xl mx-auto mb-16 reveal">
         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-blue/20 text-sm font-semibold text-primary mb-6">
           <span class="material-symbols-outlined text-lg">history</span>
           History View
@@ -590,7 +718,7 @@
 
       <div class="grid md:grid-cols-2 gap-8">
         <!-- Day Cards -->
-        <div class="bg-bg-cream rounded-[2rem] p-8">
+        <div class="bg-bg-cream rounded-[2rem] p-8 reveal hover-lift" data-delay="100">
           <h3 class="font-display text-xl font-semibold text-primary mb-6">Day cards show everything</h3>
 
           <div class="space-y-4">
@@ -641,7 +769,7 @@
         </div>
 
         <!-- Fast Answers -->
-        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-blue/10 rounded-[2rem] p-8">
+        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-blue/10 rounded-[2rem] p-8 reveal hover-lift" data-delay="200">
           <h3 class="font-display text-xl font-semibold text-primary mb-6">Fast answers to common questions</h3>
 
           <div class="space-y-4">
@@ -672,10 +800,10 @@
 
   <!-- Insights Section -->
   <section id="insights" class="py-24 px-6 bg-gradient-to-b from-white to-accent-mint/10 relative overflow-hidden">
-    <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent-mint/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="parallax-blob absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent-mint/10 rounded-full blur-3xl pointer-events-none" data-speed="0.03"></div>
 
     <div class="max-w-6xl mx-auto relative z-10">
-      <div class="text-center max-w-2xl mx-auto mb-16">
+      <div class="text-center max-w-2xl mx-auto mb-16 reveal">
         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-mint/30 text-sm font-semibold text-primary mb-6">
           <span class="material-symbols-outlined text-lg">psychology</span>
           Evidence-backed insights
@@ -689,7 +817,7 @@
 
       <div class="grid md:grid-cols-3 gap-6 mb-12">
         <!-- Insight Card -->
-        <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-primary/5 md:col-span-2">
+        <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-primary/5 md:col-span-2 reveal hover-lift" data-delay="100">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-xl bg-accent-purple/30 flex items-center justify-center">
               <span class="material-symbols-outlined text-purple-700">trending_up</span>
@@ -723,7 +851,7 @@
         </div>
 
         <!-- Why it matters -->
-        <div class="bg-gradient-to-br from-accent-mint/20 to-accent-blue/20 rounded-[2rem] p-6 border border-accent-mint/30">
+        <div class="bg-gradient-to-br from-accent-mint/20 to-accent-blue/20 rounded-[2rem] p-6 border border-accent-mint/30 reveal hover-lift" data-delay="200">
           <h4 class="font-display text-lg font-semibold text-primary mb-4">Why this matters</h4>
           <ul class="space-y-3 text-text-muted text-sm">
             <li class="flex items-start gap-2">
@@ -751,12 +879,12 @@
 
   <!-- Doctor Pack Section -->
   <section id="doctor-pack" class="py-24 px-6 bg-white relative overflow-hidden">
-    <div class="absolute top-1/2 left-0 w-[400px] h-[400px] bg-accent-peach/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="parallax-blob absolute top-1/2 left-0 w-[400px] h-[400px] bg-accent-peach/10 rounded-full blur-3xl pointer-events-none" data-speed="0.02"></div>
 
     <div class="max-w-6xl mx-auto relative z-10">
       <div class="grid md:grid-cols-2 gap-12 items-center">
         <!-- Content -->
-        <div>
+        <div class="reveal">
           <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-peach/30 text-sm font-semibold text-primary mb-6">
             <span class="material-symbols-outlined text-lg">description</span>
             Doctor-ready summaries
@@ -802,8 +930,8 @@
         </div>
 
         <!-- Visual -->
-        <div class="relative">
-          <div class="bg-bg-cream rounded-[2.5rem] p-8 shadow-soft border border-primary/5">
+        <div class="relative reveal-scale" data-delay="200">
+          <div class="bg-bg-cream rounded-[2.5rem] p-8 shadow-soft border border-primary/5 hover-lift">
             <!-- Doctor Pack Preview -->
             <div class="bg-white rounded-2xl p-6 shadow-card mb-4">
               <div class="flex items-center justify-between mb-4">
@@ -816,15 +944,15 @@
                 </div>
               </div>
 
-              <!-- Mini Chart -->
-              <div class="h-24 flex items-end gap-1 mb-4">
-                <div class="flex-1 bg-accent-mint/30 rounded-t h-[40%]"></div>
-                <div class="flex-1 bg-accent-mint/30 rounded-t h-[60%]"></div>
-                <div class="flex-1 bg-accent-rose/30 rounded-t h-[85%]"></div>
-                <div class="flex-1 bg-accent-rose/30 rounded-t h-[75%]"></div>
-                <div class="flex-1 bg-yellow-200/50 rounded-t h-[50%]"></div>
-                <div class="flex-1 bg-accent-mint/30 rounded-t h-[35%]"></div>
-                <div class="flex-1 bg-accent-mint/30 rounded-t h-[30%]"></div>
+              <!-- Mini Chart with subtle animation -->
+              <div class="h-24 flex items-end gap-1 mb-4 chart-bars">
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[40%] transition-all duration-500"></div>
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[60%] transition-all duration-500"></div>
+                <div class="flex-1 bg-accent-rose/30 rounded-t h-[85%] transition-all duration-500"></div>
+                <div class="flex-1 bg-accent-rose/30 rounded-t h-[75%] transition-all duration-500"></div>
+                <div class="flex-1 bg-yellow-200/50 rounded-t h-[50%] transition-all duration-500"></div>
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[35%] transition-all duration-500"></div>
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[30%] transition-all duration-500"></div>
               </div>
 
               <div class="grid grid-cols-2 gap-4 text-sm">
@@ -851,9 +979,9 @@
 
   <!-- Multiple Conditions Section -->
   <section class="py-24 px-6 bg-gradient-to-b from-white to-accent-purple/5 relative overflow-hidden">
-    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="parallax-blob absolute top-0 right-1/4 w-[500px] h-[500px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none" data-speed="0.025"></div>
 
-    <div class="max-w-4xl mx-auto text-center relative z-10">
+    <div class="max-w-4xl mx-auto text-center relative z-10 reveal">
       <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/20 text-sm font-semibold text-primary mb-6">
         <span class="material-symbols-outlined text-lg">category</span>
         Multiple Conditions
@@ -866,15 +994,15 @@
         Separate symptom sets per condition. Shared drivers. One timeline that still makes sense.
       </p>
 
-      <div class="flex flex-wrap justify-center gap-3 mb-10">
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Endometriosis</span>
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">PCOS</span>
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Long COVID</span>
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Chronic Fatigue</span>
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Fibromyalgia</span>
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">POTS</span>
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Migraine</span>
-        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">IBS</span>
+      <div class="flex flex-wrap justify-center gap-3 mb-10 reveal-stagger">
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">Endometriosis</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">PCOS</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">Long COVID</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">Chronic Fatigue</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">Fibromyalgia</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">POTS</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">Migraine</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">IBS</span>
       </div>
 
       <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all">
@@ -886,14 +1014,14 @@
 
   <!-- Closing CTA Section -->
   <section id="cta" class="py-24 px-6 bg-primary relative overflow-hidden">
-    <!-- Decorative elements -->
+    <!-- Decorative elements with parallax -->
     <div class="absolute top-0 left-0 w-full h-full opacity-10">
-      <div class="absolute -top-20 -right-20 w-80 h-80 bg-accent-peach rounded-full blur-3xl"></div>
-      <div class="absolute bottom-0 -left-20 w-64 h-64 bg-accent-purple rounded-full blur-3xl"></div>
-      <div class="absolute top-1/2 right-1/4 w-48 h-48 bg-accent-mint rounded-full blur-3xl"></div>
+      <div class="parallax-blob absolute -top-20 -right-20 w-80 h-80 bg-accent-peach rounded-full blur-3xl" data-speed="0.02"></div>
+      <div class="parallax-blob absolute bottom-0 -left-20 w-64 h-64 bg-accent-purple rounded-full blur-3xl" data-speed="0.03"></div>
+      <div class="parallax-blob absolute top-1/2 right-1/4 w-48 h-48 bg-accent-mint rounded-full blur-3xl" data-speed="0.015"></div>
     </div>
 
-    <div class="max-w-4xl mx-auto text-center relative z-10">
+    <div class="max-w-4xl mx-auto text-center relative z-10 reveal">
       <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-8">
         <span class="material-symbols-outlined text-white text-3xl">favorite</span>
       </div>
@@ -955,6 +1083,116 @@
       </div>
     </div>
   </footer>
+
+  <!-- Parallax & Scroll Reveal Script -->
+  <script>
+    (function() {
+      'use strict';
+      
+      // ===== PARALLAX EFFECT =====
+      const parallaxBlobs = document.querySelectorAll('.parallax-blob');
+      let ticking = false;
+      let lastScrollY = 0;
+      
+      function updateParallax() {
+        parallaxBlobs.forEach(blob => {
+          const speed = parseFloat(blob.dataset.speed) || 0.03;
+          const yPos = -(lastScrollY * speed * 100);
+          blob.style.transform = `translateY(${yPos}px)`;
+        });
+        ticking = false;
+      }
+      
+      function onScroll() {
+        lastScrollY = window.scrollY;
+        if (!ticking) {
+          requestAnimationFrame(updateParallax);
+          ticking = true;
+        }
+      }
+      
+      // ===== SCROLL REVEAL =====
+      const revealElements = document.querySelectorAll('.reveal, .reveal-scale, .reveal-stagger');
+      
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px 0px -80px 0px',
+        threshold: 0.1
+      };
+      
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const delay = parseInt(entry.target.dataset.delay) || 0;
+            setTimeout(() => {
+              entry.target.classList.add('revealed');
+            }, delay);
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+      
+      revealElements.forEach(el => {
+        revealObserver.observe(el);
+      });
+      
+      // ===== SMOOTH NAVIGATION HIGHLIGHT =====
+      const navLinks = document.querySelectorAll('nav a[href^="#"]');
+      const sections = document.querySelectorAll('section[id]');
+      
+      function updateActiveNav() {
+        const scrollPos = window.scrollY + 100;
+        
+        sections.forEach(section => {
+          const top = section.offsetTop;
+          const height = section.offsetHeight;
+          const id = section.getAttribute('id');
+          
+          if (scrollPos >= top && scrollPos < top + height) {
+            navLinks.forEach(link => {
+              link.classList.remove('text-primary');
+              if (link.getAttribute('href') === '#' + id) {
+                link.classList.add('text-primary');
+              }
+            });
+          }
+        });
+      }
+      
+      // ===== INIT =====
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('scroll', updateActiveNav, { passive: true });
+      
+      // Trigger initial reveal for elements already in view
+      setTimeout(() => {
+        revealElements.forEach(el => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.9) {
+            const delay = parseInt(el.dataset.delay) || 0;
+            setTimeout(() => {
+              el.classList.add('revealed');
+            }, delay);
+          }
+        });
+      }, 100);
+      
+      // ===== REDUCE MOTION SUPPORT =====
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        // Disable animations for users who prefer reduced motion
+        document.querySelectorAll('.parallax-blob').forEach(el => {
+          el.style.animation = 'none';
+        });
+        document.querySelectorAll('.float-card, .float-card-delayed').forEach(el => {
+          el.style.animation = 'none';
+        });
+        // Immediately reveal all elements
+        revealElements.forEach(el => {
+          el.classList.add('revealed');
+          el.style.transition = 'none';
+        });
+      }
+    })();
+  </script>
 
 </body>
 </html>
