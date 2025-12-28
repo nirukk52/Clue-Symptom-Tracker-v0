@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Health Analytics + Doctor View</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "brand": {
+                            DEFAULT: "#4b2aad", // Deep purple
+                            light: "#9d8ec4",
+                            lighter: "#e9e4f5",
+                            dark: "#201445", // Podia Dark Navy
+                        },
+                        "pastel": {
+                            cream: "#fdfbf9", // Podia warm background
+                            mint: "#dcfce7",
+                            peach: "#fcecdb", // Podia-like soft orange card bg
+                            orange: "#e8a865", // Podia-like orange accent
+                            lilac: "#e5dcf5", // Podia-like purple card bg
+                            purple: "#a78bfa",
+                            blue: "#dbeafe", // Podia-like blue card bg
+                            blueAccent: "#60a5fa",
+                        },
+                        "surface": {
+                            white: "#ffffff",
+                            subtle: "#f3f0fa", // Slightly cooler white
+                        },
+                        "text": {
+                            main: "#201445", // Deep ink
+                            muted: "#6b6684", // Purplish gray
+                            light: "#9ca3af",
+                        }
+                    },
+                    fontFamily: {
+                        "sans": ["DM Sans", "sans-serif"],
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "xl": "12px",
+                        "2xl": "16px",
+                        "3xl": "24px",
+                        "4xl": "32px",
+                        "5xl": "40px",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'soft': '0 8px 30px -4px rgba(32, 20, 69, 0.04)',
+                        'card': '0 4px 20px -2px rgba(32, 20, 69, 0.05)',
+                        'floating': '0 20px 40px -10px rgba(75, 42, 173, 0.15)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'DM Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-pastel-cream text-text-main transition-colors duration-200 selection:bg-brand-lighter selection:text-brand-dark">
+<div class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto bg-pastel-cream shadow-2xl overflow-x-hidden border-x border-slate-100">
+<div class="sticky top-0 z-30 bg-pastel-cream/95 backdrop-blur-sm px-6 py-4 flex items-center justify-between">
+<button class="p-2 -ml-2 rounded-full hover:bg-black/5 transition-colors text-text-main">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold font-display text-text-main">Health Monitor</h1>
+<button class="p-2 -mr-2 rounded-full hover:bg-black/5 transition-colors text-text-main">
+<span class="material-symbols-outlined text-[24px]">settings</span>
+</button>
+</div>
+<div class="px-6 pb-6 pt-2">
+<div class="flex p-1 bg-white border border-slate-100 rounded-full relative shadow-sm">
+<button class="relative z-10 flex-1 py-3 text-sm font-bold text-white bg-brand-dark shadow-md rounded-full transition-all duration-300">
+                    My Insights
+                </button>
+<button class="relative z-10 flex-1 py-3 text-sm font-bold text-text-muted hover:text-text-main text-center rounded-full transition-colors">
+                    Doctor View
+                </button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-6 pb-32 space-y-8">
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold font-display text-text-main">Weekly Vibe Check</h2>
+<span class="text-xs font-bold bg-pastel-mint text-emerald-800 px-3 py-1.5 rounded-full border border-emerald-100/50 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> Trending Up
+                    </span>
+</div>
+<div class="bg-pastel-lilac rounded-[2rem] p-7 shadow-sm border border-white/50 flex items-center gap-5 relative overflow-hidden group hover:shadow-card transition-all duration-300">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
+<div class="flex-1 relative z-10">
+<p class="text-xl font-bold text-brand-dark leading-tight mb-3">Looking good!</p>
+<p class="text-brand-dark/80 text-sm leading-relaxed font-medium">
+                            You're feeling <span class="font-bold bg-white/60 px-1.5 py-0.5 rounded-md text-brand-dark">15% better</span> than your baseline this week.
+                        </p>
+</div>
+<div class="w-16 h-16 shrink-0 relative z-10 rounded-full bg-brand-dark text-white shadow-lg shadow-brand-dark/10 flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[32px]">sentiment_satisfied</span>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-end justify-between mb-5">
+<div>
+<p class="text-sm font-bold text-text-muted mb-1 uppercase tracking-wider text-[11px]">Average Pain Level</p>
+<div class="flex items-baseline gap-2">
+<h3 class="text-5xl font-bold font-display text-text-main tracking-tight">3.2<span class="text-2xl text-text-light font-medium">/10</span></h3>
+</div>
+</div>
+<div class="relative group">
+<select class="appearance-none bg-white border-2 border-slate-100 text-xs font-bold rounded-full pl-5 pr-10 py-3 outline-none focus:border-brand-light text-text-main cursor-pointer shadow-sm hover:border-brand-light/50 transition-colors">
+<option>Last 14 Days</option>
+<option>Last 30 Days</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<div class="bg-white rounded-[2.5rem] p-6 shadow-soft border border-slate-100/50">
+<div class="w-full h-48 relative">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 350 150">
+<defs>
+<linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#4b2aad" stop-opacity="0.15"></stop>
+<stop offset="100%" stop-color="#4b2aad" stop-opacity="0"></stop>
+</linearGradient>
+<filter height="130%" id="shadow" width="130%" x="-15%" y="-15%">
+<fedropshadow dx="0" dy="4" flood-color="#4b2aad" flood-opacity="0.2" stdDeviation="4"></fedropshadow>
+</filter>
+</defs>
+<line stroke="#f3f4f6" stroke-dasharray="0" stroke-width="1" x1="0" x2="350" y1="150" y2="150"></line>
+<line stroke="#f3f4f6" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="350" y1="75" y2="75"></line>
+<line stroke="#f3f4f6" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="350" y1="0" y2="0"></line>
+<path d="M0,100 C50,110 50,60 100,60 C150,60 150,90 200,70 C250,50 250,100 300,90 C330,84 350,70 350,70 V150 H0 Z" fill="url(#chartGradient)"></path>
+<path d="M0,100 C50,110 50,60 100,60 C150,60 150,90 200,70 C250,50 250,100 300,90 C330,84 350,70 350,70" fill="none" filter="url(#shadow)" stroke="#4b2aad" stroke-linecap="round" stroke-width="5"></path>
+<circle cx="200" cy="70" fill="#ffffff" r="8" stroke="#201445" stroke-width="4"></circle>
+<foreignObject height="40" width="80" x="160" y="15">
+<div class="bg-brand-dark text-white text-[10px] rounded-full py-1.5 px-3 text-center shadow-lg font-bold tracking-wide">
+                                    Low Pain
+                                </div>
+</foreignObject>
+</svg>
+</div>
+<div class="flex justify-between mt-6 text-xs text-text-light font-bold px-2 uppercase tracking-wide">
+<span>Mon</span>
+<span>Tue</span>
+<span>Wed</span>
+<span>Thu</span>
+<span>Fri</span>
+<span>Sat</span>
+<span>Sun</span>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-2 gap-4">
+<div class="bg-pastel-blue rounded-[2rem] p-6 border border-white/50 hover:shadow-card transition-all duration-300 group">
+<div class="flex items-start justify-between mb-4">
+<div class="p-2.5 bg-white rounded-full text-brand-dark shadow-sm">
+<span class="material-symbols-outlined text-[20px]">bedtime</span>
+</div>
+<span class="text-[10px] font-bold text-white bg-brand-dark px-2.5 py-1 rounded-full">+1hr</span>
+</div>
+<p class="text-sm font-bold text-slate-500 mb-1">Sleep Avg</p>
+<p class="text-2xl font-bold font-display text-brand-dark">7h 45m</p>
+</div>
+<div class="bg-pastel-peach rounded-[2rem] p-6 border border-white/50 hover:shadow-card transition-all duration-300 group">
+<div class="flex items-start justify-between mb-4">
+<div class="p-2.5 bg-white rounded-full text-brand-dark shadow-sm">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<span class="text-[10px] font-bold text-text-muted bg-white px-2.5 py-1 rounded-full">-5%</span>
+</div>
+<p class="text-sm font-bold text-slate-500 mb-1">Fatigue</p>
+<p class="text-2xl font-bold font-display text-brand-dark">Moderate</p>
+</div>
+</section>
+<div class="relative py-6">
+<div aria-hidden="true" class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-slate-200"></div>
+</div>
+<div class="relative flex justify-center">
+<span class="bg-pastel-cream px-4 text-xs font-bold text-text-light uppercase tracking-widest">Clinical Data</span>
+</div>
+</div>
+<section class="opacity-95 transition-opacity hover:opacity-100">
+<div class="bg-white rounded-[2rem] border border-slate-100/60 overflow-hidden shadow-soft">
+<div class="bg-surface-subtle/50 px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+<h3 class="text-sm font-bold text-text-main flex items-center gap-2">
+<div class="bg-brand-lighter p-1.5 rounded-lg text-brand-dark">
+<span class="material-symbols-outlined text-[18px]">medical_services</span>
+</div>
+                            Clinical Summary
+                        </h3>
+<button class="text-brand-dark border border-slate-200 font-bold text-[10px] uppercase tracking-wide hover:bg-brand-dark hover:text-white transition-colors px-4 py-2 rounded-full">Export PDF</button>
+</div>
+<div class="p-7 space-y-8">
+<div>
+<div class="flex items-center gap-3 mb-3">
+<span class="h-2.5 w-2.5 rounded-full bg-rose-400 ring-4 ring-rose-100"></span>
+<p class="text-xs font-bold text-text-light uppercase tracking-wider">Primary Complaint</p>
+</div>
+<h4 class="text-lg font-bold text-text-main mb-4 pl-5">Abdominal Pain</h4>
+<div class="grid gap-3 bg-surface-subtle p-5 rounded-2xl border border-slate-100 ml-1">
+<div class="flex flex-col sm:flex-row sm:gap-2 text-sm">
+<span class="font-bold text-text-main min-w-[80px]">Quality:</span>
+<span class="text-text-muted">Sharp, intermittent spikes.</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:gap-2 text-sm">
+<span class="font-bold text-text-main min-w-[80px]">Severity:</span>
+<span class="text-text-muted">Peaked at 7/10 on Tuesday.</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:gap-2 text-sm">
+<span class="font-bold text-text-main min-w-[80px]">Duration:</span>
+<span class="text-text-muted">Episodes last approx 2-3h.</span>
+</div>
+</div>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-5">
+<span class="h-2.5 w-2.5 rounded-full bg-orange-400 ring-4 ring-orange-100"></span>
+<p class="text-xs font-bold text-text-light uppercase tracking-wider">Flare Timeline (7 Days)</p>
+</div>
+<div class="relative pl-4 space-y-8 before:absolute before:left-[5px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+<div class="relative pl-8 group">
+<div class="absolute left-[calc(0px-5px)] top-1.5 h-3.5 w-3.5 rounded-full bg-white border-[3px] border-rose-400 shadow-sm z-10 group-hover:scale-110 transition-transform"></div>
+<div class="flex flex-col bg-white p-3 rounded-xl border border-slate-100 shadow-sm -mt-2">
+<span class="text-[10px] font-bold text-text-light uppercase tracking-wide mb-1">Oct 18 • 08:30 PM</span>
+<span class="text-sm font-bold text-text-main">Acute Flare (Level 7)</span>
+<span class="text-xs text-text-muted mt-2 bg-rose-50 text-rose-700 font-bold inline-block px-2 py-1 rounded-md w-fit">Trigger: Post-meal</span>
+</div>
+</div>
+<div class="relative pl-8 group">
+<div class="absolute left-[calc(0px-5px)] top-1.5 h-3.5 w-3.5 rounded-full bg-white border-[3px] border-amber-400 shadow-sm z-10 group-hover:scale-110 transition-transform"></div>
+<div class="flex flex-col bg-white p-3 rounded-xl border border-slate-100 shadow-sm -mt-2">
+<span class="text-[10px] font-bold text-text-light uppercase tracking-wide mb-1">Oct 16 • 02:00 PM</span>
+<span class="text-sm font-bold text-text-main">Moderate Discomfort (Level 4)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-100 pb-safe pt-2 px-6 z-40 rounded-t-[2rem] shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-center h-20">
+<button class="flex flex-col items-center gap-1.5 text-text-light hover:text-brand-dark transition-colors group">
+<span class="material-symbols-outlined text-[28px] group-hover:scale-110 transition-transform">home</span>
+<span class="text-[10px] font-bold">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1.5 text-text-light hover:text-brand-dark transition-colors group">
+<span class="material-symbols-outlined text-[28px] group-hover:scale-110 transition-transform">edit_note</span>
+<span class="text-[10px] font-bold">Log</span>
+</button>
+<button class="flex flex-col items-center gap-1.5 text-brand-dark relative">
+<div class="absolute -top-3 h-1.5 w-12 bg-brand-dark rounded-full"></div>
+<span class="material-symbols-outlined text-[28px] font-variation-fill">bar_chart</span>
+<span class="text-[10px] font-bold">Analytics</span>
+</button>
+<button class="flex flex-col items-center gap-1.5 text-text-light hover:text-brand-dark transition-colors group">
+<span class="material-symbols-outlined text-[28px] group-hover:scale-110 transition-transform">account_circle</span>
+<span class="text-[10px] font-bold">Profile</span>
+</button>
+</div>
+<div class="h-2 w-full"></div>
+</nav>
+</div>
+</body></html>

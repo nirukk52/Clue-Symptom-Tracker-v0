@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>What are you managing?</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#20142c", // Dark purple/black from Podia for text and main buttons
+                        secondary: "#9484c6", // Podia purple accent
+                        accent: "#fdf8f4", // Very light cream background
+                        "background-light": "#fdf8f4", // Light cream
+                        "background-dark": "#1a1a1a", // Dark mode bg
+                        "card-light": "#ffffff",
+                        "card-dark": "#2d2d2d",
+                        "purple-soft": "#e5d4f3",
+                        "orange-soft": "#f2b66d",
+                        "blue-soft": "#b2d2de",
+                        "text-light": "#20142c",
+                        "text-dark": "#fdf8f4",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "12px",
+                        'xl': "16px",
+                        '2xl': "24px",
+                        '3xl': "32px",
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                },
+            },
+        };
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark min-h-screen flex flex-col antialiased transition-colors duration-200">
+<div class="fixed top-[-50px] left-[-30px] w-40 h-40 bg-orange-soft opacity-20 rounded-full blur-3xl pointer-events-none z-0"></div>
+<div class="fixed top-[20%] right-[-50px] w-64 h-64 bg-purple-soft opacity-20 rounded-full blur-3xl pointer-events-none z-0"></div>
+<div class="fixed bottom-[-50px] right-[20px] w-48 h-48 bg-blue-soft opacity-20 rounded-full blur-3xl pointer-events-none z-0"></div>
+<div class="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full px-6 pt-12 pb-24">
+<header class="mb-6">
+<h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-primary dark:text-white mb-3">
+                What are you<br/>managing?
+            </h1>
+<p class="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+                Select up to 3 chronic conditions or symptoms to personalize your tracking.
+            </p>
+</header>
+<div class="relative mb-8 group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-icons-round text-gray-400 dark:text-gray-500">search</span>
+</div>
+<input class="block w-full pl-12 pr-4 py-4 bg-white dark:bg-card-dark border-2 border-transparent focus:border-purple-soft dark:focus:border-purple-soft rounded-2xl text-base shadow-soft placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white transition-all outline-none" placeholder="Search conditions, symptoms..." type="text"/>
+</div>
+<div class="flex-1 overflow-y-auto hide-scrollbar space-y-8 pb-4">
+<section>
+<h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 ml-1">
+                    Common Picks
+                </h3>
+<div class="flex flex-wrap gap-3">
+<button class="flex items-center space-x-2 px-4 py-2.5 bg-primary text-white rounded-full transition-transform active:scale-95 shadow-md">
+<span class="font-medium">Chronic Pain</span>
+<span class="material-icons-round text-sm">check</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Fatigue</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Anxiety</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Insomnia</span>
+</button>
+</div>
+</section>
+<section>
+<div class="flex items-center mb-4">
+<div class="w-8 h-8 rounded-lg bg-orange-soft flex items-center justify-center text-primary mr-3 shadow-sm">
+<span class="material-icons-round text-lg">spa</span>
+</div>
+<h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                        Digestive
+                    </h3>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">IBS</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Crohn's Disease</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Bloating</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Acid Reflux</span>
+</button>
+</div>
+</section>
+<section>
+<div class="flex items-center mb-4">
+<div class="w-8 h-8 rounded-lg bg-purple-soft flex items-center justify-center text-primary mr-3 shadow-sm">
+<span class="material-icons-round text-lg">healing</span>
+</div>
+<h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                        Pain + Inflammation
+                    </h3>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Migraines</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Fibromyalgia</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Arthritis</span>
+</button>
+<button class="px-4 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-700 hover:border-purple-soft dark:hover:border-purple-soft text-gray-700 dark:text-gray-200 rounded-full shadow-sm transition-all active:scale-95">
+<span class="font-medium">Back Pain</span>
+</button>
+</div>
+</section>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-light via-background-light to-transparent dark:from-background-dark dark:via-background-dark dark:to-transparent z-20 pointer-events-none">
+<div class="max-w-md mx-auto w-full pointer-events-auto flex flex-col items-center space-y-4">
+<button class="w-full py-4 bg-primary text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center group">
+                Continue
+                <span class="material-icons-round ml-2 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors py-2">
+                I'll choose later
+            </button>
+</div>
+</div>
+
+</body></html>

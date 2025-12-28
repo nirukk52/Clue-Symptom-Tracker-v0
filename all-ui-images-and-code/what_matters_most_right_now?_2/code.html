@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Onboarding - What brings you here</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,300;9..144,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#20132E", // Dark purple
+              secondary: "#4b2aad", // Vibrant purple
+              "background-light": "#FDFBF9", // Off-white cream
+              "background-dark": "#18181b", // Zinc 900
+              "card-light": "#FFFFFF",
+              "card-dark": "#27272a", // Zinc 800
+              "accent-peach": "#E8974F",
+              "accent-blue": "#A4C8D8",
+              "accent-purple": "#D0BDF4",
+              "accent-dark-blue": "#1C2E38",
+              "pastel-yellow": "#FDF6D9",
+              "pastel-blue": "#E3F1F6",
+              "pastel-pink": "#FCE5E5",
+              "pastel-green": "#E6F6E6"
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              display: ["Fraunces", "serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.75rem",
+              'xl': '1rem',
+              '2xl': '1.5rem',
+              '3xl': '2rem',
+            },
+            boxShadow: {
+              'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+              'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
+              'card': '0 2px 8px -2px rgba(32, 19, 46, 0.08)',
+            }
+          },
+        },
+      };
+    </script>
+<style>.no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }.select-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        input[type="radio"]:checked + div {
+            border-color: #20132E;
+            transform: scale(1.02);
+        }
+        input[type="radio"]:checked + div .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .dark input[type="radio"]:checked + div {
+            border-color: #D0BDF4;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(800px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-primary dark:text-gray-100 font-sans min-h-screen relative overflow-hidden flex flex-col antialiased">
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-accent-peach opacity-30 rounded-[3rem] transform rotate-12 blur-2xl pointer-events-none z-0 dark:opacity-10"></div>
+<div class="absolute top-1/3 -left-12 w-48 h-48 bg-accent-blue opacity-30 rounded-full blur-3xl pointer-events-none z-0 dark:opacity-10"></div>
+<div class="absolute bottom-20 -right-6 w-56 h-56 bg-accent-purple opacity-30 rounded-[4rem] transform -rotate-12 blur-3xl pointer-events-none z-0 dark:opacity-10"></div>
+<main class="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full px-6 pt-10 pb-6 h-screen">
+<header class="mb-6 flex-shrink-0">
+<div class="flex items-center gap-2 mb-6">
+<div class="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+<div class="h-full w-1/4 bg-primary dark:bg-accent-purple rounded-full"></div>
+</div>
+</div>
+<h1 class="font-display text-[2rem] font-semibold text-primary dark:text-white leading-tight mb-2">
+                What brings you here today?
+            </h1>
+<p class="text-gray-600 dark:text-gray-400 text-base leading-relaxed">
+                This tunes your first week so Clue feels helpful fast.
+            </p>
+</header>
+<form class="flex-1 overflow-y-auto no-scrollbar pb-28 grid grid-cols-1 gap-4">
+<label class="block cursor-pointer group relative">
+<input class="peer sr-only" name="intent" type="radio" value="awareness"/>
+<div class="select-card relative p-6 bg-pastel-yellow dark:bg-gray-800 border-2 border-transparent shadow-card rounded-3xl hover:shadow-lg h-full flex flex-col items-start text-left">
+<div class="absolute top-4 right-4 check-icon transition-all duration-300 transform scale-75 opacity-0">
+<div class="w-6 h-6 rounded-full bg-primary dark:bg-accent-purple text-white dark:text-primary flex items-center justify-center">
+<span class="material-icons-round text-sm font-bold">check</span>
+</div>
+</div>
+<div class="mb-3 p-3 bg-white/60 dark:bg-gray-700/60 rounded-2xl w-12 h-12 flex items-center justify-center text-yellow-700 dark:text-yellow-300 shadow-sm backdrop-blur-sm">
+<span class="material-icons-round text-2xl">visibility</span>
+</div>
+<h3 class="font-display font-semibold text-xl text-primary dark:text-white mb-2">Awareness</h3>
+<div class="space-y-1.5 w-full">
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"I just want to see patterns."</p>
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"I'm curious about my body."</p>
+</div>
+</div>
+</label>
+<label class="block cursor-pointer group relative">
+<input class="peer sr-only" name="intent" type="radio" value="tracking"/>
+<div class="select-card relative p-6 bg-pastel-blue dark:bg-gray-800 border-2 border-transparent shadow-card rounded-3xl hover:shadow-lg h-full flex flex-col items-start text-left">
+<div class="absolute top-4 right-4 check-icon transition-all duration-300 transform scale-75 opacity-0">
+<div class="w-6 h-6 rounded-full bg-primary dark:bg-accent-purple text-white dark:text-primary flex items-center justify-center">
+<span class="material-icons-round text-sm font-bold">check</span>
+</div>
+</div>
+<div class="mb-3 p-3 bg-white/60 dark:bg-gray-700/60 rounded-2xl w-12 h-12 flex items-center justify-center text-blue-700 dark:text-blue-300 shadow-sm backdrop-blur-sm">
+<span class="material-icons-round text-2xl">edit_note</span>
+</div>
+<h3 class="font-display font-semibold text-xl text-primary dark:text-white mb-2">Tracking</h3>
+<div class="space-y-1.5 w-full">
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"I need a log for my doctor."</p>
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"I'm monitoring specific symptoms."</p>
+</div>
+</div>
+</label>
+<label class="block cursor-pointer group relative">
+<input class="peer sr-only" name="intent" type="radio" value="insight"/>
+<div class="select-card relative p-6 bg-pastel-pink dark:bg-gray-800 border-2 border-transparent shadow-card rounded-3xl hover:shadow-lg h-full flex flex-col items-start text-left">
+<div class="absolute top-4 right-4 check-icon transition-all duration-300 transform scale-75 opacity-0">
+<div class="w-6 h-6 rounded-full bg-primary dark:bg-accent-purple text-white dark:text-primary flex items-center justify-center">
+<span class="material-icons-round text-sm font-bold">check</span>
+</div>
+</div>
+<div class="mb-3 p-3 bg-white/60 dark:bg-gray-700/60 rounded-2xl w-12 h-12 flex items-center justify-center text-red-700 dark:text-red-300 shadow-sm backdrop-blur-sm">
+<span class="material-icons-round text-2xl">lightbulb</span>
+</div>
+<h3 class="font-display font-semibold text-xl text-primary dark:text-white mb-2">Insight</h3>
+<div class="space-y-1.5 w-full">
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"Why do I feel this way?"</p>
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"Help me connect the dots."</p>
+</div>
+</div>
+</label>
+<label class="block cursor-pointer group relative">
+<input class="peer sr-only" name="intent" type="radio" value="action"/>
+<div class="select-card relative p-6 bg-pastel-green dark:bg-gray-800 border-2 border-transparent shadow-card rounded-3xl hover:shadow-lg h-full flex flex-col items-start text-left">
+<div class="absolute top-4 right-4 check-icon transition-all duration-300 transform scale-75 opacity-0">
+<div class="w-6 h-6 rounded-full bg-primary dark:bg-accent-purple text-white dark:text-primary flex items-center justify-center">
+<span class="material-icons-round text-sm font-bold">check</span>
+</div>
+</div>
+<div class="mb-3 p-3 bg-white/60 dark:bg-gray-700/60 rounded-2xl w-12 h-12 flex items-center justify-center text-green-700 dark:text-green-300 shadow-sm backdrop-blur-sm">
+<span class="material-icons-round text-2xl">directions_run</span>
+</div>
+<h3 class="font-display font-semibold text-xl text-primary dark:text-white mb-2">Action</h3>
+<div class="space-y-1.5 w-full">
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"I want to feel better now."</p>
+<p class="text-sm text-primary/80 dark:text-gray-300 font-medium italic">"Give me tools to manage this."</p>
+</div>
+</div>
+</label>
+</form>
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-light via-background-light to-transparent dark:from-background-dark dark:via-background-dark pt-12 max-w-md mx-auto z-20">
+<button class="w-full bg-primary text-white font-semibold py-4 px-6 rounded-full shadow-lg hover:bg-opacity-90 active:transform active:scale-95 transition-all flex items-center justify-center group" type="button">
+<span>Next</span>
+<span class="material-icons-round ml-2 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chat Interface</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#201445", // Dark navy like Podia's primary text/buttons
+                        "primary-light": "#f3f0fa", // Very light purple background
+                        "accent-purple": "#b6a4ea", // Podia-like purple accent
+                        "accent-peach": "#f0b67f", // Podia-like orange accent
+                        "accent-mint": "#b8e3d6", // Softer mint
+                        "accent-blue": "#a9ced8", // Podia-like light blue
+                        "background-light": "#fdfbf9", // Creamy off-white background
+                        "background-dark": "#1a1625",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d2640",
+                        "text-main": "#201445", // Dark navy text
+                        "text-muted": "#554b66",
+                        "bubble-user": "#4b2aad", // Keep distinct purple for user bubbles but refined
+                        "bubble-bot": "#ffffff"
+                    },
+                    fontFamily: {
+                        "display": ["DM Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem", 
+                        "xl": "1.5rem", 
+                        "2xl": "2rem", 
+                        "3xl": "2.5rem", 
+                        "4xl": "3rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'soft': '0 8px 40px -4px rgba(32, 20, 69, 0.08)',
+                        'soft-hover': '0 12px 50px -8px rgba(32, 20, 69, 0.12)',
+                        'card': '0 2px 12px -2px rgba(32, 20, 69, 0.05)',
+                        'button': '0 4px 0 0 rgba(0,0,0,0.1)' // playful pressed effect
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }.podia-gradient {
+        background: linear-gradient(135deg, #fdfbf9 0%, #fff8f3 50%, #fdfbf9 100%);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="podia-gradient dark:bg-background-dark font-display antialiased text-text-main dark:text-gray-100 overflow-hidden">
+<div class="relative flex h-screen w-full flex-col mx-auto max-w-md bg-transparent dark:bg-background-dark shadow-2xl overflow-hidden">
+<header class="flex items-center justify-between px-6 py-5 bg-transparent z-10">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-main dark:text-white transition-colors">
+<span class="material-symbols-outlined" style="font-size: 28px;">menu</span>
+</button>
+<h1 class="text-2xl font-bold tracking-tight text-text-main dark:text-white">Chat</h1>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-main dark:text-white transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">ios_share</span>
+</button>
+</header>
+<main class="flex-1 overflow-y-auto px-5 py-2 space-y-8 bg-transparent">
+<div class="relative w-full">
+<div class="flex flex-col gap-5 rounded-[2.5rem] border border-primary/5 dark:border-gray-700 bg-surface-light dark:bg-surface-dark p-7 shadow-soft hover:shadow-soft-hover transition-all duration-300 transform hover:-translate-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent-mint/40 dark:bg-accent-mint/10">
+<span class="material-symbols-outlined text-teal-800 dark:text-teal-400" style="font-size: 18px;">push_pin</span>
+<p class="text-[12px] font-bold uppercase tracking-wider text-teal-900 dark:text-teal-300">Focus</p>
+</div>
+<button class="text-xs font-bold text-text-main hover:text-primary/80 transition-colors bg-black/5 hover:bg-black/10 px-4 py-1.5 rounded-full">Edit</button>
+</div>
+<div>
+<p class="text-sm font-medium text-text-muted dark:text-gray-400 mb-3 ml-1">Hypothesis tracking</p>
+<p class="text-xl font-bold leading-snug text-text-main dark:text-white">
+                            How does <span class="bg-accent-purple/30 dark:bg-primary/30 px-2 py-0.5 rounded-lg text-primary dark:text-primary-light box-decoration-clone">Poor Sleep</span> impact <span class="bg-accent-peach/40 dark:bg-accent-peach/10 px-2 py-0.5 rounded-lg text-orange-900 dark:text-orange-200 box-decoration-clone">Joint Pain</span>?
+                        </p>
+</div>
+<div class="flex flex-col gap-2 mt-2">
+<div class="flex justify-between text-xs font-bold text-text-muted dark:text-gray-400 px-1">
+<span>Progress</span>
+<span>Day 4/7</span>
+</div>
+<div class="h-3 w-full rounded-full bg-primary-light dark:bg-gray-700 overflow-hidden">
+<div class="h-full w-[65%] rounded-full bg-accent-purple"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-center py-4">
+<span class="px-5 py-2 text-xs font-bold tracking-wide uppercase text-text-muted/70 bg-black/5 dark:bg-surface-dark rounded-full">Today</span>
+</div>
+<div class="flex items-end gap-3 group pl-1">
+<div class="bg-center bg-no-repeat bg-cover rounded-full w-10 h-10 shrink-0 border border-black/5 dark:border-gray-700 shadow-sm" data-alt="Health Bot Avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDmYdDR9TBwc9kr-5kHd0bxQabR03oTc0re0csRLopXHLY1Df2Dv-PgDwbJYTxykA_bFPfo1NOPLPnTFkVYonliY4Vjh9yM_6nxbDfICZvjp99F4q8c0GA0aBseJTH4cdVkFrxBNpUhQ7xIFaZYFLnxxgSBle6x5OuT2_SshjpqGZT44iFMYxMs-YIgFEX26ADiGn5-MRMeQAOIKorp8NHISq2zCO6EN5cy2Qi8WsQgMxQ9yMktG1DvgtrgNkZXgP4dESoIkHCbjxu_");'></div>
+<div class="flex flex-col gap-1 items-start max-w-[85%]">
+<span class="text-[11px] font-medium text-text-muted ml-4 hidden group-hover:block transition-opacity">Health Bot • 9:01 AM</span>
+<div class="p-6 rounded-[2rem] rounded-bl-none bg-surface-light dark:bg-surface-dark border border-black/5 dark:border-gray-700 text-text-main dark:text-gray-100 shadow-card">
+<p class="text-[17px] leading-relaxed font-medium">Good morning, Alex. On a scale of 1-10, how is your energy level right now?</p>
+</div>
+</div>
+</div>
+<div class="flex items-end gap-3 justify-end group pr-1">
+<div class="flex flex-col gap-1 items-end max-w-[85%]">
+<span class="text-[11px] font-medium text-text-muted mr-4 hidden group-hover:block transition-opacity">You • 9:05 AM</span>
+<div class="p-6 rounded-[2rem] rounded-br-none bg-primary text-white shadow-md">
+<p class="text-[17px] leading-relaxed font-medium text-white/95">About a 4. Feeling groggy.</p>
+</div>
+</div>
+</div>
+<div class="flex items-end gap-3 group pl-1">
+<div class="bg-center bg-no-repeat bg-cover rounded-full w-10 h-10 shrink-0 border border-black/5 dark:border-gray-700 shadow-sm" data-alt="Health Bot Avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCJEXq_75e0XwlkXEt3ymZDWDsb1XdanXkcfMpF5LRWOuChw1Ps91DL7wAGqLgwciELexxt23Voj1GqEDBI1e8FqPVNA7oFzMscZsSXS3mluGsbWINVwUH5VyA7V-j1KVKQiEVL5fcHxinsycpY89fXHVu5InWUHj2SUbGbwcQQ1LOOB0Y0vK4dVv4jFtunrDT2n0a0okv8UgDdBmZE4GCRpLlPTaOXBhEQLOflwYZlww39cRdxB8HQg6l4bc_KgQvEWZkstZuljg0D");'></div>
+<div class="flex flex-col gap-1 items-start max-w-[85%]">
+<span class="text-[11px] font-medium text-text-muted ml-4 hidden group-hover:block transition-opacity">Health Bot • 9:06 AM</span>
+<div class="p-6 rounded-[2rem] rounded-bl-none bg-surface-light dark:bg-surface-dark border border-black/5 dark:border-gray-700 text-text-main dark:text-gray-100 shadow-card">
+<p class="text-[17px] leading-relaxed font-medium">Noted. Have you taken your morning supplements yet?</p>
+</div>
+</div>
+</div>
+<div class="h-20"></div>
+</main>
+<footer class="bg-surface-light/90 dark:bg-surface-dark/95 backdrop-blur-xl border-t border-black/5 dark:border-gray-800 px-4 pb-8 pt-5 rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+<div class="flex gap-3 mb-5 overflow-x-auto no-scrollbar pb-2 px-1">
+<button class="group flex items-center gap-2 pl-3 pr-5 py-2.5 bg-accent-purple/20 hover:bg-accent-purple/30 dark:bg-gray-800 rounded-full text-sm font-bold text-primary dark:text-gray-200 transition-all whitespace-nowrap border border-transparent">
+<div class="w-6 h-6 rounded-full bg-accent-purple/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-size: 16px;">sentiment_satisfied</span>
+</div>
+                    Mood
+                </button>
+<button class="group flex items-center gap-2 pl-3 pr-5 py-2.5 bg-accent-peach/20 hover:bg-accent-peach/30 dark:bg-gray-800 rounded-full text-sm font-bold text-primary dark:text-gray-200 transition-all whitespace-nowrap border border-transparent">
+<div class="w-6 h-6 rounded-full bg-accent-peach/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-orange-900" style="font-size: 16px;">wounds_injuries</span>
+</div>
+                    Pain Level
+                </button>
+<button class="group flex items-center gap-2 pl-3 pr-5 py-2.5 bg-accent-blue/20 hover:bg-accent-blue/30 dark:bg-gray-800 rounded-full text-sm font-bold text-primary dark:text-gray-200 transition-all whitespace-nowrap border border-transparent">
+<div class="w-6 h-6 rounded-full bg-accent-blue/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-blue-900" style="font-size: 16px;">medication</span>
+</div>
+                    Meds
+                </button>
+</div>
+<div class="flex items-end gap-3">
+<button class="flex items-center justify-center w-12 h-12 mb-[2px] rounded-full text-text-main hover:text-primary bg-background-light hover:bg-primary-light dark:hover:bg-gray-700 dark:bg-gray-800 border border-black/10 dark:border-gray-700 transition-all shrink-0 shadow-sm hover:shadow-md">
+<span class="material-symbols-outlined" style="font-size: 24px;">add</span>
+</button>
+<div class="flex-1 min-h-[56px] bg-background-light dark:bg-gray-900 rounded-[2rem] border border-black/10 dark:border-gray-700 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all flex items-center px-6 shadow-inner py-3">
+<textarea class="w-full bg-transparent border-none p-0 text-[16px] text-text-main dark:text-white placeholder:text-gray-400 focus:ring-0 font-medium resize-none overflow-hidden" placeholder="Type a message..." rows="1" style="min-height: 24px; max-height: 120px;"></textarea>
+</div>
+<button class="flex items-center justify-center w-12 h-12 mb-[2px] rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 dark:shadow-none transition-all transform hover:scale-105 active:scale-95 shrink-0">
+<span class="material-symbols-outlined" style="font-size: 24px;">arrow_upward</span>
+</button>
+</div>
+</footer>
+</div>
+</body></html>

@@ -1,0 +1,161 @@
+# ===========================
+# Dependencies
+# ===========================
+node_modules/
+.pnpm-store/
+.yarn/
+.npm/
+
+# ===========================
+# Expo / React Native
+# ===========================
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.expo-shared/
+
+# EAS Build
+.eas/
+
+# Metro bundler
+.metro-health-check*
+
+# ===========================
+# Native builds (when needed)
+# ===========================
+# Uncomment if you want to ignore native folders
+# ios/
+# android/
+
+# iOS build artifacts
+ios/build/
+ios/Pods/
+ios/.xcode.env.local
+*.xcuserstate
+*.xcuserdatad/
+
+# Android build artifacts
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+
+# ===========================
+# Signing keys & certificates
+# ===========================
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+google-services.json
+GoogleService-Info.plist
+
+# ===========================
+# Environment variables
+# ===========================
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ===========================
+# IDE / Editor
+# ===========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# Cursor AI
+.cursor/
+
+# ===========================
+# OS generated files
+# ===========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.orig.*
+
+# ===========================
+# Logs
+# ===========================
+npm-debug.*
+yarn-debug.*
+yarn-error.log
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# ===========================
+# Testing / Coverage
+# ===========================
+/coverage
+.nyc_output/
+jest-results/
+test-results/
+
+# ===========================
+# TypeScript
+# ===========================
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ===========================
+# Build outputs
+# ===========================
+/build
+/out
+/.next/
+/.nuxt/
+
+# ===========================
+# Supabase / PowerSync
+# ===========================
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# PowerSync local database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# ===========================
+# Misc
+# ===========================
+*.bak
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+.turbo/
+
+# Sentry
+.sentryclirc
+
+# Storybook
+storybook-static/
+
+# Bundle analyzer
+.bundle-analyzer/
+bundle-stats.json

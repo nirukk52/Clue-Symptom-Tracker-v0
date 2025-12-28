@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Baseline captured</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#20142c", 
+                        secondary: "#9484c6", 
+                        accent: "#fdf8f4", 
+                        "background-light": "#fdf8f4", 
+                        "background-dark": "#1a1a1a", 
+                        "card-light": "#ffffff",
+                        "card-dark": "#2d2d2d",
+                        "purple-soft": "#e5d4f3",
+                        "orange-soft": "#f2b66d",
+                        "blue-soft": "#b2d2de",
+                        "green-soft": "#cbe8ce", // Added for success state
+                        "text-light": "#20142c",
+                        "text-dark": "#fdf8f4",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "12px",
+                        'xl': "16px",
+                        '2xl': "24px",
+                        '3xl': "32px",
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(32, 20, 44, 0.05)',
+                    }
+                },
+            },
+        };
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter {
+            animation: fade-in-up 0.6s ease-out forwards;
+        }
+        .animate-enter-delay-1 { animation-delay: 0.1s; }
+        .animate-enter-delay-2 { animation-delay: 0.2s; }
+        .animate-enter-delay-3 { animation-delay: 0.3s; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark min-h-screen flex flex-col antialiased transition-colors duration-200">
+<div class="fixed top-[-50px] left-[-30px] w-40 h-40 bg-orange-soft opacity-20 rounded-full blur-3xl pointer-events-none z-0"></div>
+<div class="fixed top-[20%] right-[-50px] w-64 h-64 bg-purple-soft opacity-20 rounded-full blur-3xl pointer-events-none z-0"></div>
+<div class="fixed bottom-[-50px] right-[20px] w-48 h-48 bg-blue-soft opacity-20 rounded-full blur-3xl pointer-events-none z-0"></div>
+<div class="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full px-6 pt-10 pb-32">
+<header class="mb-8 text-center flex flex-col items-center animate-enter">
+<div class="w-16 h-16 bg-green-soft rounded-full flex items-center justify-center text-green-900 mb-5 shadow-glow">
+<span class="material-icons-round text-3xl">check</span>
+</div>
+<h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-primary dark:text-white mb-2">
+                Baseline captured
+            </h1>
+<p class="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+                You're all set. Here's a preview of your journey ahead.
+            </p>
+</header>
+<div class="space-y-6">
+<section class="bg-white dark:bg-card-dark rounded-2xl p-5 shadow-soft border border-gray-100 dark:border-gray-700 animate-enter animate-enter-delay-1">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-bold text-lg text-primary dark:text-white">Your calendar, filled in</h2>
+<span class="text-[10px] uppercase font-bold tracking-wider bg-purple-soft/50 text-primary px-2 py-1 rounded-lg">Preview</span>
+</div>
+<div class="bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+<div class="grid grid-cols-7 gap-2 mb-2 text-center">
+<span class="text-[10px] uppercase text-gray-400 font-bold">S</span>
+<span class="text-[10px] uppercase text-gray-400 font-bold">M</span>
+<span class="text-[10px] uppercase text-gray-400 font-bold">T</span>
+<span class="text-[10px] uppercase text-gray-400 font-bold">W</span>
+<span class="text-[10px] uppercase text-gray-400 font-bold">T</span>
+<span class="text-[10px] uppercase text-gray-400 font-bold">F</span>
+<span class="text-[10px] uppercase text-gray-400 font-bold">S</span>
+</div>
+<div class="grid grid-cols-7 gap-2">
+<div class="aspect-square rounded-lg flex items-center justify-center text-xs text-gray-300">29</div>
+<div class="aspect-square rounded-lg flex items-center justify-center text-xs text-gray-300">30</div>
+<div class="aspect-square rounded-lg bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-600 shadow-sm flex flex-col items-center justify-center">
+<span class="text-xs font-bold text-gray-700 dark:text-gray-200">1</span>
+<div class="w-1.5 h-1.5 rounded-full bg-orange-soft mt-1"></div>
+</div>
+<div class="aspect-square rounded-lg bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-600 shadow-sm flex flex-col items-center justify-center">
+<span class="text-xs font-bold text-gray-700 dark:text-gray-200">2</span>
+<div class="flex gap-0.5 mt-1">
+<div class="w-1.5 h-1.5 rounded-full bg-purple-soft"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-blue-soft"></div>
+</div>
+</div>
+<div class="aspect-square rounded-lg bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-600 shadow-sm flex flex-col items-center justify-center">
+<span class="text-xs font-bold text-gray-700 dark:text-gray-200">3</span>
+<div class="w-1.5 h-1.5 rounded-full bg-red-300 mt-1"></div>
+</div>
+<div class="aspect-square rounded-lg bg-primary text-white shadow-md flex flex-col items-center justify-center">
+<span class="text-xs font-bold">4</span>
+<span class="material-icons-round text-[10px] mt-0.5">check</span>
+</div>
+<div class="aspect-square rounded-lg bg-white/50 dark:bg-white/5 border border-dashed border-gray-200 dark:border-gray-600 flex flex-col items-center justify-center">
+<span class="text-xs font-bold text-gray-400">5</span>
+</div>
+</div>
+</div>
+</section>
+<section class="animate-enter animate-enter-delay-2">
+<h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 ml-1">
+                    What happens next
+                </h3>
+<div class="space-y-3">
+<div class="bg-white dark:bg-card-dark p-4 rounded-2xl shadow-soft border border-gray-100 dark:border-gray-700 flex items-start gap-4">
+<div class="w-10 h-10 rounded-xl bg-blue-soft/30 flex-shrink-0 flex items-center justify-center text-blue-700 dark:text-blue-300">
+<span class="material-icons-round text-xl">insights</span>
+</div>
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-sm mb-1">After 3 days</h4>
+<p class="text-sm text-gray-600 dark:text-gray-300 leading-snug">
+                                Clue starts spotting early links between <span class="font-medium text-primary dark:text-white">[Feature]</span> and <span class="font-medium text-primary dark:text-white">[Outcome]</span>.
+                            </p>
+</div>
+</div>
+<div class="bg-white dark:bg-card-dark p-4 rounded-2xl shadow-soft border border-gray-100 dark:border-gray-700 flex items-start gap-4">
+<div class="w-10 h-10 rounded-xl bg-purple-soft/30 flex-shrink-0 flex items-center justify-center text-purple-700 dark:text-purple-300">
+<span class="material-icons-round text-xl">calendar_view_week</span>
+</div>
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-sm mb-1">After 14 days</h4>
+<p class="text-sm text-gray-600 dark:text-gray-300 leading-snug">
+                                You'll unlock a clear 2-4 week trend view.
+                            </p>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-gradient-to-br from-orange-soft/20 to-accent dark:from-gray-800 dark:to-card-dark rounded-2xl p-5 border border-orange-soft/30 relative overflow-hidden animate-enter animate-enter-delay-3">
+<div class="absolute right-[-20px] top-[-20px] w-32 h-32 bg-orange-soft/20 rounded-full blur-2xl"></div>
+<div class="relative z-10 flex items-start gap-4">
+<div class="w-10 h-10 rounded-xl bg-white dark:bg-gray-700 shadow-sm flex-shrink-0 flex items-center justify-center text-orange-600 dark:text-orange-300">
+<span class="material-icons-round text-xl">medical_services</span>
+</div>
+<div>
+<h3 class="font-bold text-gray-900 dark:text-white mb-1">Doctor-ready from day one</h3>
+<p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                            Clue summarizes your symptoms into a clear, clinical format ready for your next appointment.
+                        </p>
+</div>
+</div>
+</section>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-light via-background-light/95 to-transparent dark:from-background-dark dark:via-background-dark/95 dark:to-transparent z-20 pointer-events-none pb-8 pt-12">
+<div class="max-w-md mx-auto w-full pointer-events-auto flex flex-col gap-3">
+<button class="w-full py-4 bg-primary text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-95 flex items-center justify-center group">
+<span class="material-icons-round mr-2">chat_bubble_outline</span>
+                Start chatting
+            </button>
+<button class="w-full py-3.5 bg-white dark:bg-card-dark text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 font-bold rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-95 flex items-center justify-center">
+<span class="material-icons-round mr-2 text-lg text-gray-400">edit</span>
+                Quick entry
+            </button>
+</div>
+</div>
+
+</body></html>

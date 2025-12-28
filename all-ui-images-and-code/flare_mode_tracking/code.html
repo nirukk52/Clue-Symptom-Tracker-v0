@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Flare Mode Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5d51ec",
+                        "background-light": "#f8f8fa",
+                        "background-dark": "#121121",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1e1e2e",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "1.5rem",
+                        "xl": "2rem",
+                        "2xl": "2.5rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-zinc-900 dark:text-zinc-100 antialiased selection:bg-primary selection:text-white">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto overflow-hidden bg-background-light dark:bg-background-dark pb-8">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-50 flex items-center justify-between bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md px-6 py-4">
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined">close</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">Flare Mode ⚠️</h1>
+<button class="h-10 px-5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold shadow-sm hover:opacity-90 transition-opacity">
+                End
+            </button>
+</header>
+<!-- Main Content -->
+<main class="flex flex-col gap-6 px-4 pt-2">
+<!-- Severity Section -->
+<section class="flex flex-col gap-4 rounded-2xl bg-white dark:bg-card-dark p-6 shadow-soft">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-bold text-zinc-900 dark:text-white">Current Severity</h2>
+<span class="text-primary font-bold text-lg">7/10</span>
+</div>
+<div class="relative flex w-full flex-col items-center justify-center pt-6 pb-2">
+<!-- Custom Slider Visual -->
+<div class="relative h-6 w-full rounded-full bg-zinc-100 dark:bg-zinc-700">
+<!-- Active Track -->
+<div class="absolute left-0 top-0 h-full w-[70%] rounded-full bg-primary/20"></div>
+<div class="absolute left-0 top-0 h-full w-[70%] rounded-full bg-gradient-to-r from-primary/60 to-primary"></div>
+<!-- Thumb -->
+<div class="absolute top-1/2 -translate-y-1/2 left-[70%] -ml-4 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] ring-4 ring-primary/20 cursor-pointer hover:scale-110 transition-transform">
+<div class="h-3 w-3 rounded-full bg-primary"></div>
+</div>
+</div>
+<!-- Labels -->
+<div class="mt-4 flex w-full justify-between text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+<span>Mild</span>
+<span>Moderate</span>
+<span>Severe</span>
+</div>
+</div>
+</section>
+<!-- Quick Log Chips -->
+<section class="flex flex-col gap-3">
+<h3 class="px-2 text-lg font-bold text-zinc-900 dark:text-white">Quick Check-in</h3>
+<div class="flex flex-wrap gap-3">
+<!-- Active Chip -->
+<button class="group flex h-12 items-center gap-2 rounded-full bg-primary px-5 transition-all active:scale-95 shadow-md shadow-primary/20">
+<span class="material-symbols-outlined text-[20px] text-white">bolt</span>
+<span class="text-sm font-bold text-white">Pain</span>
+</button>
+<!-- Inactive Chips -->
+<button class="group flex h-12 items-center gap-2 rounded-full bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 px-5 transition-all active:scale-95 hover:bg-zinc-50 dark:hover:bg-zinc-700">
+<span class="text-sm font-medium text-zinc-600 dark:text-zinc-300">Fatigue</span>
+</button>
+<button class="group flex h-12 items-center gap-2 rounded-full bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 px-5 transition-all active:scale-95 hover:bg-zinc-50 dark:hover:bg-zinc-700">
+<span class="text-sm font-medium text-zinc-600 dark:text-zinc-300">Brain Fog</span>
+</button>
+<button class="group flex h-12 items-center gap-2 rounded-full bg-primary px-5 transition-all active:scale-95 shadow-md shadow-primary/20">
+<span class="material-symbols-outlined text-[20px] text-white">sick</span>
+<span class="text-sm font-bold text-white">Nausea</span>
+</button>
+<button class="group flex h-12 items-center gap-2 rounded-full bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 px-5 transition-all active:scale-95 hover:bg-zinc-50 dark:hover:bg-zinc-700">
+<span class="material-symbols-outlined text-[20px] text-zinc-400">add</span>
+<span class="text-sm font-medium text-zinc-600 dark:text-zinc-300">Add</span>
+</button>
+</div>
+</section>
+<!-- Timing Section -->
+<section class="grid grid-cols-1 gap-4 rounded-2xl bg-white dark:bg-card-dark p-6 shadow-soft">
+<div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-700 pb-4">
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Started</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-zinc-400 text-sm">schedule</span>
+<span class="text-lg font-bold text-zinc-900 dark:text-white">2:30 PM</span>
+</div>
+</div>
+<button class="rounded-lg bg-zinc-50 dark:bg-zinc-700 px-3 py-1 text-xs font-bold text-zinc-500 hover:bg-zinc-100 transition-colors">Edit</button>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex flex-col">
+<span class="text-base font-bold text-zinc-900 dark:text-white">Currently Ongoing</span>
+<span class="text-sm text-zinc-500">Flare has lasted 2h 15m</span>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-opacity-75">
+<span class="sr-only">Use setting</span>
+<span aria-hidden="true" class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-6"></span>
+</div>
+</div>
+</section>
+<!-- Auto-compare Insights -->
+<section class="mt-2 flex flex-col gap-4 rounded-2xl bg-[#f0effd] dark:bg-primary/20 p-6 shadow-none">
+<div class="flex items-center gap-2 text-primary dark:text-primary-300">
+<span class="material-symbols-outlined">insights</span>
+<h3 class="text-sm font-bold uppercase tracking-wide">Pattern Detected</h3>
+</div>
+<p class="text-lg font-medium leading-snug text-zinc-800 dark:text-zinc-100">
+                    This flare looks similar to your last 2 episodes in intensity and duration.
+                </p>
+<div class="h-px w-full bg-primary/10 dark:bg-primary/30"></div>
+<div class="flex flex-col gap-2">
+<span class="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">Potential Triggers Found</span>
+<div class="flex flex-wrap gap-2">
+<div class="flex items-center gap-1.5 rounded-lg bg-white dark:bg-zinc-900 px-3 py-2 shadow-sm">
+<span class="h-2 w-2 rounded-full bg-orange-400"></span>
+<span class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Sleep dip (-2h)</span>
+</div>
+<div class="flex items-center gap-1.5 rounded-lg bg-white dark:bg-zinc-900 px-3 py-2 shadow-sm">
+<span class="h-2 w-2 rounded-full bg-red-400"></span>
+<span class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Missed meds</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Notes / Text Area -->
+<section class="flex flex-col gap-3">
+<h3 class="px-2 text-lg font-bold text-zinc-900 dark:text-white">Additional Notes</h3>
+<div class="relative">
+<textarea class="w-full rounded-2xl border-none bg-white dark:bg-card-dark p-4 text-zinc-900 dark:text-white shadow-soft focus:ring-2 focus:ring-primary/50 resize-none h-32 text-base" placeholder="Anything else you want to track?"></textarea>
+<div class="absolute bottom-4 right-4 flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[18px]">mic</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Actions Spacer -->
+<div class="h-20"></div>
+</div>
+</body></html>

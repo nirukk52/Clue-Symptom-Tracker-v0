@@ -1,0 +1,25 @@
+Go through @context 
+Create a plan to build the @context/onboarding-flow.md  for the app.
+
+@all-ui-images-and-code  can be found here.
+Update the @.claude-skills/frontend-design  skill based on @all-ui-images-and-code  and @context/design-inspiration-overview.md  
+It has UI for all onboarding screens:
+
+Onboarding Screen 1:
+@all-ui-images-and-code/onboarding-screen-1-what_are_you_managing?_1/screen.png from @all-ui-images-and-code/onboarding-screen-1-what_are_you_managing?_1 
+
+Onboarding Screen 2:
+@all-ui-images-and-code/what_matters_most_right_now?_1/screen.png from @all-ui-images-and-code/onboarding-screen-2-what_matters_most_right_now?_1 
+
+Onboarding Screen 3:
+Use the design of @all-ui-images-and-code/what_matters_most_right_now?_3/screen.png  for @all-ui-images-and-code/onboarding-screen-4-design-inspiration 
+And update all the options seen inside screen 3 with 
+@README.md:140-172  these options.
+
+
+After 3rd onboarding screen. 
+Open the chat screen @all-ui-images-and-code/chat/screen.png from @all-ui-images-and-code/chat/ 
+
+We need a frontend design skill.
+We need all the above code in running flawlessly pixel perfect in Android and IOS.
+We need local sqlite data sync with 
