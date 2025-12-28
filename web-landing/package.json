@@ -1,0 +1,19 @@
+{
+  "name": "chronic-life-landing",
+  "version": "1.0.0",
+  "description": "Landing page for Chronic Life - Track symptoms without draining your energy",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build needed'",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "chronic-illness",
+    "symptom-tracker",
+    "health",
+    "landing-page"
+  ],
+  "author": "Chronic Life",
+  "license": "MIT"
+}

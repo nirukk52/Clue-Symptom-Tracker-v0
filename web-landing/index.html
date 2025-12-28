@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chronic Life - Track symptoms without draining your energy</title>
+  <meta name="description" content="20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.">
+
+  <!-- Fonts: Fraunces for display, DM Sans for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            // Primary Colors
+            primary: "#20132E",
+            "primary-light": "#f3f0fa",
+
+            // Backgrounds
+            "bg-cream": "#FDFBF9",
+            "bg-card": "#FFFFFF",
+
+            // Pastel Accents
+            "accent-peach": "#E8974F",
+            "accent-blue": "#A4C8D8",
+            "accent-purple": "#D0BDF4",
+            "accent-mint": "#B8E3D6",
+            "accent-rose": "#F4C4C4",
+
+            // Selection States
+            "pill-hover": "#F3EFFF",
+            "pill-selected": "#E0D4FC",
+
+            // Text
+            "text-main": "#20132E",
+            "text-muted": "#554b66",
+          },
+          fontFamily: {
+            display: ["Fraunces", "Georgia", "serif"],
+            body: ["DM Sans", "system-ui", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "12px",
+            xl: "16px",
+            "2xl": "24px",
+            "3xl": "32px",
+            "4xl": "40px",
+            pill: "9999px",
+          },
+          boxShadow: {
+            soft: "0 4px 20px -2px rgba(32, 20, 46, 0.08)",
+            card: "0 2px 12px -2px rgba(32, 20, 69, 0.06)",
+            glow: "0 0 60px -10px rgba(208, 189, 244, 0.4)",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; }
+    .font-display { font-family: 'Fraunces', Georgia, serif; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(32, 19, 46, 0.15);
+      border-radius: 20px;
+    }
+
+    /* Blob animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(3deg); }
+    }
+    @keyframes float-reverse {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(20px) rotate(-3deg); }
+    }
+    .animate-float { animation: float 8s ease-in-out infinite; }
+    .animate-float-reverse { animation: float-reverse 10s ease-in-out infinite; }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #20132E 0%, #E8974F 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Glass effect */
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-bg-cream text-text-main antialiased overflow-x-hidden">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-primary/5">
+    <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2">
+        <div class="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center">
+          <span class="text-white font-display font-bold text-lg">C</span>
+        </div>
+        <span class="text-xl font-display font-semibold text-primary">Chronic Life</span>
+      </a>
+
+      <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-text-muted">
+        <a href="#assistant" class="hover:text-primary transition-colors">Assistant</a>
+        <a href="#quick-checkins" class="hover:text-primary transition-colors">Quick Check-ins</a>
+        <a href="#flare-mode" class="hover:text-primary transition-colors">Flare Mode</a>
+        <a href="#insights" class="hover:text-primary transition-colors">Insights</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="#" class="text-sm font-semibold text-text-muted hover:text-primary transition-colors hidden sm:block">Log In</a>
+        <a href="#cta" class="bg-primary hover:bg-primary/90 text-white text-sm font-bold px-5 py-2.5 rounded-pill transition-all hover:shadow-lg active:scale-95">
+          Get Started
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="relative min-h-screen pt-32 pb-20 px-6 overflow-hidden">
+    <!-- Decorative Blobs -->
+    <div class="absolute -top-20 -right-20 w-80 h-80 bg-accent-peach/30 rounded-[4rem] rotate-12 blur-3xl animate-float pointer-events-none"></div>
+    <div class="absolute top-1/3 -left-20 w-64 h-64 bg-accent-blue/40 rounded-full blur-3xl animate-float-reverse pointer-events-none"></div>
+    <div class="absolute bottom-20 right-1/4 w-96 h-96 bg-accent-purple/30 rounded-[5rem] -rotate-12 blur-3xl animate-float pointer-events-none"></div>
+    <div class="absolute bottom-40 -left-10 w-48 h-48 bg-accent-mint/50 rounded-full blur-2xl animate-float-reverse pointer-events-none"></div>
+
+    <div class="max-w-5xl mx-auto relative z-10">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-mint/40 text-sm font-semibold text-primary mb-8">
+          <span class="material-symbols-outlined text-lg">favorite</span>
+          Built for chronic life
+        </div>
+
+        <h1 class="font-display text-5xl md:text-7xl font-semibold text-primary leading-[1.1] mb-6">
+          Track symptoms without<br>
+          <span class="gradient-text">draining your energy.</span>
+        </h1>
+
+        <p class="text-xl text-text-muted leading-relaxed mb-4 max-w-2xl mx-auto">
+          20-second check-ins, flare mode on bad days, and a history that works when brain fog hits.
+        </p>
+
+        <p class="text-lg text-text-muted/80 leading-relaxed mb-10 max-w-xl mx-auto">
+          A personal assistant that remembers patterns, nudges the next best step, and turns your logs into doctor-ready summaries.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="#cta" class="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-primary/90 text-white text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+            Start a 20-second check-in
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </a>
+          <a href="#assistant" class="w-full sm:w-auto h-14 px-8 bg-white hover:bg-pill-hover border-2 border-primary/10 text-primary text-lg font-bold rounded-pill transition-all active:scale-95 flex items-center justify-center gap-2">
+            Meet your assistant
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero Visual Card -->
+      <div class="relative max-w-4xl mx-auto">
+        <div class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-soft border border-primary/5">
+          <!-- Mock App Interface -->
+          <div class="flex flex-col md:flex-row gap-6">
+            <!-- Quick Entry Preview -->
+            <div class="flex-1 bg-bg-cream rounded-3xl p-6">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-accent-purple/30 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary">bolt</span>
+                </div>
+                <div>
+                  <p class="font-semibold text-primary">Quick Entry</p>
+                  <p class="text-sm text-text-muted">Today, 2:30 PM</p>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <p class="text-sm font-semibold text-text-muted mb-2">How's your energy?</p>
+                  <div class="flex gap-2">
+                    <div class="flex-1 h-3 bg-accent-peach/40 rounded-full"></div>
+                    <span class="text-sm font-bold text-accent-peach">4/10</span>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-text-muted mb-2">Top suspects today</p>
+                  <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1.5 bg-accent-blue/30 rounded-pill text-sm font-medium text-primary">Poor sleep</span>
+                    <span class="px-3 py-1.5 bg-accent-rose/30 rounded-pill text-sm font-medium text-primary">Stress</span>
+                    <span class="px-3 py-1.5 bg-accent-mint/30 rounded-pill text-sm font-medium text-primary">Weather</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Preview -->
+            <div class="flex-1 bg-bg-cream rounded-3xl p-6">
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-accent-mint/40 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary">smart_toy</span>
+                </div>
+                <div>
+                  <p class="font-semibold text-primary">Your Assistant</p>
+                  <p class="text-sm text-text-muted">Always here</p>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="bg-white rounded-2xl rounded-bl-none p-4 shadow-card">
+                  <p class="text-sm text-primary leading-relaxed">I noticed your fatigue spiked after days with less than 6hrs sleep. Want me to track this pattern?</p>
+                </div>
+                <div class="bg-primary rounded-2xl rounded-br-none p-4 ml-8">
+                  <p class="text-sm text-white/95">Yes, please!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Stats -->
+        <div class="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-card border border-primary/5 hidden md:block">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-accent-mint/30 flex items-center justify-center">
+              <span class="material-symbols-outlined text-teal-700">timer</span>
+            </div>
+            <div>
+              <p class="text-2xl font-display font-bold text-primary">20s</p>
+              <p class="text-xs text-text-muted">avg check-in</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-card border border-primary/5 hidden md:block">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-accent-purple/30 flex items-center justify-center">
+              <span class="material-symbols-outlined text-purple-700">description</span>
+            </div>
+            <div>
+              <p class="text-2xl font-display font-bold text-primary">1-tap</p>
+              <p class="text-xs text-text-muted">doctor export</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Personal Assistant Section -->
+  <section id="assistant" class="py-24 px-6 bg-gradient-to-b from-bg-cream to-white relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/20 text-sm font-semibold text-primary mb-6">
+          <span class="material-symbols-outlined text-lg">smart_toy</span>
+          Your Personal Assistant
+        </div>
+
+        <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+          Not just tracking—<br>someone helping you steer.
+        </h2>
+        <p class="text-lg text-text-muted">Built for chronic life. Learns your patterns, adapts to your energy.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 mb-12">
+        <!-- What it does -->
+        <div class="bg-white rounded-[2rem] p-8 shadow-soft border border-primary/5">
+          <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-accent-peach/30 flex items-center justify-center">
+              <span class="material-symbols-outlined text-accent-peach">auto_awesome</span>
+            </div>
+            What it does
+          </h3>
+
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Turns "I feel awful" into a clean log in seconds</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Asks only the next best question (no interrogation)</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Spots when something is changing early (before it becomes a full flare)</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Suggests tiny actions you can actually do today</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Preps a visit summary when you say "I have an appointment"</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Why it feels personal -->
+        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-mint/10 rounded-[2rem] p-8 border border-accent-purple/20">
+          <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-primary">favorite</span>
+            </div>
+            Why it feels personal
+          </h3>
+
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
+              <span class="text-text-muted">Learns your common triggers and meds</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
+              <span class="text-text-muted">Adapts on low-energy days</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
+              <span class="text-text-muted">Keeps your Quick Entry small and relevant</span>
+            </li>
+          </ul>
+
+          <a href="#" class="inline-flex items-center gap-2 mt-8 text-primary font-semibold hover:gap-3 transition-all">
+            See assistant examples
+            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Check-ins Section -->
+  <section id="quick-checkins" class="py-24 px-6 bg-white relative overflow-hidden">
+    <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Content -->
+        <div>
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-blue/20 text-sm font-semibold text-primary mb-6">
+            <span class="material-symbols-outlined text-lg">bolt</span>
+            Quick Check-ins
+          </div>
+
+          <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+            20 seconds.<br>That's it.
+          </h2>
+
+          <p class="text-lg text-text-muted mb-8">
+            Quick check-ins. Flare mode. Evidence-backed insights. Everything designed to respect your energy.
+          </p>
+
+          <div class="space-y-6 mb-8">
+            <div>
+              <h4 class="font-semibold text-primary mb-2">What you do</h4>
+              <ul class="space-y-2 text-text-muted">
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-peach"></span>
+                  Tap your top outcome (0–10)
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-peach"></span>
+                  Pick 1–3 "top suspects" (sleep, stress, food, meds, cycle, weather)
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-peach"></span>
+                  Optional: one note, one timestamp
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 class="font-semibold text-primary mb-2">Why it feels easy</h4>
+              <ul class="space-y-2 text-text-muted">
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-mint"></span>
+                  Everything important is one screen
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-mint"></span>
+                  Defaults remember your patterns
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-mint"></span>
+                  No "form bloat" over time
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all">
+            Try Quick Entry
+            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </a>
+        </div>
+
+        <!-- Visual -->
+        <div class="relative">
+          <div class="bg-bg-cream rounded-[2.5rem] p-8 shadow-soft border border-primary/5">
+            <!-- Quick Entry Mock -->
+            <div class="bg-white rounded-3xl p-6 shadow-card mb-6">
+              <p class="text-sm font-semibold text-text-muted mb-4">How's your energy today?</p>
+              <div class="flex gap-2 mb-4">
+                <button class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm hover:bg-pill-hover transition-colors">1</button>
+                <button class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm hover:bg-pill-hover transition-colors">2</button>
+                <button class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm hover:bg-pill-hover transition-colors">3</button>
+                <button class="w-10 h-10 rounded-xl bg-pill-selected border-2 border-primary text-primary font-bold text-sm">4</button>
+                <button class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm hover:bg-pill-hover transition-colors">5</button>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-6 shadow-card">
+              <p class="text-sm font-semibold text-text-muted mb-4">Top suspects?</p>
+              <div class="flex flex-wrap gap-2">
+                <span class="px-4 py-2 bg-pill-selected border-2 border-primary rounded-pill text-sm font-semibold text-primary flex items-center gap-1">
+                  Poor sleep <span class="material-symbols-outlined text-sm">check</span>
+                </span>
+                <span class="px-4 py-2 bg-pill-selected border-2 border-primary rounded-pill text-sm font-semibold text-primary flex items-center gap-1">
+                  Stress <span class="material-symbols-outlined text-sm">check</span>
+                </span>
+                <span class="px-4 py-2 bg-white border border-gray-200 rounded-pill text-sm font-medium text-text-muted">Food</span>
+                <span class="px-4 py-2 bg-white border border-gray-200 rounded-pill text-sm font-medium text-text-muted">Meds</span>
+                <span class="px-4 py-2 bg-white border border-gray-200 rounded-pill text-sm font-medium text-text-muted">Cycle</span>
+                <span class="px-4 py-2 bg-white border border-gray-200 rounded-pill text-sm font-medium text-text-muted">Weather</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timer badge -->
+          <div class="absolute -bottom-4 -right-4 bg-accent-mint rounded-2xl p-4 shadow-lg">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-teal-800">timer</span>
+              <span class="font-display font-bold text-teal-900">18 sec</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Flare Mode Section -->
+  <section id="flare-mode" class="py-24 px-6 bg-gradient-to-b from-white to-accent-rose/10 relative overflow-hidden">
+    <div class="absolute top-1/2 right-0 w-[400px] h-[400px] bg-accent-peach/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Visual -->
+        <div class="order-2 md:order-1">
+          <div class="bg-white rounded-[2.5rem] p-8 shadow-soft border border-accent-rose/20">
+            <!-- Flare Mode Interface -->
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-accent-rose/30 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-red-600">warning</span>
+                </div>
+                <div>
+                  <p class="font-semibold text-primary">Flare Mode</p>
+                  <p class="text-sm text-text-muted">Simplified tracking</p>
+                </div>
+              </div>
+              <div class="w-12 h-6 bg-accent-rose rounded-pill relative">
+                <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <button class="w-full p-4 bg-accent-rose/20 rounded-2xl text-left hover:bg-accent-rose/30 transition-colors">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-red-600">local_fire_department</span>
+                  <div>
+                    <p class="font-semibold text-primary">I'm in a flare</p>
+                    <p class="text-sm text-text-muted">One tap to log it</p>
+                  </div>
+                </div>
+              </button>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-bg-cream rounded-xl">
+                  <p class="text-xs text-text-muted mb-1">Severity</p>
+                  <p class="font-semibold text-primary">7/10</p>
+                </div>
+                <div class="p-3 bg-bg-cream rounded-xl">
+                  <p class="text-xs text-text-muted mb-1">Started</p>
+                  <p class="font-semibold text-primary">6:30 AM</p>
+                </div>
+              </div>
+
+              <div class="p-4 bg-bg-cream rounded-xl">
+                <p class="text-xs text-text-muted mb-2">Key symptoms</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="px-3 py-1 bg-white rounded-pill text-sm font-medium text-primary">Fatigue</span>
+                  <span class="px-3 py-1 bg-white rounded-pill text-sm font-medium text-primary">Pain</span>
+                  <span class="px-3 py-1 bg-white rounded-pill text-sm font-medium text-primary">Brain fog</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="order-1 md:order-2">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-rose/30 text-sm font-semibold text-primary mb-6">
+            <span class="material-symbols-outlined text-lg">local_fire_department</span>
+            Flare Mode
+          </div>
+
+          <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+            Log the flare without explaining your whole life.
+          </h2>
+
+          <p class="text-lg text-text-muted mb-8">
+            Designed for bad days. When you're not okay, the last thing you need is a complex form.
+          </p>
+
+          <div class="space-y-6 mb-8">
+            <div>
+              <h4 class="font-semibold text-primary mb-2">Designed for bad days</h4>
+              <ul class="space-y-2 text-text-muted">
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-rose"></span>
+                  One-tap: "I'm in a flare"
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-rose"></span>
+                  Captures: severity, start time, key symptoms, meds taken
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-rose"></span>
+                  Defers details: you can fill in later, or never
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 class="font-semibold text-primary mb-2">What you get</h4>
+              <ul class="space-y-2 text-text-muted">
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-peach"></span>
+                  Clear flare timeline
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-peach"></span>
+                  "What changed?" prompts only when helpful
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all">
+            Turn on Flare Mode
+            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- History Section -->
+  <section id="history" class="py-24 px-6 bg-white relative overflow-hidden">
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-blue/20 text-sm font-semibold text-primary mb-6">
+          <span class="material-symbols-outlined text-lg">history</span>
+          History View
+        </div>
+
+        <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+          History that works with brain fog.
+        </h2>
+        <p class="text-lg text-text-muted">Stop guessing. Tap a day and see the story.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Day Cards -->
+        <div class="bg-bg-cream rounded-[2rem] p-8">
+          <h3 class="font-display text-xl font-semibold text-primary mb-6">Day cards show everything</h3>
+
+          <div class="space-y-4">
+            <!-- Day Card Example -->
+            <div class="bg-white rounded-2xl p-5 shadow-card border border-primary/5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="font-semibold text-primary">Tuesday, Dec 24</p>
+                  <p class="text-sm text-text-muted">Moderate day</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-yellow-600">sentiment_neutral</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p class="text-text-muted">Symptoms</p>
+                  <p class="font-medium text-primary">Fatigue (6), Pain (4)</p>
+                </div>
+                <div>
+                  <p class="text-text-muted">Meds</p>
+                  <p class="font-medium text-primary">Ibuprofen 2pm</p>
+                </div>
+                <div>
+                  <p class="text-text-muted">Triggers</p>
+                  <p class="font-medium text-primary">Poor sleep, Stress</p>
+                </div>
+                <div>
+                  <p class="text-text-muted">Notes</p>
+                  <p class="font-medium text-primary">Deadline week</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 shadow-card border border-primary/5 opacity-70">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="font-semibold text-primary">Monday, Dec 23</p>
+                  <p class="text-sm text-text-muted">Good day</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-green-600">sentiment_satisfied</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fast Answers -->
+        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-blue/10 rounded-[2rem] p-8">
+          <h3 class="font-display text-xl font-semibold text-primary mb-6">Fast answers to common questions</h3>
+
+          <div class="space-y-4">
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-5">
+              <p class="text-primary font-medium mb-2">"When did this last happen?"</p>
+              <p class="text-sm text-text-muted">Similar flare on Dec 18 — lasted 2 days</p>
+            </div>
+
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-5">
+              <p class="text-primary font-medium mb-2">"How long did it last?"</p>
+              <p class="text-sm text-text-muted">Your average flare duration: 1.5 days</p>
+            </div>
+
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-5">
+              <p class="text-primary font-medium mb-2">"What did I try that day?"</p>
+              <p class="text-sm text-text-muted">Rest, ibuprofen at 2pm, early bedtime</p>
+            </div>
+          </div>
+
+          <a href="#" class="inline-flex items-center gap-2 mt-6 text-primary font-semibold hover:gap-3 transition-all">
+            See History View
+            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Insights Section -->
+  <section id="insights" class="py-24 px-6 bg-gradient-to-b from-white to-accent-mint/10 relative overflow-hidden">
+    <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent-mint/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-mint/30 text-sm font-semibold text-primary mb-6">
+          <span class="material-symbols-outlined text-lg">psychology</span>
+          Evidence-backed insights
+        </div>
+
+        <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+          No vibes. Only receipts.
+        </h2>
+        <p class="text-lg text-text-muted">Chronic Life only calls a pattern when it can show the data behind it.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6 mb-12">
+        <!-- Insight Card -->
+        <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-primary/5 md:col-span-2">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-accent-purple/30 flex items-center justify-center">
+              <span class="material-symbols-outlined text-purple-700">trending_up</span>
+            </div>
+            <div>
+              <p class="font-semibold text-primary">Pattern Detected</p>
+              <p class="text-sm text-text-muted">Based on 14 data points</p>
+            </div>
+          </div>
+
+          <div class="bg-bg-cream rounded-2xl p-5 mb-4">
+            <p class="text-lg text-primary leading-relaxed">
+              <span class="font-semibold">Your fatigue increases 40%</span> on days following less than 6 hours of sleep.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-4 text-sm text-text-muted">
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">calendar_month</span>
+              Dec 10-24, 2024
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">data_array</span>
+              14 entries analyzed
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">verified</span>
+              High confidence
+            </span>
+          </div>
+        </div>
+
+        <!-- Why it matters -->
+        <div class="bg-gradient-to-br from-accent-mint/20 to-accent-blue/20 rounded-[2rem] p-6 border border-accent-mint/30">
+          <h4 class="font-display text-lg font-semibold text-primary mb-4">Why this matters</h4>
+          <ul class="space-y-3 text-text-muted text-sm">
+            <li class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-accent-mint text-base mt-0.5">check</span>
+              You can trust it
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-accent-mint text-base mt-0.5">check</span>
+              You can repeat what worked
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-accent-mint text-base mt-0.5">check</span>
+              You can show it to a clinician without embarrassment
+            </li>
+          </ul>
+
+          <a href="#" class="inline-flex items-center gap-2 mt-6 text-primary font-semibold text-sm hover:gap-3 transition-all">
+            See an example insight
+            <span class="material-symbols-outlined text-base">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Doctor Pack Section -->
+  <section id="doctor-pack" class="py-24 px-6 bg-white relative overflow-hidden">
+    <div class="absolute top-1/2 left-0 w-[400px] h-[400px] bg-accent-peach/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Content -->
+        <div>
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-peach/30 text-sm font-semibold text-primary mb-6">
+            <span class="material-symbols-outlined text-lg">description</span>
+            Doctor-ready summaries
+          </div>
+
+          <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+            Scan in 30 seconds.
+          </h2>
+          <p class="text-lg text-text-muted mb-8">
+            Export something your doctor will actually read. Designed by physicians, for physicians.
+          </p>
+
+          <div class="space-y-4 mb-8">
+            <h4 class="font-semibold text-primary">Doctor Pack includes:</h4>
+            <ul class="space-y-3 text-text-muted">
+              <li class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-accent-peach">check_circle</span>
+                2–4 week trend snapshot (clean graphs)
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-accent-peach">check_circle</span>
+                Flare frequency + duration
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-accent-peach">check_circle</span>
+                Top suspected drivers you tagged
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-accent-peach">check_circle</span>
+                Med timing vs symptom changes (when data supports it)
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-accent-peach">check_circle</span>
+                One-page "what I need help with" summary
+              </li>
+            </ul>
+          </div>
+
+          <a href="#" class="inline-flex items-center gap-2 bg-accent-peach hover:bg-accent-peach/90 text-white px-6 py-3 rounded-pill font-semibold transition-all hover:shadow-lg active:scale-95">
+            <span class="material-symbols-outlined">download</span>
+            Export Doctor Pack
+          </a>
+        </div>
+
+        <!-- Visual -->
+        <div class="relative">
+          <div class="bg-bg-cream rounded-[2.5rem] p-8 shadow-soft border border-primary/5">
+            <!-- Doctor Pack Preview -->
+            <div class="bg-white rounded-2xl p-6 shadow-card mb-4">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="font-display font-semibold text-primary">Doctor Summary</p>
+                  <p class="text-sm text-text-muted">Dec 10-24, 2024</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-accent-peach/20 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-accent-peach">picture_as_pdf</span>
+                </div>
+              </div>
+
+              <!-- Mini Chart -->
+              <div class="h-24 flex items-end gap-1 mb-4">
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[40%]"></div>
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[60%]"></div>
+                <div class="flex-1 bg-accent-rose/30 rounded-t h-[85%]"></div>
+                <div class="flex-1 bg-accent-rose/30 rounded-t h-[75%]"></div>
+                <div class="flex-1 bg-yellow-200/50 rounded-t h-[50%]"></div>
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[35%]"></div>
+                <div class="flex-1 bg-accent-mint/30 rounded-t h-[30%]"></div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="p-3 bg-bg-cream rounded-xl">
+                  <p class="text-text-muted">Flare episodes</p>
+                  <p class="font-semibold text-primary">2 in 14 days</p>
+                </div>
+                <div class="p-3 bg-bg-cream rounded-xl">
+                  <p class="text-text-muted">Avg duration</p>
+                  <p class="font-semibold text-primary">1.5 days</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center text-sm text-text-muted">
+              <span class="material-symbols-outlined text-base align-middle">print</span>
+              Print-friendly • PDF export
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Multiple Conditions Section -->
+  <section class="py-24 px-6 bg-gradient-to-b from-white to-accent-purple/5 relative overflow-hidden">
+    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/20 text-sm font-semibold text-primary mb-6">
+        <span class="material-symbols-outlined text-lg">category</span>
+        Multiple Conditions
+      </div>
+
+      <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+        One system, many conditions—<br>without chaos.
+      </h2>
+      <p class="text-lg text-text-muted mb-10">
+        Separate symptom sets per condition. Shared drivers. One timeline that still makes sense.
+      </p>
+
+      <div class="flex flex-wrap justify-center gap-3 mb-10">
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Endometriosis</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">PCOS</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Long COVID</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Chronic Fatigue</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Fibromyalgia</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">POTS</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">Migraine</span>
+        <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg transition-all cursor-pointer">IBS</span>
+      </div>
+
+      <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all">
+        Set up your first focus question
+        <span class="material-symbols-outlined text-lg">arrow_forward</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Closing CTA Section -->
+  <section id="cta" class="py-24 px-6 bg-primary relative overflow-hidden">
+    <!-- Decorative elements -->
+    <div class="absolute top-0 left-0 w-full h-full opacity-10">
+      <div class="absolute -top-20 -right-20 w-80 h-80 bg-accent-peach rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 -left-20 w-64 h-64 bg-accent-purple rounded-full blur-3xl"></div>
+      <div class="absolute top-1/2 right-1/4 w-48 h-48 bg-accent-mint rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+      <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-8">
+        <span class="material-symbols-outlined text-white text-3xl">favorite</span>
+      </div>
+
+      <h2 class="font-display text-4xl md:text-5xl font-semibold text-white mb-6">
+        Built for chronic life.
+      </h2>
+
+      <p class="text-xl text-white/80 leading-relaxed mb-4 max-w-2xl mx-auto">
+        Chronic Life is a chat-first symptom tracker with a personal assistant for people managing chronic conditions.
+      </p>
+
+      <p class="text-lg text-white/60 mb-10 max-w-xl mx-auto">
+        Log in 20 seconds, capture flares on hard days, and export doctor-ready summaries with clean trends.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+        <a href="#" class="w-full sm:w-auto h-14 px-8 bg-white hover:bg-white/95 text-primary text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+          Get started free
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </a>
+        <a href="#doctor-pack" class="w-full sm:w-auto h-14 px-8 bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white text-lg font-bold rounded-pill transition-all active:scale-95 flex items-center justify-center gap-2">
+          Preview Doctor Pack
+        </a>
+      </div>
+
+      <div class="flex items-center justify-center gap-6 text-white/60 text-sm">
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">lock</span>
+          Your data stays private
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">cloud_off</span>
+          Works offline
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 px-6 bg-bg-cream border-t border-primary/5">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
+            <span class="text-white font-display font-bold text-sm">C</span>
+          </div>
+          <span class="font-display font-semibold text-primary">Chronic Life</span>
+        </div>
+
+        <div class="flex gap-8 text-sm font-medium text-text-muted">
+          <a href="#" class="hover:text-primary transition-colors">Features</a>
+          <a href="#" class="hover:text-primary transition-colors">Privacy</a>
+          <a href="#" class="hover:text-primary transition-colors">Terms</a>
+          <a href="#" class="hover:text-primary transition-colors">Support</a>
+        </div>
+
+        <p class="text-sm text-text-muted">© 2024 Chronic Life. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
