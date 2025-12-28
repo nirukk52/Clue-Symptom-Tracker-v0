@@ -1,8 +1,7 @@
 import { colorScheme, useColorScheme } from 'nativewind';
 import React from 'react';
-import { useMMKVString } from 'react-native-mmkv';
 
-import { storage } from '../storage';
+import { storage, useMMKVString } from '../storage';
 
 const SELECTED_THEME = 'SELECTED_THEME';
 export type ColorSchemeType = 'light' | 'dark' | 'system';

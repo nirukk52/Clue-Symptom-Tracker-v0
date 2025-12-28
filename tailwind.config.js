@@ -10,6 +10,8 @@ module.exports = {
     extend: {
       fontFamily: {
         inter: ['Inter'],
+        /** Fraunces serif for display headings */
+        fraunces: ['Fraunces_600SemiBold'],
       },
       colors,
     },

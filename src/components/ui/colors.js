@@ -1,6 +1,38 @@
+/**
+ * Tailwind color palette for Clue Symptom Tracker
+ * 
+ * Why it exists: Extends Tailwind with Clue's Podia-inspired design system colors.
+ * Use 'clue-*' prefix for custom colors to distinguish from default Tailwind.
+ * 
+ * Reference: .specify/memory/constitution.md §Design System
+ */
 module.exports = {
   white: '#ffffff',
   black: '#000000',
+  
+  // Clue Design System Colors
+  clue: {
+    /** Dark navy - primary text, buttons, user chat bubbles */
+    primary: '#20132E',
+    /** Lighter tint of primary for backgrounds */
+    'primary-light': '#f3f0fa',
+    /** Warm cream - main app background */
+    'bg-light': '#FDFBF9',
+    /** Peach/orange - decorative blob, digestive category */
+    peach: '#E8974F',
+    /** Soft blue - decorative blob, sleep category */
+    blue: '#A4C8D8',
+    /** Lavender purple - decorative blob, selected states */
+    purple: '#D0BDF4',
+    /** Teal/mint - Focus badge, positive indicators */
+    mint: '#B8E3D6',
+    /** Muted gray for secondary text */
+    muted: '#666666',
+    /** Light gray for input borders */
+    border: '#E5E5E5',
+  },
+  
+  // Keep existing colors for backward compatibility
   charcoal: {
     50: '#F2F2F2',
     100: '#E5E5E5',
