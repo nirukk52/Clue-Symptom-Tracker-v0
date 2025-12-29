@@ -15,7 +15,17 @@ cp env.example .env
 python -c "from rag.indexer import index_knowledge; index_knowledge()"
 
 # 3. Launch LangGraph Studio
-langgraph dev
+# Option A: If using conda, activate environment first
+# conda activate base  # or your env name
+# langgraph dev
+
+# Option B: Use full path to langgraph
+/Users/priyankalalge/miniconda3/bin/langgraph dev
+
+# Option C: Install langgraph-cli globally
+# pip install langgraph-cli
+# langgraph dev
+
 # Opens at http://localhost:8123
 ```
 
