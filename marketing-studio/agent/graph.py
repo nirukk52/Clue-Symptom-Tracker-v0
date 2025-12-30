@@ -2,7 +2,8 @@
 LangGraph agent definition.
 Why it exists: Defines the agent as a state graph with nodes for
 retrieval, reasoning, and tool execution. This is the main entry
-point for LangGraph Studio.
+point for LangGraph Studio. The graph uses a messages key for chat
+functionality, allowing natural conversation flow.
 """
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
@@ -39,16 +40,19 @@ def create_tools():
 
 def create_graph() -> StateGraph:
     """
-    Build the LangGraph agent graph.
+    Build the LangGraph agent graph with messages-based chat.
 
     Why it exists: Defines the flow:
-    1. retrieve: Get relevant context from knowledge base
-    2. agent: Reason and decide on actions
+    1. retrieve: Get relevant context from knowledge base based on messages
+    2. agent: Reason and decide on actions using messages and context
     3. tools: Execute any requested tools
     4. Loop back to agent or end
 
+    The graph accepts messages as input (HumanMessage, AIMessage, etc.)
+    and maintains conversation history through the messages key in state.
+
     Returns:
-        Compiled StateGraph ready for execution
+        Compiled StateGraph ready for execution with chat support
     """
     # Create the graph
     graph = StateGraph(AgentState)
@@ -58,7 +62,7 @@ def create_graph() -> StateGraph:
     graph.add_node("agent", agent_node)
     graph.add_node("tools", ToolNode(create_tools()))
 
-    # Set entry point
+    # Set entry point - retrieve node will extract query from messages
     graph.set_entry_point("retrieve")
 
     # Add edges

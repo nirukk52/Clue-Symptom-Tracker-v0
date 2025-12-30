@@ -1,22 +1,25 @@
 #!/bin/bash
 # Helper script to run LangGraph Studio
-# Why it exists: Makes it easy to launch the agent without worrying about PATH
+# Why it exists: Makes it easy to launch the agent without worrying about PATH or Python version
 
 cd "$(dirname "$0")"
 
-# Try to find langgraph in common locations
-if command -v langgraph &> /dev/null; then
-    LANGGRAPH_CMD="langgraph"
-elif [ -f "/Users/priyankalalge/miniconda3/bin/langgraph" ]; then
-    LANGGRAPH_CMD="/Users/priyankalalge/miniconda3/bin/langgraph"
+# Activate virtual environment if it exists
+if [ -d "venv" ]; then
+    source venv/bin/activate
+    echo "✓ Activated virtual environment (Python 3.11)"
 else
-    echo "Error: langgraph not found. Install with: pip install langgraph-cli"
-    exit 1
+    echo "⚠ Warning: Virtual environment not found. Creating one..."
+    python3.11 -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip
+    pip install "langgraph-cli[inmem]"
+    pip install -r requirements.txt
+    echo "✓ Created and activated virtual environment"
 fi
 
 echo "Starting LangGraph Studio..."
 echo "Opening at http://localhost:8123"
 echo ""
 
-$LANGGRAPH_CMD dev
-
+langgraph dev

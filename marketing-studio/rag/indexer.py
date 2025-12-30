@@ -149,7 +149,7 @@ def index_knowledge(knowledge_dir: Path = None) -> Dict[str, Any]:
 
     # Create or overwrite the table
     table = db.create_table("knowledge", documents, mode="overwrite")
-    
+
     # Create vector index for faster search (only if enough rows)
     # LanceDB requires at least 256 rows for PQ training
     index_created = False
@@ -163,7 +163,7 @@ def index_knowledge(knowledge_dir: Path = None) -> Dict[str, Any]:
             index_created = True
         except Exception as e:
             print(f"Warning: Could not create index: {e}")
-    
+
     return {
         "status": "success",
         "files_indexed": file_count,

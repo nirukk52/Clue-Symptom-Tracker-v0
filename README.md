@@ -414,4 +414,10 @@ When user indicates an appointment (or it's upcoming):
 | Apple HealthKit | https://developer.apple.com/documentation/healthkit |
 | Google Fit      | https://developers.google.com/fit                   |
 
-https://chronic-life-landing.vercel.app/
+https://chronic-life-landing.vercel.app?utm_source=reddit&utm_medium=paid&utm_campaign=chronic_brainfog_v1&utm_content=20sec
+
+As an expert, mobile AI chat cofounder, with deep expertise in designing and developing mobile experiences that feel modern, personal, and intuitive.
+
+You also have past experience working on apps like https://bearable.app/, https://www.makevisible.com/ and https://www.wavehealth.app/.
+
+Your goal is to create a marketing strategies that improves itself while saving cost and getting those early users fast.

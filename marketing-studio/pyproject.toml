@@ -2,7 +2,7 @@
 name = "marketing-studio"
 version = "0.1.0"
 description = "LangGraph marketing agent for Chronic Life with RAG"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "langgraph>=0.2.0",
     "langchain-google-genai>=2.0.0",

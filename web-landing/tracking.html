@@ -68,6 +68,36 @@
     .metric-good { color: #10b981; }
     .metric-okay { color: #f59e0b; }
     .metric-bad { color: #ef4444; }
+
+    /* Modal overlay */
+    .referrer-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(32, 19, 46, 0.95);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .referrer-modal.hidden { display: none; }
+    .referrer-modal-content {
+      background: white;
+      border-radius: 24px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .campaign-row-clickable {
+      cursor: pointer;
+    }
+    .campaign-row-clickable:hover {
+      background-color: rgba(243, 240, 250, 0.7) !important;
+    }
   </style>
 </head>
 <body class="bg-bg-cream text-text-main antialiased min-h-screen">
@@ -114,7 +144,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
       <div class="bg-white rounded-2xl p-6 border border-primary/5">
         <p class="text-text-muted text-sm mb-1">Total Views</p>
         <p class="font-display text-3xl font-bold text-primary" id="totalViews">-</p>
@@ -130,6 +160,14 @@
       <div class="bg-white rounded-2xl p-6 border border-primary/5">
         <p class="text-text-muted text-sm mb-1">Conversion Rate</p>
         <p class="font-display text-3xl font-bold text-accent-peach" id="conversionRate">-</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-primary/5">
+        <p class="text-text-muted text-sm mb-1">Null Referrer</p>
+        <p class="font-display text-3xl font-bold text-accent-blue" id="nullReferrer">-</p>
+      </div>
+      <div class="bg-white rounded-2xl p-6 border border-primary/5">
+        <p class="text-text-muted text-sm mb-1">Other Referrer</p>
+        <p class="font-display text-3xl font-bold text-accent-purple" id="otherReferrer">-</p>
       </div>
     </div>
 
@@ -149,11 +187,13 @@
               <th class="px-6 py-3 text-right text-sm font-semibold text-text-muted">Signups</th>
               <th class="px-6 py-3 text-right text-sm font-semibold text-text-muted">Click Rate</th>
               <th class="px-6 py-3 text-right text-sm font-semibold text-text-muted">Conv Rate</th>
+              <th class="px-6 py-3 text-right text-sm font-semibold text-text-muted">Null Referrer</th>
+              <th class="px-6 py-3 text-right text-sm font-semibold text-text-muted">Other Referrer</th>
             </tr>
           </thead>
           <tbody id="campaignTable">
             <tr>
-              <td colspan="7" class="px-6 py-8 text-center text-text-muted">
+              <td colspan="9" class="px-6 py-8 text-center text-text-muted">
                 <span class="material-symbols-outlined animate-spin">progress_activity</span>
                 <p class="mt-2">Loading data...</p>
               </td>
@@ -197,6 +237,26 @@
     </div>
   </div>
 
+  <!-- Referrer Details Modal -->
+  <div class="referrer-modal hidden" id="referrerModal">
+    <div class="referrer-modal-content">
+      <div class="px-6 py-4 border-b border-primary/5 flex items-center justify-between">
+        <div>
+          <h2 class="font-display text-xl font-semibold text-primary" id="modalTitle">Referrer Breakdown</h2>
+          <p class="text-text-muted text-sm mt-1" id="modalSubtitle">-</p>
+        </div>
+        <button onclick="closeReferrerModal()" class="p-2 hover:bg-primary-light rounded-full transition-colors">
+          <span class="material-symbols-outlined text-primary">close</span>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-1 px-6 py-4">
+        <div id="referrerBreakdown">
+          <p class="text-text-muted text-center py-8">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ===== CONFIG =====
     const SUPABASE_URL = 'https://zvpudxinbcsrfyojrhhv.supabase.co';
@@ -204,6 +264,10 @@
     const DASHBOARD_PASSWORD = 'chroniclife2025';
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Store events and signups globally for referrer breakdown
+    let allEvents = [];
+    let allSignups = [];
 
     // ===== PASSWORD GATE =====
     const passwordOverlay = document.getElementById('passwordOverlay');
@@ -250,13 +314,17 @@
         if (eventsError) throw eventsError;
         if (signupsError) throw signupsError;
 
-        renderDashboard(events || [], signups || []);
+        // Store globally for referrer breakdown
+        allEvents = events || [];
+        allSignups = signups || [];
+
+        renderDashboard(allEvents, allSignups);
         document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
       } catch (err) {
         console.error('Error loading data:', err);
         document.getElementById('campaignTable').innerHTML = `
           <tr>
-            <td colspan="7" class="px-6 py-8 text-center text-accent-peach">
+            <td colspan="9" class="px-6 py-8 text-center text-accent-peach">
               Error loading data. Check console for details.
             </td>
           </tr>
@@ -278,6 +346,17 @@
         : '0%';
       document.getElementById('conversionRate').textContent = convRate;
 
+      // Calculate referrer counts
+      const allReferrers = [
+        ...events.map(e => e.referrer),
+        ...signups.map(s => s.referrer)
+      ];
+      const nullReferrerCount = allReferrers.filter(r => !r || r === null || r === '').length;
+      const otherReferrerCount = allReferrers.filter(r => r && r !== null && r !== '').length;
+
+      document.getElementById('nullReferrer').textContent = nullReferrerCount;
+      document.getElementById('otherReferrer').textContent = otherReferrerCount;
+
       // Group by campaign + content
       const campaigns = {};
 
@@ -285,27 +364,69 @@
       pageViews.forEach(e => {
         const key = `${e.utm_campaign || 'direct'}|${e.utm_content || 'none'}`;
         if (!campaigns[key]) {
-          campaigns[key] = { campaign: e.utm_campaign || 'Direct', content: e.utm_content || '-', views: 0, clicks: 0, signups: 0 };
+          campaigns[key] = {
+            campaign: e.utm_campaign || 'Direct',
+            content: e.utm_content || '-',
+            views: 0,
+            clicks: 0,
+            signups: 0,
+            nullReferrer: 0,
+            otherReferrer: 0
+          };
         }
         campaigns[key].views++;
+        // Count referrer for this event
+        if (!e.referrer || e.referrer === null || e.referrer === '') {
+          campaigns[key].nullReferrer++;
+        } else {
+          campaigns[key].otherReferrer++;
+        }
       });
 
       // Process clicks
       clicks.forEach(e => {
         const key = `${e.utm_campaign || 'direct'}|${e.utm_content || 'none'}`;
         if (!campaigns[key]) {
-          campaigns[key] = { campaign: e.utm_campaign || 'Direct', content: e.utm_content || '-', views: 0, clicks: 0, signups: 0 };
+          campaigns[key] = {
+            campaign: e.utm_campaign || 'Direct',
+            content: e.utm_content || '-',
+            views: 0,
+            clicks: 0,
+            signups: 0,
+            nullReferrer: 0,
+            otherReferrer: 0
+          };
         }
         campaigns[key].clicks++;
+        // Count referrer for this event
+        if (!e.referrer || e.referrer === null || e.referrer === '') {
+          campaigns[key].nullReferrer++;
+        } else {
+          campaigns[key].otherReferrer++;
+        }
       });
 
       // Process signups
       signups.forEach(s => {
         const key = `${s.utm_campaign || 'direct'}|${s.utm_content || 'none'}`;
         if (!campaigns[key]) {
-          campaigns[key] = { campaign: s.utm_campaign || 'Direct', content: s.utm_content || '-', views: 0, clicks: 0, signups: 0 };
+          campaigns[key] = {
+            campaign: s.utm_campaign || 'Direct',
+            content: s.utm_content || '-',
+            views: 0,
+            clicks: 0,
+            signups: 0,
+            nullReferrer: 0,
+            otherReferrer: 0
+          };
         }
         campaigns[key].signups++;
+        // Count referrer for this signup
+        if (!s.referrer || s.referrer === null || s.referrer === '') {
+          campaigns[key].nullReferrer++;
+        } else {
+          campaigns[key].otherReferrer++;
+        }
       });
 
       // Render campaign table
@@ -314,7 +435,7 @@
       if (campaignData.length === 0) {
         document.getElementById('campaignTable').innerHTML = `
           <tr>
-            <td colspan="7" class="px-6 py-8 text-center text-text-muted">
+            <td colspan="9" class="px-6 py-8 text-center text-text-muted">
               No data yet. Run some ads!
             </td>
           </tr>
@@ -327,8 +448,14 @@
           const clickRateClass = clickRate >= 15 ? 'metric-good' : clickRate >= 5 ? 'metric-okay' : 'metric-bad';
           const convRateClass = convRate >= 10 ? 'metric-good' : convRate >= 3 ? 'metric-okay' : 'metric-bad';
 
+          const rowKey = `${c.campaign}|${c.content}`;
+          // Encode for HTML attributes (escape quotes)
+          const campaignData = (c.campaign || 'Direct').replace(/"/g, '&quot;');
+          const contentData = (c.content || '-').replace(/"/g, '&quot;');
           return `
-            <tr class="border-b border-primary/5 hover:bg-bg-cream/50">
+            <tr class="border-b border-primary/5 campaign-row-clickable"
+                data-campaign="${campaignData}"
+                data-content="${contentData}">
               <td class="px-6 py-4 font-medium text-primary">${escapeHtml(c.campaign)}</td>
               <td class="px-6 py-4 text-text-muted">${escapeHtml(c.content)}</td>
               <td class="px-6 py-4 text-right">${c.views}</td>
@@ -336,9 +463,20 @@
               <td class="px-6 py-4 text-right font-semibold">${c.signups}</td>
               <td class="px-6 py-4 text-right ${clickRateClass}">${clickRate}%</td>
               <td class="px-6 py-4 text-right ${convRateClass}">${convRate}%</td>
+              <td class="px-6 py-4 text-right text-accent-blue">${c.nullReferrer}</td>
+              <td class="px-6 py-4 text-right text-accent-purple">${c.otherReferrer}</td>
             </tr>
           `;
         }).join('');
+
+        // Add click handlers to campaign rows
+        document.querySelectorAll('.campaign-row-clickable').forEach(row => {
+          row.addEventListener('click', function() {
+            const campaign = this.dataset.campaign;
+            const content = this.dataset.content;
+            showReferrerBreakdown(campaign, content);
+          });
+        });
       }
 
       // Render signups table (last 20)
@@ -383,6 +521,102 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // ===== REFERRER BREAKDOWN MODAL =====
+    function showReferrerBreakdown(campaign, content) {
+      const modal = document.getElementById('referrerModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalSubtitle = document.getElementById('modalSubtitle');
+      const breakdown = document.getElementById('referrerBreakdown');
+
+      // Set title
+      modalTitle.textContent = 'Referrer Breakdown';
+      modalSubtitle.textContent = `${campaign} - ${content}`;
+
+      // Filter events and signups by campaign and content
+      const campaignEvents = allEvents.filter(e => {
+        const eCampaign = e.utm_campaign || 'Direct';
+        const eContent = e.utm_content || '-';
+        return eCampaign === campaign && eContent === content;
+      });
+
+      const campaignSignups = allSignups.filter(s => {
+        const sCampaign = s.utm_campaign || 'Direct';
+        const sContent = s.utm_content || '-';
+        return sCampaign === campaign && sContent === content;
+      });
+
+      // Collect all referrers
+      const allReferrers = [
+        ...campaignEvents.map(e => e.referrer),
+        ...campaignSignups.map(s => s.referrer)
+      ];
+
+      // Group referrers by value and count
+      const referrerCounts = {};
+      allReferrers.forEach(ref => {
+        const key = ref || null;
+        referrerCounts[key] = (referrerCounts[key] || 0) + 1;
+      });
+
+      // Sort by count (descending)
+      const sortedReferrers = Object.entries(referrerCounts)
+        .map(([ref, count]) => ({ referrer: ref, count }))
+        .sort((a, b) => b.count - a.count);
+
+      // Render breakdown
+      if (sortedReferrers.length === 0) {
+        breakdown.innerHTML = `
+          <p class="text-text-muted text-center py-8">No referrer data available for this campaign.</p>
+        `;
+      } else {
+        breakdown.innerHTML = `
+          <div class="space-y-3">
+            ${sortedReferrers.map(r => {
+              const displayRef = r.referrer === null || r.referrer === ''
+                ? '<span class="text-text-muted italic">null</span>'
+                : escapeHtml(r.referrer);
+              return `
+                <div class="flex items-center justify-between p-4 bg-bg-cream rounded-xl border border-primary/5">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-text-muted mb-1">Referrer</p>
+                    <p class="font-medium text-primary break-all">${displayRef}</p>
+                  </div>
+                  <div class="ml-4 text-right">
+                    <p class="text-sm text-text-muted mb-1">Count</p>
+                    <p class="font-display text-2xl font-bold text-accent-purple">${r.count}</p>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeReferrerModal() {
+      document.getElementById('referrerModal').classList.add('hidden');
+    }
+
+    // Close modal on outside click (setup after DOM is ready)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupModalClose);
+    } else {
+      setupModalClose();
+    }
+
+    function setupModalClose() {
+      const modal = document.getElementById('referrerModal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            closeReferrerModal();
+          }
+        });
+      }
     }
   </script>
 </body>

@@ -1,8 +1,0 @@
-google-adk
-google-genai
-python-dotenv
-beautifulsoup4
-requests
-pandas
-plotly
-

@@ -73,6 +73,16 @@ Important:
 - Premium, fintech-like clarity
 """
 
+    # Check API key first
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key or api_key == "your_google_api_key_here":
+        return {
+            "status": "error",
+            "error": "GOOGLE_API_KEY not configured. Please set it in your .env file.",
+            "prompt_used": prompt,
+            "hint": "Get your API key from https://aistudio.google.com/app/apikey"
+        }
+
     try:
         from google.genai import types
 
@@ -104,14 +114,36 @@ Important:
         else:
             return {
                 "status": "error",
-                "error": "No image generated - may have been filtered for safety",
-                "prompt_used": prompt
+                "error": "No image generated - may have been filtered for safety or API quota exceeded",
+                "prompt_used": prompt,
+                "hint": "Check if Imagen API is enabled for your API key at https://console.cloud.google.com/apis/library"
             }
 
-    except Exception as e:
+    except ImportError as e:
         return {
             "status": "error",
-            "error": str(e),
+            "error": f"Missing dependency: {str(e)}",
             "prompt_used": prompt,
-            "hint": "Ensure GOOGLE_API_KEY is set and has Imagen API access enabled."
+            "hint": "Run: pip install google-genai>=0.3.0"
+        }
+    except Exception as e:
+        error_str = str(e)
+        error_type = type(e).__name__
+
+        # Provide more specific error messages
+        if "API key" in error_str or "authentication" in error_str.lower():
+            error_msg = "API key authentication failed. Please verify your GOOGLE_API_KEY is correct."
+        elif "quota" in error_str.lower() or "limit" in error_str.lower():
+            error_msg = "API quota exceeded. Please check your Google Cloud quota limits."
+        elif "permission" in error_str.lower() or "not enabled" in error_str.lower():
+            error_msg = "Imagen API not enabled. Enable it at https://console.cloud.google.com/apis/library"
+        else:
+            error_msg = f"Image generation failed: {error_type}: {error_str}"
+
+        return {
+            "status": "error",
+            "error": error_msg,
+            "prompt_used": prompt,
+            "error_details": error_str,
+            "hint": "Ensure GOOGLE_API_KEY is set correctly and Imagen API is enabled for your project."
         }
