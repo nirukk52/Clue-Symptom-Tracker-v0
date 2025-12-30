@@ -9,16 +9,17 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import FlashMessage from 'react-native-flash-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { APIProvider } from '@/api';
 import { hydrateAuth, loadSelectedTheme } from '@/lib';
+import { KeyboardProvider } from '@/lib/keyboard-controller';
+import { useOnboardingStore } from '@/lib/store/onboarding';
 import { useThemeConfig } from '@/lib/use-theme-config';
 
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(app)',
+  initialRouteName: '(onboarding)',
 };
 
 hydrateAuth();
@@ -32,12 +33,21 @@ SplashScreen.setOptions({
 });
 
 export default function RootLayout() {
+  const isOnboardingComplete = useOnboardingStore((s) => s.isComplete);
+
   return (
     <Providers>
-      <Stack>
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* Route based on onboarding completion */}
+        {isOnboardingComplete ? (
+          <Stack.Screen name="(tabs)" />
+        ) : (
+          <Stack.Screen name="(onboarding)" />
+        )}
+        {/* Legacy routes - keep for now */}
+        <Stack.Screen name="(app)" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="login" />
       </Stack>
     </Providers>
   );
@@ -45,6 +55,7 @@ export default function RootLayout() {
 
 function Providers({ children }: { children: React.ReactNode }) {
   const theme = useThemeConfig();
+
   return (
     <GestureHandlerRootView
       style={styles.container}

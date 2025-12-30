@@ -1,0 +1,32 @@
+[project]
+name = "marketing-studio"
+version = "0.1.0"
+description = "LangGraph marketing agent for Chronic Life with RAG"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.2.0",
+    "langchain-google-genai>=2.0.0",
+    "langchain-core>=0.3.0",
+    "lancedb>=0.4.0",
+    "google-genai>=0.3.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "markdown>=3.5.0",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "pandas>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent*", "rag*", "tools*"]

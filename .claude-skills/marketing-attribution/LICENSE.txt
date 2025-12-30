@@ -1,0 +1,5 @@
+Marketing Attribution Skill
+Copyright (c) 2025 Chronic Life
+
+This skill is for internal use only within the Chronic Life project.
+All tracking data is stored in the project's Supabase instance.

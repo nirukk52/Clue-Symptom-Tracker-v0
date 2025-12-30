@@ -96,6 +96,6 @@ describe('Select component ', () => {
     const optionItem1 = screen.getByTestId('select-item-chocolate');
     await user.press(optionItem1);
 
-    expect(onSelect).toHaveBeenCalledWith(options[0].value);
+    expect(onSelect).toHaveBeenCalledWith(options[0]?.value);
   });
 });
