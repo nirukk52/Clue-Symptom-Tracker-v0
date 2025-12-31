@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chronic Life - Track symptoms without draining your energy</title>
-  <meta name="description" content="20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.">
+  <meta name="description" content="20-second check-ins designed for spoonies. When every task costs energy, tracking shouldn't.">
 
   <!-- Fonts: Fraunces for display, DM Sans for body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -380,7 +380,7 @@
   <!-- Navigation -->
   <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-primary/5">
     <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-      <a href="#" class="flex items-center gap-2">
+      <a href="/" class="flex items-center gap-2">
         <div class="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center">
           <span class="text-white font-display font-bold text-lg">C</span>
         </div>
@@ -388,22 +388,22 @@
       </a>
 
       <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-text-muted">
-        <a href="#assistant" class="hover:text-primary transition-colors">Assistant</a>
         <a href="#quick-checkins" class="hover:text-primary transition-colors">Quick Check-ins</a>
         <a href="#flare-mode" class="hover:text-primary transition-colors">Flare Mode</a>
+        <a href="#assistant" class="hover:text-primary transition-colors">Assistant</a>
         <a href="#insights" class="hover:text-primary transition-colors">Insights</a>
       </div>
 
       <div class="flex items-center gap-3">
-        <a href="#" class="text-sm font-semibold text-text-muted hover:text-primary transition-colors hidden sm:block" data-modal-trigger>Log In</a>
-        <a href="#" class="bg-primary hover:bg-primary/90 text-white text-sm font-bold px-5 py-2.5 rounded-pill transition-all hover:shadow-lg active:scale-95" data-modal-trigger>
+        <a href="#" class="text-sm font-semibold text-text-muted hover:text-primary transition-colors hidden sm:block" data-modal-trigger data-cta-id="nav_login" data-cta-text="Log In">Log In</a>
+        <a href="#" class="bg-primary hover:bg-primary/90 text-white text-sm font-bold px-5 py-2.5 rounded-pill transition-all hover:shadow-lg active:scale-95" data-modal-trigger data-cta-id="nav_get_started" data-cta-text="Get Started">
           Get Started
         </a>
       </div>
     </div>
   </nav>
 
-  <!-- Hero Section -->
+  <!-- Hero Section - CUSTOMIZED FOR SPOON SAVER -->
   <header class="relative min-h-screen pt-32 pb-20 px-6 overflow-hidden">
     <!-- Decorative Blobs with Parallax -->
     <div class="parallax-blob absolute -top-20 -right-20 w-80 h-80 bg-accent-peach/30 rounded-[4rem] rotate-12 blur-3xl animate-float pointer-events-none" data-speed="0.05"></div>
@@ -413,10 +413,10 @@
 
     <div class="max-w-5xl mx-auto relative z-10">
       <div class="text-center max-w-3xl mx-auto mb-16">
-        <!-- Badge -->
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-mint/40 text-sm font-semibold text-primary mb-8 pulse-glow">
-          <span class="material-symbols-outlined text-lg">favorite</span>
-          Built for chronic life
+        <!-- Badge - Spoonie focused -->
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-peach/30 text-sm font-semibold text-primary mb-8 pulse-glow">
+          <span class="material-symbols-outlined text-lg">bolt</span>
+          Designed for spoonies
         </div>
 
         <h1 class="font-display text-5xl md:text-7xl font-semibold text-primary leading-[1.1] mb-6">
@@ -425,20 +425,20 @@
         </h1>
 
         <p class="text-xl text-text-muted leading-relaxed mb-4 max-w-2xl mx-auto">
-          20-second check-ins, flare mode on bad days, and a history that works when brain fog hits.
+          20-second check-ins designed for spoonies. When every task costs energy, tracking shouldn't.
         </p>
 
         <p class="text-lg text-text-muted/80 leading-relaxed mb-10 max-w-xl mx-auto">
-          A personal assistant that remembers patterns, nudges the next best step, and turns your logs into doctor-ready summaries.
+          Stop spending spoons on tracking. Start saving them for living.
         </p>
 
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="#" class="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-primary/90 text-white text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 hover-glow" data-modal-trigger>
+          <a href="#" class="w-full sm:w-auto h-14 px-8 bg-primary hover:bg-primary/90 text-white text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 hover-glow" data-modal-trigger data-cta-id="hero_primary" data-cta-text="Start a 20-second check-in">
             Start a 20-second check-in
             <span class="material-symbols-outlined">arrow_forward</span>
           </a>
-          <a href="#" class="w-full sm:w-auto h-14 px-8 bg-white hover:bg-pill-hover border-2 border-primary/10 text-primary text-lg font-bold rounded-pill transition-all active:scale-95 flex items-center justify-center gap-2" data-modal-trigger>
-            Meet your assistant
+          <a href="#quick-checkins" class="w-full sm:w-auto h-14 px-8 bg-white hover:bg-pill-hover border-2 border-primary/10 text-primary text-lg font-bold rounded-pill transition-all active:scale-95 flex items-center justify-center gap-2">
+            See how it protects your bandwidth
           </a>
         </div>
       </div>
@@ -479,24 +479,30 @@
               </div>
             </div>
 
-            <!-- Chat Preview -->
+            <!-- Low Energy Mode Preview -->
             <div class="flex-1 bg-bg-cream rounded-3xl p-6">
               <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-xl bg-accent-mint/40 flex items-center justify-center">
-                  <span class="material-symbols-outlined text-primary">smart_toy</span>
+                <div class="w-10 h-10 rounded-xl bg-accent-rose/40 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary">battery_low</span>
                 </div>
                 <div>
-                  <p class="font-semibold text-primary">Your Assistant</p>
-                  <p class="text-sm text-text-muted">Always here</p>
+                  <p class="font-semibold text-primary">"I'm wiped" Mode</p>
+                  <p class="text-sm text-text-muted">One tap logging</p>
                 </div>
               </div>
 
               <div class="space-y-3">
+                <button class="w-full p-4 bg-accent-rose/20 rounded-2xl text-left hover:bg-accent-rose/30 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-red-600">battery_0_bar</span>
+                    <div>
+                      <p class="font-semibold text-primary">I'm wiped</p>
+                      <p class="text-sm text-text-muted">Log it in one tap</p>
+                    </div>
+                  </div>
+                </button>
                 <div class="bg-white rounded-2xl rounded-bl-none p-4 shadow-card">
-                  <p class="text-sm text-primary leading-relaxed">I noticed your fatigue spiked after days with less than 6hrs sleep. Want me to track this pattern?</p>
-                </div>
-                <div class="bg-primary rounded-2xl rounded-br-none p-4 ml-8">
-                  <p class="text-sm text-white/95">Yes, please!</p>
+                  <p class="text-sm text-primary leading-relaxed">Got it. I've logged a low-energy day. Rest up — we can add details later if you want.</p>
                 </div>
               </div>
             </div>
@@ -518,12 +524,12 @@
 
         <div class="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-card border border-primary/5 hidden md:block float-card-delayed hover-lift">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-accent-purple/30 flex items-center justify-center">
-              <span class="material-symbols-outlined text-purple-700">description</span>
+            <div class="w-12 h-12 rounded-xl bg-accent-peach/30 flex items-center justify-center">
+              <span class="material-symbols-outlined text-orange-700">savings</span>
             </div>
             <div>
-              <p class="text-2xl font-display font-bold text-primary">1-tap</p>
-              <p class="text-xs text-text-muted">doctor export</p>
+              <p class="text-2xl font-display font-bold text-primary">0</p>
+              <p class="text-xs text-text-muted">spoons spent</p>
             </div>
           </div>
         </div>
@@ -531,91 +537,7 @@
     </div>
   </header>
 
-  <!-- Personal Assistant Section -->
-  <section id="assistant" class="py-24 px-6 bg-gradient-to-b from-bg-cream to-white relative overflow-hidden">
-    <div class="parallax-blob absolute top-0 right-0 w-[600px] h-[600px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none" data-speed="0.02"></div>
-
-    <div class="max-w-6xl mx-auto relative z-10">
-      <div class="text-center max-w-2xl mx-auto mb-16">
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/20 text-sm font-semibold text-primary mb-6">
-          <span class="material-symbols-outlined text-lg">smart_toy</span>
-          Your Personal Assistant
-        </div>
-
-        <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
-          Not just tracking—<br>someone helping you steer.
-        </h2>
-        <p class="text-lg text-text-muted">Built for chronic life. Learns your patterns, adapts to your energy.</p>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-8 mb-12">
-        <!-- What it does -->
-        <div class="bg-white rounded-[2rem] p-8 shadow-soft border border-primary/5 hover-lift gradient-border">
-          <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-accent-peach/30 flex items-center justify-center">
-              <span class="material-symbols-outlined text-accent-peach">auto_awesome</span>
-            </div>
-            What it does
-          </h3>
-
-          <ul class="space-y-4">
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
-              <span class="text-text-muted">Turns "I feel awful" into a clean log in seconds</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
-              <span class="text-text-muted">Asks only the next best question (no interrogation)</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
-              <span class="text-text-muted">Spots when something is changing early (before it becomes a full flare)</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
-              <span class="text-text-muted">Suggests tiny actions you can actually do today</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
-              <span class="text-text-muted">Preps a visit summary when you say "I have an appointment"</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Why it feels personal -->
-        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-mint/10 rounded-[2rem] p-8 border border-accent-purple/20 hover-lift">
-          <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <span class="material-symbols-outlined text-primary">favorite</span>
-            </div>
-            Why it feels personal
-          </h3>
-
-          <ul class="space-y-4">
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
-              <span class="text-text-muted">Learns your common triggers and meds</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
-              <span class="text-text-muted">Adapts on low-energy days</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
-              <span class="text-text-muted">Keeps your Quick Entry small and relevant</span>
-            </li>
-          </ul>
-
-          <a href="#" class="inline-flex items-center gap-2 mt-8 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger>
-            See assistant examples
-            <span class="material-symbols-outlined text-lg">arrow_forward</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Quick Check-ins Section -->
+  <!-- Quick Check-ins Section - FOCUS FEATURE (First after hero) -->
   <section id="quick-checkins" class="py-24 px-6 bg-white relative overflow-hidden">
     <div class="parallax-blob absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-3xl pointer-events-none" data-speed="0.03"></div>
 
@@ -674,7 +596,7 @@
             </div>
           </div>
 
-          <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger>
+          <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger data-cta-id="quick_checkins_try" data-cta-text="Try Quick Entry">
             Try Quick Entry
             <span class="material-symbols-outlined text-lg">arrow_forward</span>
           </a>
@@ -832,8 +754,92 @@
             </div>
           </div>
 
-          <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger>
+          <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger data-cta-id="flare_mode_turn_on" data-cta-text="Turn on Flare Mode">
             Turn on Flare Mode
+            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Personal Assistant Section -->
+  <section id="assistant" class="py-24 px-6 bg-gradient-to-b from-accent-rose/10 to-white relative overflow-hidden">
+    <div class="parallax-blob absolute top-0 right-0 w-[600px] h-[600px] bg-accent-purple/10 rounded-full blur-3xl pointer-events-none" data-speed="0.02"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/20 text-sm font-semibold text-primary mb-6">
+          <span class="material-symbols-outlined text-lg">smart_toy</span>
+          Your Personal Assistant
+        </div>
+
+        <h2 class="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">
+          Not just tracking—<br>someone helping you steer.
+        </h2>
+        <p class="text-lg text-text-muted">Built for chronic life. Learns your patterns, adapts to your energy.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 mb-12">
+        <!-- What it does -->
+        <div class="bg-white rounded-[2rem] p-8 shadow-soft border border-primary/5 hover-lift gradient-border">
+          <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-accent-peach/30 flex items-center justify-center">
+              <span class="material-symbols-outlined text-accent-peach">auto_awesome</span>
+            </div>
+            What it does
+          </h3>
+
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Turns "I feel awful" into a clean log in seconds</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Asks only the next best question (no interrogation)</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Spots when something is changing early (before it becomes a full flare)</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Suggests tiny actions you can actually do today</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-mint mt-0.5">check_circle</span>
+              <span class="text-text-muted">Preps a visit summary when you say "I have an appointment"</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Why it feels personal -->
+        <div class="bg-gradient-to-br from-accent-purple/10 to-accent-mint/10 rounded-[2rem] p-8 border border-accent-purple/20 hover-lift">
+          <h3 class="font-display text-2xl font-semibold text-primary mb-6 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-primary">favorite</span>
+            </div>
+            Why it feels personal
+          </h3>
+
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
+              <span class="text-text-muted">Learns your common triggers and meds</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
+              <span class="text-text-muted">Adapts on low-energy days</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-accent-purple mt-0.5">star</span>
+              <span class="text-text-muted">Keeps your Quick Entry small and relevant</span>
+            </li>
+          </ul>
+
+          <a href="#" class="inline-flex items-center gap-2 mt-8 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger data-cta-id="assistant_examples" data-cta-text="See assistant examples">
+            See assistant examples
             <span class="material-symbols-outlined text-lg">arrow_forward</span>
           </a>
         </div>
@@ -931,7 +937,7 @@
             </div>
           </div>
 
-          <a href="#" class="inline-flex items-center gap-2 mt-6 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger>
+          <a href="#" class="inline-flex items-center gap-2 mt-6 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger data-cta-id="history_view" data-cta-text="See History View">
             See History View
             <span class="material-symbols-outlined text-lg">arrow_forward</span>
           </a>
@@ -1010,7 +1016,7 @@
             </li>
           </ul>
 
-          <a href="#" class="inline-flex items-center gap-2 mt-6 text-primary font-semibold text-sm hover:gap-3 transition-all" data-modal-trigger>
+          <a href="#" class="inline-flex items-center gap-2 mt-6 text-primary font-semibold text-sm hover:gap-3 transition-all" data-modal-trigger data-cta-id="insights_example" data-cta-text="See an example insight">
             See an example insight
             <span class="material-symbols-outlined text-base">arrow_forward</span>
           </a>
@@ -1065,7 +1071,7 @@
             </ul>
           </div>
 
-          <a href="#" class="inline-flex items-center gap-2 bg-accent-peach hover:bg-accent-peach/90 text-white px-6 py-3 rounded-pill font-semibold transition-all hover:shadow-lg active:scale-95" data-modal-trigger>
+          <a href="#" class="inline-flex items-center gap-2 bg-accent-peach hover:bg-accent-peach/90 text-white px-6 py-3 rounded-pill font-semibold transition-all hover:shadow-lg active:scale-95" data-modal-trigger data-cta-id="doctor_pack_export" data-cta-text="Export Doctor Pack">
             <span class="material-symbols-outlined">download</span>
             Export Doctor Pack
           </a>
@@ -1147,7 +1153,7 @@
         <span class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">IBS</span>
       </div>
 
-      <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger>
+      <a href="#" class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all" data-modal-trigger data-cta-id="conditions_setup" data-cta-text="Set up your first focus question">
         Set up your first focus question
         <span class="material-symbols-outlined text-lg">arrow_forward</span>
       </a>
@@ -1165,15 +1171,15 @@
 
     <div class="max-w-4xl mx-auto text-center relative z-10">
       <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-8">
-        <span class="material-symbols-outlined text-white text-3xl">favorite</span>
+        <span class="material-symbols-outlined text-white text-3xl">bolt</span>
       </div>
 
       <h2 class="font-display text-4xl md:text-5xl font-semibold text-white mb-6">
-        Built for chronic life.
+        Save your spoons for living.
       </h2>
 
       <p class="text-xl text-white/80 leading-relaxed mb-4 max-w-2xl mx-auto">
-        Chronic Life is a chat-first symptom tracker with a personal assistant for people managing chronic conditions.
+        Chronic Life is a chat-first symptom tracker designed for spoonies — people who measure energy in limited units.
       </p>
 
       <p class="text-lg text-white/60 mb-10 max-w-xl mx-auto">
@@ -1181,11 +1187,11 @@
       </p>
 
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-        <a href="#" class="w-full sm:w-auto h-14 px-8 bg-white hover:bg-white/95 text-primary text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2" data-modal-trigger>
-          Get started free
+        <a href="#" class="w-full sm:w-auto h-14 px-8 bg-white hover:bg-white/95 text-primary text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2" data-modal-trigger data-cta-id="footer_primary" data-cta-text="Start a 20-second check-in">
+          Start a 20-second check-in
           <span class="material-symbols-outlined">arrow_forward</span>
         </a>
-        <a href="#" class="w-full sm:w-auto h-14 px-8 bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white text-lg font-bold rounded-pill transition-all active:scale-95 flex items-center justify-center gap-2" data-modal-trigger>
+        <a href="#" class="w-full sm:w-auto h-14 px-8 bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white text-lg font-bold rounded-pill transition-all active:scale-95 flex items-center justify-center gap-2" data-modal-trigger data-cta-id="footer_secondary" data-cta-text="Preview Doctor Pack">
           Preview Doctor Pack
         </a>
       </div>
@@ -1242,11 +1248,11 @@
         <!-- Form State -->
         <div class="modal-form" id="modalForm">
           <div class="text-center mb-6">
-            <div class="w-14 h-14 rounded-2xl bg-accent-purple/20 flex items-center justify-center mx-auto mb-4">
-              <span class="material-symbols-outlined text-primary text-2xl">favorite</span>
+            <div class="w-14 h-14 rounded-2xl bg-accent-peach/20 flex items-center justify-center mx-auto mb-4">
+              <span class="material-symbols-outlined text-primary text-2xl">bolt</span>
             </div>
             <h3 id="modalTitle" class="font-display text-2xl font-semibold text-primary mb-2">Join the waitlist</h3>
-            <p class="text-text-muted text-sm">Be first to know when Chronic Life launches. Built for people managing chronic conditions.</p>
+            <p class="text-text-muted text-sm">Be first to know when Chronic Life launches. Built for spoonies who need low-energy tracking.</p>
           </div>
 
           <form id="emailForm" class="space-y-4">
@@ -1294,6 +1300,9 @@
   <script>
     (function() {
       'use strict';
+
+      // ===== PAGE IDENTIFIER =====
+      const PAGE_ID = 'spoon_saver';
 
       // ===== SUPABASE CONFIG =====
       const SUPABASE_URL = 'https://zvpudxinbcsrfyojrhhv.supabase.co';
@@ -1424,8 +1433,8 @@
       // Capture UTM on page load
       captureUTMParams();
 
-      // Track page view
-      trackEvent('page_view');
+      // Track page view with page identifier
+      trackEvent('page_view', PAGE_ID, 'Spoon Saver Landing');
 
       // Expose functions globally for form handling
       window.ChronicLifeTracking = {
@@ -1609,9 +1618,9 @@
         btn.addEventListener('click', function(e) {
           e.preventDefault();
 
-          // Track CTA click with element context
-          const elementId = btn.id || btn.closest('section')?.id || `cta_${index}`;
-          const elementText = btn.textContent?.trim().substring(0, 50) || 'Unknown CTA';
+          // Track CTA click with element context - use data attributes if available
+          const elementId = btn.dataset.ctaId || btn.id || btn.closest('section')?.id || `cta_${index}`;
+          const elementText = btn.dataset.ctaText || btn.textContent?.trim().substring(0, 50) || 'Unknown CTA';
 
           if (window.ChronicLifeTracking) {
             window.ChronicLifeTracking.trackEvent('cta_click', elementId, elementText);
