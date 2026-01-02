@@ -112,7 +112,7 @@ https://chronic-life-landing.vercel.app/doctor-proof?utm_source=reddit&utm_mediu
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | **UTM Content**       | `appointment_prep`                                                                                                                   |
 | **Page Slug**         | `/appointment-prep`                                                                                                                  |
-| **Reddit Headline**   | Brain fog makes you forget everything in the doctor's office. Walk in prepared.                                                      |
+| **Reddit Headline**   | Stop forgetting symptoms at appointments. Walk in prepared for your next doctor's appointment.                                       |
 | **Landing H1**        | Stop forgetting symptoms at appointments.                                                                                            |
 | **Landing H2**        | Appointment Prep Mode organizes what helped, what worsened, and what changed — so you never leave feeling like you forgot something. |
 | **Primary CTA**       | Try Appointment Prep                                                                                                                 |
