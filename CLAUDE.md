@@ -5,7 +5,30 @@
 
 ## Project Overview
 
-Clue is a **local-first symptom tracker** for people with chronic conditions (endometriosis, PCOS, long COVID, etc.). It prioritizes **energy-conscious design** (brain fog friendly), **doctor-trust output** (evidence-grounded claims), and **zero loading UI** (local SQLite + cloud sync).
+Clue is a **prediction-first symptom tracker** for people with chronic conditions (endometriosis, PCOS, long COVID, fibromyalgia, etc.).
+
+### Validated Product Direction (Jan 2026)
+
+**"Predict your next flare before it hits."**
+
+After running paid Reddit campaigns, **prediction** won decisively over trigger-finding, exhaustion-focused, and doctor-mistrust messaging (4.5x more clicks). Users want to know **when** the next crash is coming so they can prepare.
+
+### Core Priorities (in order)
+
+1. **Prediction** — 24-48h early warning for flares (lag effect detection)
+2. **Energy-conscious design** — Brain fog friendly, under 30 seconds to log
+3. **Doctor-trust output** — Evidence-grounded claims, structured exports
+4. **Zero loading UI** — Local SQLite + cloud sync
+
+### Currently Testing (Prediction Depth Test)
+
+| Ad Group          | Tests          | Core Promise                        |
+| :---------------- | :------------- | :---------------------------------- |
+| **The Forecast**  | Time-based     | "I'll know WHEN it's coming"        |
+| **The Culprit**   | Variable-based | "I'll know WHICH trigger caused it" |
+| **The Preventer** | Action-based   | "I'll know WHAT TO DO to stop it"   |
+
+**Campaign Docs:** [`web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md`](./web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md)
 
 **Core Documents**:
 
@@ -13,6 +36,7 @@ Clue is a **local-first symptom tracker** for people with chronic conditions (en
 - Agent architecture: [`context/Agent-Architecture-Technical.md`](./context/Agent-Architecture-Technical.md)
 - Constitution (SSOT): [`.specify/memory/constitution.md`](./.specify/memory/constitution.md)
 - Design system: [`.claude-skills/frontend-design/SKILL.md`](./.claude-skills/frontend-design/SKILL.md)
+- **Marketing validation:** [`web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md`](./web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md)
 
 ---
 
@@ -46,6 +70,15 @@ Clue is a **local-first symptom tracker** for people with chronic conditions (en
 | Chat UI       | **Vercel AI SDK**     | For message generation + summarization |
 | First Message | **Template-based**    | Deterministic, no LLM call             |
 | Core Pipeline | **Deterministic**     | Named queries, golden fixtures         |
+
+### Prediction Engine (New Priority)
+
+| Component            | Approach                | Notes                                        |
+| :------------------- | :---------------------- | :------------------------------------------- |
+| Lag Effect Detection | **Rule-based first**    | 24-48h correlation lookback                  |
+| Flare Risk Score     | **Simple thresholds**   | Low / Elevated / High based on pattern match |
+| Top Suspects         | **Correlation ranking** | Confidence-weighted, not just frequency      |
+| Daily Indicator      | **Binary Push/Rest**    | Based on cumulative risk signals             |
 
 ### Testing
 
@@ -211,17 +244,26 @@ export function generateFirstMessage(context: OnboardingContext): string {
 
 ### NON-NEGOTIABLE
 
-1. **No loading UI** for core interactions (check-ins, chat history)
-2. **Evidence snapshots** for all agent claims (row IDs, metric IDs)
-3. **Under 30 seconds** for daily logging
-4. **Immediate per-screen saves** during onboarding (for analytics)
-5. **Custom components** - no UI libraries (Podia-inspired design)
+1. **Prediction-first UX** — Flare risk / early warning should be visible on first screen after login
+2. **No loading UI** for core interactions (check-ins, predictions, chat history)
+3. **Evidence snapshots** for all agent claims (row IDs, metric IDs)
+4. **Under 30 seconds** for daily logging
+5. **Immediate per-screen saves** during onboarding (for analytics)
+6. **Custom components** - no UI libraries (Podia-inspired design)
+
+### Prediction-Specific Constraints
+
+- **Lag effect detection** must surface 24-48h patterns (e.g., "poor sleep yesterday → flare today")
+- **Flare risk score** should be simple: Low / Elevated / High (not percentages that feel fake)
+- **Top suspects** should be ranked by confidence, not just correlation
+- **Daily Push/Rest indicator** should feel like permission, not restriction
 
 ### Performance Targets
 
 - First Contentful Paint: < 1.5s
 - Time to Interactive: < 2s
 - Onboarding completion: < 3 minutes
+- **Prediction visible:** Within 5 seconds of opening app (after sufficient data)
 
 ---
 
@@ -294,10 +336,20 @@ const response = {
 
 ## Files to Read First
 
-1. [`.specify/memory/constitution.md`](./.specify/memory/constitution.md) - Architectural decisions
-2. [`specs/1-onboarding-flow/spec.md`](./specs/1-onboarding-flow/spec.md) - Current feature spec
-3. [`.claude-skills/frontend-design/SKILL.md`](./.claude-skills/frontend-design/SKILL.md) - Design system
-4. [`context/Agent-Architecture-Technical.md`](./context/Agent-Architecture-Technical.md) - Agent pipeline
+1. [`web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md`](./web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md) - **Validated product direction** (read this to understand what users want)
+2. [`.specify/memory/constitution.md`](./.specify/memory/constitution.md) - Architectural decisions
+3. [`specs/1-onboarding-flow/spec.md`](./specs/1-onboarding-flow/spec.md) - Current feature spec
+4. [`.claude-skills/frontend-design/SKILL.md`](./.claude-skills/frontend-design/SKILL.md) - Design system
+5. [`context/Agent-Architecture-Technical.md`](./context/Agent-Architecture-Technical.md) - Agent pipeline
+
+### Marketing Validation History
+
+| Campaign                         | Winner           | Key Insight                           |
+| :------------------------------- | :--------------- | :------------------------------------ |
+| Clarity Experiment (Dec 2025)    | `predict_flares` | Prediction beats trigger-finding 4.5x |
+| Prediction Depth Test (Jan 2026) | _In progress_    | Testing Time vs Variable vs Action    |
+
+**Landing pages:** https://chroniclife.app/predict-flares
 
 ---
 
@@ -318,6 +370,38 @@ pnpm typecheck       # TypeScript only
 pnpm build:android   # EAS Build (Android)
 pnpm build:ios       # EAS Build (iOS)
 ```
+
+---
+
+## Deprecated Ideas (Preserved for Context)
+
+<details>
+<summary>Click to expand deprecated product angles</summary>
+
+### ~~Exhaustion/Brain Fog Focus~~ (Did not win)
+
+**Hypothesis:** Users' primary pain is the cognitive/energy cost of tracking.
+**Headlines tested:** "Tracking shouldn't cost you a spoon", "A second brain for foggy days"
+**Result:** Lower engagement than prediction messaging.
+**Lesson:** Users want prediction more than they want easier tracking.
+
+### ~~Doctor Mistrust Focus~~ (Did not win)
+
+**Hypothesis:** Users' primary frustration is being dismissed by doctors.
+**Headlines tested:** "Make your doctor listen", "Proof they can't dismiss"
+**Result:** Lower engagement than prediction messaging.
+**Lesson:** While doctor trust matters, it's not the primary acquisition hook.
+
+### ~~"Find Triggers" Framing~~ (Second place)
+
+**Hypothesis:** Users want to understand what's causing their symptoms.
+**Headlines tested:** "Connect the dots your brain can't", "Find the triggers you've been missing"
+**Result:** 13 clicks vs 59 for "predict flares" (4.5x difference).
+**Lesson:** "Predict what's coming" beats "understand what happened."
+
+</details>
+
+---
 
 # Guides
 
