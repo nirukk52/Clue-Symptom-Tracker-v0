@@ -313,7 +313,10 @@
             >
               <!-- Options populated dynamically based on landing page -->
             </select>
-            <p id="headlinePreview" class="text-sm text-primary mt-3 p-3 bg-bg-cream rounded-xl border border-primary/10 italic">
+            <p
+              id="headlinePreview"
+              class="text-sm text-primary mt-3 p-3 bg-bg-cream rounded-xl border border-primary/10 italic"
+            >
               <!-- Headline preview shown here -->
             </p>
             <p class="text-xs text-text-muted mt-2">
@@ -502,23 +505,53 @@
       const headlineVariants = {
         'flare-forecast': {
           '': { label: 'Default', text: 'Your flares have a forecast.' },
-          'alt-1': { label: 'Early Warning', text: 'See flares coming 48 hours early.' },
-          'alt-2': { label: 'No Surprise', text: 'Stop being blindsided by flares.' },
+          'alt-1': {
+            label: 'Early Warning',
+            text: 'See flares coming 48 hours early.',
+          },
+          'alt-2': {
+            label: 'No Surprise',
+            text: 'Stop being blindsided by flares.',
+          },
         },
         'top-suspect': {
-          '': { label: 'Default', text: 'Stop guessing what\'s making you sick.' },
-          'alt-1': { label: 'The Culprit', text: 'Find the culprit behind your flares.' },
-          'alt-2': { label: 'Food/Stress', text: 'Was it the pizza or the stress?' },
+          '': {
+            label: 'Default',
+            text: "Stop guessing what's making you sick.",
+          },
+          'alt-1': {
+            label: 'The Culprit',
+            text: 'Find the culprit behind your flares.',
+          },
+          'alt-2': {
+            label: 'Food/Stress',
+            text: 'Was it the pizza or the stress?',
+          },
         },
         'crash-prevention': {
-          '': { label: 'Default', text: 'Know when to stop before it\'s too late.' },
+          '': {
+            label: 'Default',
+            text: "Know when to stop before it's too late.",
+          },
           'alt-1': { label: 'Break Cycle', text: 'Break the boom-bust cycle.' },
-          'alt-2': { label: 'Tomorrow', text: 'Stop paying tomorrow for today.' },
+          'alt-2': {
+            label: 'Tomorrow',
+            text: 'Stop paying tomorrow for today.',
+          },
         },
         'spoon-saver': {
-          '': { label: 'Default', text: 'Track symptoms without draining your energy.' },
-          'alt-1': { label: '20 Seconds', text: '20-second check-ins for spoonies.' },
-          'alt-2': { label: 'Stop Spending', text: 'Stop spending spoons on tracking.' },
+          '': {
+            label: 'Default',
+            text: 'Track symptoms without draining your energy.',
+          },
+          'alt-1': {
+            label: '20 Seconds',
+            text: '20-second check-ins for spoonies.',
+          },
+          'alt-2': {
+            label: 'Stop Spending',
+            text: 'Stop spending spoons on tracking.',
+          },
         },
       };
 
@@ -584,14 +617,14 @@
       function populateHeadlineVariants() {
         const variants = headlineVariants[config.landing] || {};
         headlineSelect.innerHTML = '';
-        
+
         Object.entries(variants).forEach(([value, data]) => {
           const option = document.createElement('option');
           option.value = value;
           option.textContent = `${data.label}: "${data.text.substring(0, 40)}${data.text.length > 40 ? '...' : ''}"`;
           headlineSelect.appendChild(option);
         });
-        
+
         // Reset headline selection when landing page changes
         config.headline = '';
         headlineSelect.value = '';

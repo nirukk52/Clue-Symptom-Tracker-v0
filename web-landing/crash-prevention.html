@@ -519,7 +519,7 @@
 
     <!-- HERO SECTION -->
     <header class="hero-wrapper">
-      <div class="hero-visible pt-24 md:pt-32 pb-8 md:pb-0">
+      <div class="hero-visible pt-24 md:pt-32">
         <div class="max-w-7xl mx-auto px-4 md:px-8 relative">
           <div
             class="flex flex-col md:flex-row md:items-center md:min-h-[calc(100vh-8rem)]"
@@ -1362,21 +1362,19 @@
           const utm = getStoredUTM();
           const sessionId = sessionStorage.getItem('session_id');
           try {
-            await supabase
-              .from('marketing_events')
-              .insert({
-                event_type: eventType,
-                utm_source: utm.utm_source || null,
-                utm_medium: utm.utm_medium || null,
-                utm_campaign: utm.utm_campaign || null,
-                utm_content: utm.utm_content || null,
-                utm_term: utm.utm_term || null,
-                element_id: elementId,
-                element_text: elementText,
-                page_url: window.location.href,
-                referrer: document.referrer || null,
-                session_id: sessionId,
-              });
+            await supabase.from('marketing_events').insert({
+              event_type: eventType,
+              utm_source: utm.utm_source || null,
+              utm_medium: utm.utm_medium || null,
+              utm_campaign: utm.utm_campaign || null,
+              utm_content: utm.utm_content || null,
+              utm_term: utm.utm_term || null,
+              element_id: elementId,
+              element_text: elementText,
+              page_url: window.location.href,
+              referrer: document.referrer || null,
+              session_id: sessionId,
+            });
           } catch (err) {
             console.error('Tracking error:', err);
           }
@@ -1388,19 +1386,17 @@
           }
           const utm = getStoredUTM();
           try {
-            const { error } = await supabase
-              .from('beta_signups')
-              .insert({
-                email: email,
-                utm_source: utm.utm_source || null,
-                utm_medium: utm.utm_medium || null,
-                utm_campaign: utm.utm_campaign || null,
-                utm_content: utm.utm_content || null,
-                utm_term: utm.utm_term || null,
-                landing_url: window.location.href,
-                referrer: document.referrer || null,
-                user_agent: navigator.userAgent,
-              });
+            const { error } = await supabase.from('beta_signups').insert({
+              email: email,
+              utm_source: utm.utm_source || null,
+              utm_medium: utm.utm_medium || null,
+              utm_campaign: utm.utm_campaign || null,
+              utm_content: utm.utm_content || null,
+              utm_term: utm.utm_term || null,
+              landing_url: window.location.href,
+              referrer: document.referrer || null,
+              user_agent: navigator.userAgent,
+            });
             if (error) {
               return { success: false, error: error.message };
             }
