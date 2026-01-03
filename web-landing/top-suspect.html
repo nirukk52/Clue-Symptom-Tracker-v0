@@ -214,7 +214,7 @@
           
           <!-- Right: Persona Image -->
           <div class="w-full md:w-1/2 lg:w-[55%] flex justify-center md:block">
-            <img src="personas/IMG_1272.PNG" alt="Person managing chronic illness with hope" class="hero-persona" loading="eager" fetchpriority="high">
+            <img id="heroPersonaImage" src="personas/IMG_1272.PNG" alt="Person managing chronic illness with hope" class="hero-persona" loading="eager" fetchpriority="high">
           </div>
         </div>
       </div>
@@ -661,10 +661,34 @@
         document.querySelectorAll('h1[data-variant]').forEach(el => { el.classList.toggle('hidden', el.dataset.variant !== variant); });
       }
 
+      function updatePersona() {
+        const params = new URLSearchParams(window.location.search);
+        const personaParam = params.get('persona') || '2'; // Default to IMG_1272 (Maya)
+        
+        // Map persona parameter to image filename
+        // Supports: 0,1,2 OR marcus,jordan,maya
+        const personaMap = {
+          '0': 'IMG_1270.PNG',
+          '1': 'IMG_1271.PNG',
+          '2': 'IMG_1272.PNG',
+          'marcus': 'IMG_1270.PNG',
+          'jordan': 'IMG_1271.PNG',
+          'maya': 'IMG_1272.PNG'
+        };
+        
+        const personaImage = personaMap[personaParam.toLowerCase()] || personaMap['2'];
+        const personaImg = document.getElementById('heroPersonaImage');
+        
+        if (personaImg) {
+          personaImg.src = `personas/${personaImage}`;
+        }
+      }
+
       captureUTMParams();
       trackEvent('page_view', PAGE_ID, 'Top Suspect Landing');
       updateConditionPills();
       updateHeadlines();
+      updatePersona();
       window.ChronicLifeTracking = { trackEvent, submitSignup, getStoredUTM };
 
       const modal = document.getElementById('emailModal'), modalContainer = modal.querySelector('.modal-container'), modalClose = document.getElementById('modalClose'), modalForm = document.getElementById('modalForm'), modalSuccess = document.getElementById('modalSuccess'), emailForm = document.getElementById('emailForm'), emailInput = document.getElementById('emailInput'), emailError = document.getElementById('emailError'), submitBtn = document.getElementById('submitBtn'), modalDone = document.getElementById('modalDone');
