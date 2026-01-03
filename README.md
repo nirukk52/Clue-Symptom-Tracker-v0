@@ -1,14 +1,61 @@
 # Clue — Symptom & Mood Tracker
 
-> Quick, easy symptom tracking for chronic illness—especially when you're juggling multiple conditions. Discover what improves and worsens your symptoms, and bring doctor-trustworthy summaries to appointments.
+> **Predict your next flare before it hits.** A symptom tracker that learns your body's patterns and gives you a heads up — so you can prepare, not just react.
+
+---
+
+## 🎯 Validated Product Direction (Jan 2026)
+
+### What We Learned
+
+After running "The Clarity Experiment" ($100 Reddit campaign testing 3 pain points), **Pattern Discovery / Prediction** won decisively:
+
+| Ad Group                             | Clicks    | CPC   |
+| :----------------------------------- | :-------- | :---- |
+| **predict_flares**                   | **59**    | $0.05 |
+| find_triggers                        | 13        | $0.05 |
+| Others (exhaustion, doctor mistrust) | < 10 each | —     |
+
+**Prediction beat trigger-finding by 4.5x.** Users want to know what's coming, not just what happened.
+
+### Current Test: Prediction Depth Test
+
+We're now testing _which type_ of prediction resonates most:
+
+| Ad Group          | Theme          | Core Promise                            |
+| :---------------- | :------------- | :-------------------------------------- |
+| **The Forecast**  | Time-Based     | "I'll know **WHEN** it's coming"        |
+| **The Culprit**   | Variable-Based | "I'll know **WHICH** trigger caused it" |
+| **The Preventer** | Action-Based   | "I'll know **WHAT TO DO** to stop it"   |
+
+**Campaign Docs:** [`web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md`](./web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md)
 
 ---
 
 ## 1. Product Promise
 
-Clue is a **chat-first tracker** with an **evidence layer** behind it.
+Clue is a **prediction-first symptom tracker** that learns your body's lag effects and warning signs.
+
+### Core Value Proposition
+
+> **"Stop being blindsided by flares."**
+>
+> Log symptoms in 20 seconds. The app finds patterns you can't see. Get warned 24-48 hours before a crash.
 
 ### Five Pillars
+
+| Pillar      | Description                                              | Status               |
+| :---------- | :------------------------------------------------------- | :------------------- |
+| **Predict** | See flares coming 24-48h early based on your patterns    | 🎯 **PRIMARY FOCUS** |
+| **Capture** | Fast check-ins + flare logging when things spike         | ✅ Active            |
+| **Recall**  | Calendar history you can trust when brain fog hits       | ✅ Active            |
+| **Connect** | "How does X impact Y?" patterns that stay understandable | ✅ Active            |
+| **Trust**   | Doctors take your data seriously (structured exports)    | ✅ Active            |
+
+### ~~Deprecated~~ Five Pillars (Original)
+
+<details>
+<summary>Original pillars before validation (click to expand)</summary>
 
 | Pillar      | Description                                                                   |
 | ----------- | ----------------------------------------------------------------------------- |
@@ -17,6 +64,10 @@ Clue is a **chat-first tracker** with an **evidence layer** behind it.
 | **Connect** | "How does X impact Y?" patterns that stay understandable                      |
 | **Act**     | Gentle next steps, experiments, and "what to try today"                       |
 | **Trust**   | Doctors take your data seriously because Clue structures it the way they need |
+
+_Note: "Act" was replaced by "Predict" after campaign validation showed users want foresight over guidance._
+
+</details>
 
 #### Doctor Trust Details
 
@@ -29,34 +80,67 @@ Clue is a **chat-first tracker** with an **evidence layer** behind it.
 
 ## 2. Target User
 
-**Primary Persona (Beachhead):** Multi-condition chronic illness patient
+**Primary Persona (Beachhead):** Multi-condition chronic illness patient who feels **blindsided by flares**
 
 ### Meet "Sarah"
 
 - 42 years old, managing **3–4 chronic conditions**
 - Seeing **multiple providers** (specialist + PCP + mental health + PT, etc.)
 
-**Tracks for two reasons:**
+**What Sarah wants most (validated):**
 
-1. **Sense-making** — "Why is this happening again?"
-2. **Doctor reporting** — "How do I explain this clearly in 2 minutes?"
+1. **Prediction** — "Tell me when the next crash is coming so I can prepare" ← **PRIMARY**
+2. **Trigger identification** — "Tell me which variable is causing this"
+3. **Sense-making** — "Why is this happening again?"
 
 ### What Sarah Is Fighting
 
-- Symptoms shift daily, flares feel random, memory is unreliable
-- Past logs feel like noise; doctors dismiss long notes
+- **Unpredictability** — Flares feel random, she can't plan her life
+- Symptoms shift daily, memory is unreliable during brain fog
+- Past logs feel like noise; she can't see the patterns herself
 - Energy is limited; anything that feels like a form gets abandoned
 
 ### Clue's Job
 
-- Make tracking feel **lighter than remembering**
-- Make outputs feel **credible in the exam room**
+- **Primary:** Give Sarah a 24-48 hour heads up before flares hit
+- **Secondary:** Make tracking feel **lighter than remembering**
+- **Tertiary:** Make outputs feel **credible in the exam room**
 
-> _Other personas can exist later, but MVP is built for Sarah._
+> _Other personas can exist later, but MVP is built for Sarah who wants to stop being blindsided._
 
 ---
 
 ## 3. North Star Loop
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│  1) Check-in (10–30s)                                               │
+│         ↓                                                           │
+│  2) See prediction dashboard (flare risk for next 48h) ← NEW        │
+│         ↓                                                           │
+│  3) Get early warning alerts when risk is high ← NEW                │
+│         ↓                                                           │
+│  4) Flare mode when it happens anyway (simplified logging)          │
+│         ↓                                                           │
+│  5) Calendar history + Doctor-trust exports                         │
+│         ↓                                                           │
+│      repeat                                                         │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Prediction Features (Being Validated)
+
+| Feature                       | Description                                          | Testing Status |
+| :---------------------------- | :--------------------------------------------------- | :------------- |
+| **Lag Effect Detection**      | "Your flares start 24-48h after poor sleep + stress" | 🧪 Testing     |
+| **Flare Risk Score**          | "Elevated risk today based on yesterday's patterns"  | 🧪 Testing     |
+| **Top Suspects Ranking**      | "This week: Sleep (78%), Stress (65%), Food (23%)"   | 🧪 Testing     |
+| **Daily Push/Rest Indicator** | "Today is a Rest day based on your patterns"         | 🧪 Testing     |
+
+<details>
+<summary>~~Deprecated~~ Original North Star Loop (click to expand)</summary>
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -75,6 +159,10 @@ Clue is a **chat-first tracker** with an **evidence layer** behind it.
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+_Note: Original loop focused on "capture → recall → doctor export". New loop prioritizes prediction as the core value moment._
+
+</details>
 
 ---
 
@@ -414,10 +502,32 @@ When user indicates an appointment (or it's upcoming):
 | Apple HealthKit | https://developer.apple.com/documentation/healthkit |
 | Google Fit      | https://developers.google.com/fit                   |
 
-https://chronic-life-landing.vercel.app?utm_source=reddit&utm_medium=paid&utm_campaign=chronic_brainfog_v1&utm_content=20sec
+---
 
-As an expert, mobile AI chat cofounder, with deep expertise in designing and developing mobile experiences that feel modern, personal, and intuitive.
+## 12. Marketing Validation
 
-You also have past experience working on apps like https://bearable.app/, https://www.makevisible.com/ and https://www.wavehealth.app/.
+### Campaign History
 
-Your goal is to create a marketing strategies that improves itself while saving cost and getting those early users fast.
+| Campaign                  | Date     | Budget | Winner                       | Insight                               |
+| :------------------------ | :------- | :----- | :--------------------------- | :------------------------------------ |
+| **Clarity Experiment**    | Dec 2025 | $100   | `predict_flares` (59 clicks) | Prediction beats trigger-finding 4.5x |
+| **Prediction Depth Test** | Jan 2026 | $100   | _In progress_                | Testing Time vs Variable vs Action    |
+
+### Live Landing Pages
+
+- **Prediction (winner):** https://chroniclife.app/predict-flares
+- **Forecast test:** https://chroniclife.app/flare-forecast _(to create)_
+- **Culprit test:** https://chroniclife.app/top-suspect _(to create)_
+- **Prevention test:** https://chroniclife.app/crash-prevention _(to create)_
+
+### Competitive Landscape
+
+| App                                        | Strength               | Clue's Differentiation                     |
+| :----------------------------------------- | :--------------------- | :----------------------------------------- |
+| [Bearable](https://bearable.app/)          | Comprehensive tracking | Too complex; we're prediction-first        |
+| [Visible](https://www.makevisible.com/)    | Pacing focus           | We predict flares, not just track energy   |
+| [Wave Health](https://www.wavehealth.app/) | Beautiful UI           | We have prediction engine + doctor exports |
+
+---
+
+_Last Updated: January 2, 2026_

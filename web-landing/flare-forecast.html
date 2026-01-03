@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != 'dataLayer' ? '&l=' + l : '';
+        j.async = true;
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, 'script', 'dataLayer', 'GTM-KFK8WHV5');
+    </script>
+    <!-- End Google Tag Manager -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chronic Life - Your flares have a forecast</title>
+    <meta
+      name="description"
+      content="Get a 48-hour heads up based on your body's patterns. Stop being blindsided by flares."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#20132E',
+              'primary-light': '#f3f0fa',
+              'bg-cream': '#FDFBF9',
+              'bg-card': '#FFFFFF',
+              /* Hero background - Visible-inspired muted blue-gray */
+              'hero-bg': '#8BA4A8',
+              'accent-peach': '#E8974F',
+              'accent-blue': '#A4C8D8',
+              'accent-purple': '#D0BDF4',
+              'accent-mint': '#B8E3D6',
+              'accent-rose': '#F4C4C4',
+              'pill-hover': '#F3EFFF',
+              'pill-selected': '#E0D4FC',
+              'text-main': '#20132E',
+              'text-muted': '#554b66',
+            },
+            fontFamily: {
+              display: ['Fraunces', 'Georgia', 'serif'],
+              body: ['DM Sans', 'system-ui', 'sans-serif'],
+            },
+            borderRadius: {
+              DEFAULT: '12px',
+              xl: '16px',
+              '2xl': '24px',
+              '3xl': '32px',
+              '4xl': '40px',
+              pill: '9999px',
+            },
+            boxShadow: {
+              soft: '0 4px 20px -2px rgba(32, 20, 46, 0.08)',
+              card: '0 2px 12px -2px rgba(32, 20, 69, 0.06)',
+              glow: '0 0 60px -10px rgba(208, 189, 244, 0.4)',
+              'hero-cta': '0 4px 20px -2px rgba(0, 0, 0, 0.15)',
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: 'DM Sans', sans-serif;
+      }
+      .font-display {
+        font-family: 'Fraunces', Georgia, serif;
+      }
+
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: rgba(32, 19, 46, 0.15);
+        border-radius: 20px;
+      }
+
+      /* ============================================
+       HERO: VISIBLE-STYLE LAYOUT
+       Desktop: Text left, persona image right
+       Mobile: Card with image below text
+       ============================================ */
+
+      /* Hero wrapper - cream background that shows on mobile around the card */
+      .hero-wrapper {
+        background-color: #fdfbf9;
+        min-height: 100vh;
+      }
+
+      /* Hero container - the colored box */
+      .hero-visible {
+        background-color: #8ba4a8; /* Visible's muted blue-gray */
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Desktop: full-bleed hero */
+      @media (min-width: 768px) {
+        .hero-wrapper {
+          background-color: #8ba4a8;
+          padding: 0;
+        }
+        .hero-visible {
+          min-height: 100vh;
+          border-radius: 0;
+        }
+      }
+
+      /* Mobile: card style with rounded corners */
+      @media (max-width: 767px) {
+        .hero-wrapper {
+          padding: 0.75rem;
+          padding-top: 5rem; /* Account for fixed nav */
+        }
+        .hero-visible {
+          border-radius: 1.5rem;
+          min-height: calc(100vh - 6rem);
+        }
+      }
+
+      /* Persona image positioning */
+      .hero-persona {
+        user-select: none;
+        pointer-events: none;
+      }
+
+      /* Desktop: absolute positioned, right side, bleeds off edge */
+      @media (min-width: 768px) {
+        .hero-persona {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          height: 85vh;
+          max-height: 750px;
+          width: auto;
+          object-fit: contain;
+          object-position: bottom right;
+          /* Slight bleed off right edge for that Visible look */
+          transform: translateX(3%);
+        }
+      }
+
+      /* Mobile: relative, centered below text */
+      @media (max-width: 767px) {
+        .hero-persona {
+          position: relative;
+          width: 70%;
+          max-width: 280px;
+          margin: 1.5rem auto 0;
+          display: block;
+        }
+      }
+
+      /* Condition pills - semi-transparent on colored bg */
+      .condition-pill {
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.12);
+        color: white;
+        font-weight: 500;
+        font-size: 0.875rem;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        transition:
+          background 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .condition-pill:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.7);
+      }
+
+      /* Hero CTA - white button on colored bg */
+      .hero-cta {
+        background: #f5e6a3; /* Soft yellow like Visible */
+        color: #20132e;
+        padding: 1rem 1.75rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .hero-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.15);
+      }
+
+      .hero-cta:active {
+        transform: scale(0.98);
+      }
+
+      /* Glass navigation - works on both light and dark backgrounds */
+      .glass-nav {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      /* ============================================
+       ALTERNATE MOBILE VARIANT (Option B)
+       Uncomment this section and comment out the
+       card-style mobile CSS above to use this variant.
+       This makes the persona a subtle background image.
+       ============================================
+
+    @media (max-width: 767px) {
+      .hero-wrapper {
+        padding: 0;
+        background-color: #8BA4A8;
+      }
+      .hero-visible {
+        border-radius: 0;
+        min-height: 100vh;
+      }
+      .hero-persona {
+        position: fixed;
+        right: -10%;
+        bottom: 0;
+        height: 50vh;
+        width: auto;
+        opacity: 0.15;
+        z-index: 0;
+      }
+      .hero-content {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    ============================================ */
+
+      /* Section gradients */
+      .gradient-section {
+        background: linear-gradient(
+          180deg,
+          #fdfbf9 0%,
+          rgba(164, 200, 216, 0.1) 100%
+        );
+      }
+
+      /* Card hover effects */
+      .hover-lift {
+        transition:
+          transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+          box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px -8px rgba(32, 20, 46, 0.12);
+      }
+
+      /* Modal styles */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(32, 19, 46, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 100;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.3s ease,
+          visibility 0.3s ease;
+      }
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.95);
+        z-index: 101;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+          visibility 0.3s ease;
+      }
+      .modal-container.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      .modal-content {
+        background: #fdfbf9;
+        border-radius: 2rem;
+        padding: 2.5rem;
+        width: 90vw;
+        max-width: 420px;
+        box-shadow: 0 25px 60px -15px rgba(32, 20, 46, 0.25);
+        border: 1px solid rgba(32, 19, 46, 0.05);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        background: rgba(32, 19, 46, 0.05);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.2s ease,
+          transform 0.2s ease;
+      }
+      .modal-close:hover {
+        background: rgba(32, 19, 46, 0.1);
+        transform: scale(1.05);
+      }
+
+      .modal-input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        border-radius: 9999px;
+        border: 2px solid rgba(32, 19, 46, 0.1);
+        font-size: 1rem;
+        font-family: 'DM Sans', sans-serif;
+        background: white;
+        color: #20132e;
+        outline: none;
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .modal-input:focus {
+        border-color: #d0bdf4;
+        box-shadow: 0 0 0 4px rgba(208, 189, 244, 0.2);
+      }
+      .modal-input::placeholder {
+        color: #554b66;
+        opacity: 0.6;
+      }
+      .modal-input.error {
+        border-color: #e8974f;
+        animation: shake 0.4s ease;
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        20%,
+        60% {
+          transform: translateX(-6px);
+        }
+        40%,
+        80% {
+          transform: translateX(6px);
+        }
+      }
+
+      .modal-submit {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        border-radius: 9999px;
+        background: #20132e;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        font-family: 'DM Sans', sans-serif;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition:
+          background 0.2s ease,
+          transform 0.1s ease,
+          box-shadow 0.2s ease;
+      }
+      .modal-submit:hover {
+        background: rgba(32, 19, 46, 0.9);
+        box-shadow: 0 8px 24px -4px rgba(32, 20, 46, 0.3);
+      }
+      .modal-submit:active {
+        transform: scale(0.98);
+      }
+      .modal-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .modal-success {
+        display: none;
+        text-align: center;
+      }
+      .modal-success.active {
+        display: block;
+        animation: fadeInUp 0.4s ease;
+      }
+      .modal-form.hidden {
+        display: none;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .success-icon {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #b8e3d6 0%, #a4c8d8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes scaleIn {
+        from {
+          transform: scale(0);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
+
+      .modal-blob-1 {
+        position: absolute;
+        top: -2rem;
+        right: -2rem;
+        width: 6rem;
+        height: 6rem;
+        background: rgba(208, 189, 244, 0.4);
+        border-radius: 2rem;
+        transform: rotate(12deg);
+        filter: blur(20px);
+        pointer-events: none;
+      }
+      .modal-blob-2 {
+        position: absolute;
+        bottom: -1.5rem;
+        left: -1.5rem;
+        width: 5rem;
+        height: 5rem;
+        background: rgba(184, 227, 214, 0.5);
+        border-radius: 50%;
+        filter: blur(15px);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body class="bg-bg-cream text-text-main antialiased overflow-x-hidden">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-KFK8WHV5"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Navigation - Glass effect, works on light and dark -->
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-primary/5"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between"
+      >
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2">
+          <div
+            class="w-9 h-9 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-primary flex items-center justify-center"
+          >
+            <span class="text-white font-display font-bold text-base md:text-lg"
+              >C</span
+            >
+          </div>
+          <span
+            class="text-lg md:text-xl font-display font-semibold text-primary"
+            >Chronic Life</span
+          >
+        </a>
+
+        <!-- Desktop Nav Links -->
+        <div
+          class="hidden md:flex items-center gap-8 text-sm font-semibold text-text-muted"
+        >
+          <a href="#insights" class="hover:text-primary transition-colors"
+            >How it works</a
+          >
+          <a href="#flare-mode" class="hover:text-primary transition-colors"
+            >Flare Mode</a
+          >
+          <a href="#doctor-pack" class="hover:text-primary transition-colors"
+            >Doctor Pack</a
+          >
+        </div>
+
+        <!-- CTA -->
+        <div class="flex items-center gap-3">
+          <a
+            href="#"
+            class="bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 md:px-5 py-2 md:py-2.5 rounded-pill transition-all hover:shadow-lg active:scale-95"
+            data-modal-trigger
+            data-cta-id="nav_get_started"
+            data-cta-text="Get Started"
+          >
+            Get started
+            <span
+              class="material-symbols-outlined text-base ml-1 hidden md:inline align-middle"
+              >arrow_forward</span
+            >
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ============================================
+       HERO SECTION - VISIBLE STYLE
+       ============================================ -->
+    <header class="hero-wrapper">
+      <div class="hero-visible pt-24 md:pt-32 pb-8 md:pb-0">
+        <div class="max-w-7xl mx-auto px-4 md:px-8 relative">
+          <!-- Content Grid: Text left, Image right on desktop -->
+          <div
+            class="flex flex-col md:flex-row md:items-center md:min-h-[calc(100vh-8rem)]"
+          >
+            <!-- Left: Text Content -->
+            <div
+              class="hero-content w-full md:w-1/2 lg:w-[45%] text-center md:text-left relative z-10 pb-4 md:pb-0"
+            >
+              <!-- Headline - A/B testable via data attributes -->
+              <h1
+                class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.1] mb-4 md:mb-6"
+                data-variant="default"
+              >
+                Your flares have a forecast.
+              </h1>
+              <!-- Alternative headlines (hidden by default, toggle via JS/UTM) -->
+              <h1
+                class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.1] mb-4 md:mb-6 hidden"
+                data-variant="alt-1"
+              >
+                See flares coming 48 hours early.
+              </h1>
+              <h1
+                class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.1] mb-4 md:mb-6 hidden"
+                data-variant="alt-2"
+              >
+                Stop being blindsided by flares.
+              </h1>
+
+              <!-- Subheadline -->
+              <p
+                class="text-lg md:text-xl text-white/80 leading-relaxed mb-6 md:mb-8 max-w-lg mx-auto md:mx-0"
+              >
+                Get a 48-hour heads up based on your body's patterns. Stop being
+                blindsided.
+              </p>
+
+              <!-- Condition Pills - Dynamic based on UTM -->
+              <div
+                id="conditionPills"
+                class="flex flex-wrap justify-center md:justify-start gap-2 mb-6 md:mb-8"
+              >
+                <!-- Pills are populated via JavaScript based on UTM params -->
+                <span class="condition-pill" data-condition="long-covid"
+                  >Long COVID</span
+                >
+                <span class="condition-pill" data-condition="mecfs"
+                  >ME/CFS</span
+                >
+                <span class="condition-pill" data-condition="fibromyalgia"
+                  >Fibromyalgia</span
+                >
+                <span class="condition-pill" data-condition="pots">POTS</span>
+                <span class="condition-pill" data-condition="eds">EDS</span>
+              </div>
+
+              <!-- CTA Button -->
+              <div class="mb-4">
+                <a
+                  href="#"
+                  class="hero-cta"
+                  data-modal-trigger
+                  data-cta-id="hero_see_forecast"
+                  data-cta-text="See your forecast"
+                >
+                  See your forecast
+                  <span class="material-symbols-outlined text-lg"
+                    >arrow_forward</span
+                  >
+                </a>
+              </div>
+            </div>
+
+            <!-- Right: Persona Image (Desktop: absolute, Mobile: inline below) -->
+            <div
+              class="w-full md:w-1/2 lg:w-[55%] flex justify-center md:block"
+            >
+                <img
+                  id="heroPersonaImage"
+                  src="personas/IMG_1272.PNG"
+                  alt="Person managing chronic illness with hope"
+                  class="hero-persona"
+                  loading="eager"
+                  fetchpriority="high"
+                />
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================
+       INSIGHTS SECTION - LAG EFFECT FOCUS
+       ============================================ -->
+    <section
+      id="insights"
+      class="py-16 md:py-24 px-4 md:px-6 gradient-section relative overflow-hidden"
+    >
+      <div class="max-w-6xl mx-auto relative z-10">
+        <div class="text-center max-w-2xl mx-auto mb-12 md:mb-16">
+          <div
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/30 text-sm font-semibold text-primary mb-6"
+          >
+            <span class="material-symbols-outlined text-lg">psychology</span>
+            Predictive insights
+          </div>
+          <h2
+            class="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-primary mb-4"
+          >
+            Your body has a 24-48 hour delay. We track it.
+          </h2>
+          <p class="text-lg text-text-muted">
+            Most flares don't appear immediately after a trigger. Chronic Life
+            learns your body's lag effect.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 mb-12">
+          <!-- Main insight card -->
+          <div
+            class="bg-white rounded-[2rem] p-6 shadow-soft border border-primary/5 md:col-span-2 hover-lift"
+          >
+            <div class="flex items-center gap-3 mb-4">
+              <div
+                class="w-10 h-10 rounded-xl bg-accent-purple/30 flex items-center justify-center"
+              >
+                <span class="material-symbols-outlined text-purple-700"
+                  >trending_up</span
+                >
+              </div>
+              <div>
+                <p class="font-semibold text-primary">Lag Effect Detected</p>
+                <p class="text-sm text-text-muted">
+                  Based on 12 flare episodes
+                </p>
+              </div>
+            </div>
+            <div class="bg-bg-cream rounded-2xl p-5 mb-4">
+              <p class="text-lg text-primary leading-relaxed">
+                <span class="font-semibold"
+                  >Your flares typically appear 24-48 hours</span
+                >
+                after poor sleep + stress, not immediately.
+              </p>
+            </div>
+
+            <!-- Timeline visual -->
+            <div class="flex items-center gap-4 text-sm">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-accent-blue"></div>
+                <span class="text-text-muted">Trigger (Day 1)</span>
+              </div>
+              <div class="flex-1 h-0.5 bg-gray-200"></div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                <span class="text-text-muted">Warning (Day 2)</span>
+              </div>
+              <div class="flex-1 h-0.5 bg-gray-200"></div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-accent-rose"></div>
+                <span class="text-text-muted">Flare (Day 2-3)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Why this matters -->
+          <div
+            class="bg-gradient-to-br from-accent-purple/20 to-accent-rose/20 rounded-[2rem] p-6 border border-accent-purple/30 hover-lift"
+          >
+            <h4 class="font-display text-lg font-semibold text-primary mb-4">
+              Why this matters
+            </h4>
+            <ul class="space-y-3 text-text-muted text-sm">
+              <li class="flex items-start gap-2">
+                <span
+                  class="material-symbols-outlined text-accent-purple text-base mt-0.5"
+                  >check</span
+                >
+                Intervene before symptoms peak
+              </li>
+              <li class="flex items-start gap-2">
+                <span
+                  class="material-symbols-outlined text-accent-purple text-base mt-0.5"
+                  >check</span
+                >
+                Prepare rescue strategies
+              </li>
+              <li class="flex items-start gap-2">
+                <span
+                  class="material-symbols-outlined text-accent-purple text-base mt-0.5"
+                  >check</span
+                >
+                Reduce flare severity
+              </li>
+              <li class="flex items-start gap-2">
+                <span
+                  class="material-symbols-outlined text-accent-purple text-base mt-0.5"
+                  >check</span
+                >
+                Break the boom-bust cycle
+              </li>
+            </ul>
+            <a
+              href="#"
+              class="inline-flex items-center gap-2 mt-6 text-primary font-semibold text-sm hover:gap-3 transition-all"
+              data-modal-trigger
+              data-cta-id="insights_example"
+              data-cta-text="See prediction in action"
+            >
+              See prediction in action
+              <span class="material-symbols-outlined text-base"
+                >arrow_forward</span
+              >
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+       FLARE MODE SECTION
+       ============================================ -->
+    <section
+      id="flare-mode"
+      class="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-accent-purple/10 to-accent-rose/10 relative overflow-hidden"
+    >
+      <div class="max-w-6xl mx-auto relative z-10">
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <!-- Visual -->
+          <div class="order-2 md:order-1">
+            <div
+              class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-soft border border-accent-rose/20 hover-lift"
+            >
+              <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-12 h-12 rounded-xl bg-accent-rose/30 flex items-center justify-center"
+                  >
+                    <span class="material-symbols-outlined text-red-600"
+                      >warning</span
+                    >
+                  </div>
+                  <div>
+                    <p class="font-semibold text-primary">Flare Mode</p>
+                    <p class="text-sm text-text-muted">Simplified tracking</p>
+                  </div>
+                </div>
+                <div class="w-12 h-6 bg-accent-rose rounded-pill relative">
+                  <div
+                    class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                  ></div>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <button
+                  class="w-full p-4 bg-accent-rose/20 rounded-2xl text-left"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-red-600"
+                      >local_fire_department</span
+                    >
+                    <div>
+                      <p class="font-semibold text-primary">I'm in a flare</p>
+                      <p class="text-sm text-text-muted">One tap to log it</p>
+                    </div>
+                  </div>
+                </button>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="p-3 bg-bg-cream rounded-xl">
+                    <p class="text-xs text-text-muted mb-1">Severity</p>
+                    <p class="font-semibold text-primary">7/10</p>
+                  </div>
+                  <div class="p-3 bg-bg-cream rounded-xl">
+                    <p class="text-xs text-text-muted mb-1">Started</p>
+                    <p class="font-semibold text-primary">6:30 AM</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Text -->
+          <div class="order-1 md:order-2">
+            <div
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-rose/30 text-sm font-semibold text-primary mb-6"
+            >
+              <span class="material-symbols-outlined text-lg"
+                >local_fire_department</span
+              >
+              Flare Mode
+            </div>
+            <h2
+              class="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-primary mb-4"
+            >
+              When flares hit anyway, log them fast.
+            </h2>
+            <p class="text-lg text-text-muted mb-8">
+              Designed for bad days. One tap to capture what matters, details
+              can wait.
+            </p>
+            <a
+              href="#"
+              class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all"
+              data-modal-trigger
+              data-cta-id="flare_mode_turn_on"
+              data-cta-text="Turn on Flare Mode"
+            >
+              Turn on Flare Mode
+              <span class="material-symbols-outlined text-lg"
+                >arrow_forward</span
+              >
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+       QUICK CHECK-INS SECTION
+       ============================================ -->
+    <section
+      id="quick-checkins"
+      class="py-16 md:py-24 px-4 md:px-6 bg-white relative overflow-hidden"
+    >
+      <div class="max-w-6xl mx-auto relative z-10">
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <!-- Text -->
+          <div>
+            <div
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-blue/20 text-sm font-semibold text-primary mb-6"
+            >
+              <span class="material-symbols-outlined text-lg">bolt</span>
+              Quick Check-ins
+            </div>
+            <h2
+              class="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-primary mb-4"
+            >
+              20 seconds.<br />That's it.
+            </h2>
+            <p class="text-lg text-text-muted mb-8">
+              The more you log, the better predictions get. But we keep it
+              effortless.
+            </p>
+            <a
+              href="#"
+              class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all"
+              data-modal-trigger
+              data-cta-id="quick_checkins_try"
+              data-cta-text="Try Quick Entry"
+            >
+              Try Quick Entry
+              <span class="material-symbols-outlined text-lg"
+                >arrow_forward</span
+              >
+            </a>
+          </div>
+
+          <!-- Visual -->
+          <div class="relative">
+            <div
+              class="bg-bg-cream rounded-[2.5rem] p-6 md:p-8 shadow-soft border border-primary/5 hover-lift"
+            >
+              <div class="bg-white rounded-3xl p-6 shadow-card mb-6">
+                <p class="text-sm font-semibold text-text-muted mb-4">
+                  How's your energy today?
+                </p>
+                <div class="flex gap-2 mb-4">
+                  <button
+                    class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm"
+                  >
+                    1
+                  </button>
+                  <button
+                    class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm"
+                  >
+                    2
+                  </button>
+                  <button
+                    class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm"
+                  >
+                    3
+                  </button>
+                  <button
+                    class="w-10 h-10 rounded-xl bg-pill-selected border-2 border-primary text-primary font-bold text-sm"
+                  >
+                    4
+                  </button>
+                  <button
+                    class="w-10 h-10 rounded-xl bg-bg-cream text-text-muted font-bold text-sm"
+                  >
+                    5
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-3xl p-6 shadow-card">
+                <p class="text-sm font-semibold text-text-muted mb-4">
+                  Top suspects?
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    class="px-4 py-2 bg-pill-selected border-2 border-primary rounded-pill text-sm font-semibold text-primary flex items-center gap-1"
+                  >
+                    Poor sleep
+                    <span class="material-symbols-outlined text-sm">check</span>
+                  </span>
+                  <span
+                    class="px-4 py-2 bg-pill-selected border-2 border-primary rounded-pill text-sm font-semibold text-primary flex items-center gap-1"
+                  >
+                    Stress
+                    <span class="material-symbols-outlined text-sm">check</span>
+                  </span>
+                  <span
+                    class="px-4 py-2 bg-white border border-gray-200 rounded-pill text-sm font-medium text-text-muted"
+                    >Food</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div
+              class="absolute -bottom-4 -right-4 bg-accent-mint rounded-2xl p-4 shadow-lg"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-teal-800"
+                  >timer</span
+                >
+                <span class="font-display font-bold text-teal-900">18 sec</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+       DOCTOR PACK SECTION
+       ============================================ -->
+    <section
+      id="doctor-pack"
+      class="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-white to-accent-peach/5 relative overflow-hidden"
+    >
+      <div class="max-w-6xl mx-auto relative z-10">
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div>
+            <div
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-peach/30 text-sm font-semibold text-primary mb-6"
+            >
+              <span class="material-symbols-outlined text-lg">description</span>
+              Doctor-ready summaries
+            </div>
+            <h2
+              class="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-primary mb-4"
+            >
+              Share your patterns with your doctor.
+            </h2>
+            <p class="text-lg text-text-muted mb-8">
+              Export predictions, triggers, and flare history in a format
+              doctors actually read.
+            </p>
+            <a
+              href="#"
+              class="inline-flex items-center gap-2 bg-accent-peach hover:bg-accent-peach/90 text-white px-6 py-3 rounded-pill font-semibold transition-all hover:shadow-lg active:scale-95"
+              data-modal-trigger
+              data-cta-id="doctor_pack_export"
+              data-cta-text="Export Doctor Pack"
+            >
+              <span class="material-symbols-outlined">download</span>
+              Export Doctor Pack
+            </a>
+          </div>
+          <div class="relative">
+            <div
+              class="bg-bg-cream rounded-[2.5rem] p-6 md:p-8 shadow-soft border border-primary/5 hover-lift"
+            >
+              <div class="bg-white rounded-2xl p-6 shadow-card mb-4">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p class="font-display font-semibold text-primary">
+                      Doctor Summary
+                    </p>
+                    <p class="text-sm text-text-muted">Dec 10-24, 2024</p>
+                  </div>
+                  <div
+                    class="w-10 h-10 rounded-xl bg-accent-peach/20 flex items-center justify-center"
+                  >
+                    <span class="material-symbols-outlined text-accent-peach"
+                      >picture_as_pdf</span
+                    >
+                  </div>
+                </div>
+                <div class="h-24 flex items-end gap-1 mb-4">
+                  <div class="flex-1 bg-accent-mint/30 rounded-t h-[40%]"></div>
+                  <div class="flex-1 bg-accent-mint/30 rounded-t h-[60%]"></div>
+                  <div class="flex-1 bg-accent-rose/30 rounded-t h-[85%]"></div>
+                  <div class="flex-1 bg-accent-rose/30 rounded-t h-[75%]"></div>
+                  <div class="flex-1 bg-yellow-200/50 rounded-t h-[50%]"></div>
+                  <div class="flex-1 bg-accent-mint/30 rounded-t h-[35%]"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div class="p-3 bg-bg-cream rounded-xl">
+                    <p class="text-text-muted">Flare episodes</p>
+                    <p class="font-semibold text-primary">2 in 14 days</p>
+                  </div>
+                  <div class="p-3 bg-bg-cream rounded-xl">
+                    <p class="text-text-muted">Prediction accuracy</p>
+                    <p class="font-semibold text-primary">80%</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+       MULTIPLE CONDITIONS SECTION
+       ============================================ -->
+    <section
+      class="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-accent-peach/5 to-bg-cream relative overflow-hidden"
+    >
+      <div class="max-w-4xl mx-auto text-center relative z-10">
+        <div
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-accent-purple/20 text-sm font-semibold text-primary mb-6"
+        >
+          <span class="material-symbols-outlined text-lg">category</span>
+          Multiple Conditions
+        </div>
+        <h2
+          class="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-primary mb-4"
+        >
+          One system, many conditions—<br />without chaos.
+        </h2>
+        <p class="text-lg text-text-muted mb-10">
+          Separate symptom sets per condition. Shared drivers. One timeline that
+          still makes sense.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3 mb-10">
+          <span
+            class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+            >Endometriosis</span
+          >
+          <span
+            class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+            >PCOS</span
+          >
+          <span
+            class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+            >Long COVID</span
+          >
+          <span
+            class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+            >Chronic Fatigue</span
+          >
+          <span
+            class="px-5 py-3 bg-white rounded-pill shadow-card border border-primary/5 text-primary font-semibold hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+            >Fibromyalgia</span
+          >
+        </div>
+        <a
+          href="#"
+          class="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all"
+          data-modal-trigger
+          data-cta-id="conditions_setup"
+          data-cta-text="Set up your first focus question"
+        >
+          Set up your first focus question
+          <span class="material-symbols-outlined text-lg">arrow_forward</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============================================
+       CLOSING CTA SECTION
+       ============================================ -->
+    <section
+      id="cta"
+      class="py-16 md:py-24 px-4 md:px-6 bg-primary relative overflow-hidden"
+    >
+      <div class="max-w-4xl mx-auto text-center relative z-10">
+        <div
+          class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-8"
+        >
+          <span class="material-symbols-outlined text-white text-3xl"
+            >visibility</span
+          >
+        </div>
+        <h2
+          class="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-white mb-6"
+        >
+          Your flares have a forecast.
+        </h2>
+        <p
+          class="text-lg md:text-xl text-white/80 leading-relaxed mb-4 max-w-2xl mx-auto"
+        >
+          Chronic Life learns your body's lag effects and warning signs so you
+          can prepare, not just react.
+        </p>
+        <p class="text-base md:text-lg text-white/60 mb-10 max-w-xl mx-auto">
+          Get a 48-hour heads up. Stop being blindsided.
+        </p>
+        <div
+          class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
+        >
+          <a
+            href="#"
+            class="w-full sm:w-auto h-14 px-8 bg-white hover:bg-white/95 text-primary text-lg font-bold rounded-pill shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+            data-modal-trigger
+            data-cta-id="footer_primary"
+            data-cta-text="See your forecast"
+          >
+            See your forecast
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </a>
+        </div>
+        <div
+          class="flex items-center justify-center gap-6 text-white/60 text-sm"
+        >
+          <span class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">lock</span>
+            Your data stays private
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">cloud_off</span>
+            Works offline
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+       FOOTER
+       ============================================ -->
+    <footer class="py-12 px-4 md:px-6 bg-bg-cream border-t border-primary/5">
+      <div class="max-w-6xl mx-auto">
+        <div
+          class="flex flex-col md:flex-row justify-between items-center gap-6"
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center"
+            >
+              <span class="text-white font-display font-bold text-sm">C</span>
+            </div>
+            <span class="font-display font-semibold text-primary"
+              >Chronic Life</span
+            >
+          </div>
+          <div class="flex gap-8 text-sm font-medium text-text-muted">
+            <a href="#" class="hover:text-primary transition-colors"
+              >Features</a
+            >
+            <a href="#" class="hover:text-primary transition-colors">Privacy</a>
+            <a href="#" class="hover:text-primary transition-colors">Terms</a>
+            <a href="#" class="hover:text-primary transition-colors">Support</a>
+          </div>
+          <p class="text-sm text-text-muted">
+            © 2025 Chronic Life. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ============================================
+       EMAIL SIGNUP MODAL
+       ============================================ -->
+    <div
+      class="modal-overlay"
+      id="emailModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+      <div class="modal-container">
+        <div class="modal-content">
+          <div class="modal-blob-1"></div>
+          <div class="modal-blob-2"></div>
+          <button class="modal-close" id="modalClose" aria-label="Close modal">
+            <span class="material-symbols-outlined text-text-muted">close</span>
+          </button>
+          <div class="modal-form" id="modalForm">
+            <div class="text-center mb-6">
+              <div
+                class="w-14 h-14 rounded-2xl bg-accent-purple/20 flex items-center justify-center mx-auto mb-4"
+              >
+                <span class="material-symbols-outlined text-primary text-2xl"
+                  >visibility</span
+                >
+              </div>
+              <h3
+                id="modalTitle"
+                class="font-display text-2xl font-semibold text-primary mb-2"
+              >
+                See your forecast
+              </h3>
+              <p class="text-text-muted text-sm">
+                Join the waitlist for early access. Get a 48-hour heads up on
+                your flares.
+              </p>
+            </div>
+            <form id="emailForm" class="space-y-4">
+              <div>
+                <input
+                  type="email"
+                  id="emailInput"
+                  class="modal-input"
+                  placeholder="your@email.com"
+                  required
+                  autocomplete="email"
+                  aria-label="Email address"
+                />
+                <p
+                  id="emailError"
+                  class="text-accent-peach text-sm mt-2 hidden"
+                >
+                  Please enter a valid email address
+                </p>
+              </div>
+              <button type="submit" class="modal-submit" id="submitBtn">
+                Get early access
+                <span class="material-symbols-outlined text-lg"
+                  >arrow_forward</span
+                >
+              </button>
+            </form>
+            <p class="text-center text-xs text-text-muted/70 mt-4">
+              <span class="material-symbols-outlined text-xs align-middle"
+                >lock</span
+              >
+              No spam, ever. Unsubscribe anytime.
+            </p>
+          </div>
+          <div class="modal-success" id="modalSuccess">
+            <div class="success-icon">
+              <span class="material-symbols-outlined text-white text-3xl"
+                >check</span
+              >
+            </div>
+            <h3 class="font-display text-2xl font-semibold text-primary mb-2">
+              You're on the list!
+            </h3>
+            <p class="text-text-muted mb-6">
+              We'll reach out when Chronic Life is ready. See your flares coming
+              before they hit.
+            </p>
+            <button id="modalDone" class="modal-submit">
+              Done
+              <span class="material-symbols-outlined text-lg">check</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================
+       TRACKING & INTERACTION SCRIPTS
+       ============================================ -->
+    <script>
+      (function () {
+        'use strict';
+
+        /* ============================================
+         PAGE CONFIG - Update for each landing page
+         ============================================ */
+        const PAGE_ID = 'flare_forecast_landing';
+        const SUPABASE_URL = 'https://zvpudxinbcsrfyojrhhv.supabase.co';
+        const SUPABASE_ANON_KEY =
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cHVkeGluYmNzcmZ5b2pyaGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTE3MjksImV4cCI6MjA4MjUyNzcyOX0.5vV65qusPzu7847VxbiodRU0DZG1AryUuoklX3qFAWk';
+        const supabase = window.supabase
+          ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+          : null;
+        const UTM_PARAMS = [
+          'utm_source',
+          'utm_medium',
+          'utm_campaign',
+          'utm_content',
+          'utm_term',
+        ];
+
+        /* ============================================
+         UTILITY FUNCTIONS
+         ============================================ */
+        function generateSessionId() {
+          return (
+            'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+          );
+        }
+
+        function captureUTMParams() {
+          const params = new URLSearchParams(window.location.search);
+          const utm = {};
+          let hasUTM = false;
+          UTM_PARAMS.forEach((param) => {
+            const value = params.get(param);
+            if (value) {
+              utm[param] = value;
+              hasUTM = true;
+            }
+          });
+          if (hasUTM) {
+            sessionStorage.setItem('utm_data', JSON.stringify(utm));
+          }
+          if (!sessionStorage.getItem('session_id')) {
+            sessionStorage.setItem('session_id', generateSessionId());
+          }
+          return utm;
+        }
+
+        function getStoredUTM() {
+          try {
+            return JSON.parse(sessionStorage.getItem('utm_data')) || {};
+          } catch {
+            return {};
+          }
+        }
+
+        /* ============================================
+         TRACKING FUNCTIONS
+         ============================================ */
+        async function trackEvent(
+          eventType,
+          elementId = null,
+          elementText = null
+        ) {
+          if (!supabase) {
+            return;
+          }
+          const utm = getStoredUTM();
+          const sessionId = sessionStorage.getItem('session_id');
+          try {
+            await supabase.from('marketing_events').insert({
+              event_type: eventType,
+              utm_source: utm.utm_source || null,
+              utm_medium: utm.utm_medium || null,
+              utm_campaign: utm.utm_campaign || null,
+              utm_content: utm.utm_content || null,
+              utm_term: utm.utm_term || null,
+              element_id: elementId,
+              element_text: elementText,
+              page_url: window.location.href,
+              referrer: document.referrer || null,
+              session_id: sessionId,
+            });
+          } catch (err) {
+            console.error('Tracking error:', err);
+          }
+        }
+
+        async function submitSignup(email) {
+          if (!supabase) {
+            return { success: false, error: 'Supabase not initialized' };
+          }
+          const utm = getStoredUTM();
+          try {
+            const { error } = await supabase.from('beta_signups').insert({
+              email: email,
+              utm_source: utm.utm_source || null,
+              utm_medium: utm.utm_medium || null,
+              utm_campaign: utm.utm_campaign || null,
+              utm_content: utm.utm_content || null,
+              utm_term: utm.utm_term || null,
+              landing_url: window.location.href,
+              referrer: document.referrer || null,
+              user_agent: navigator.userAgent,
+            });
+            if (error) {
+              return { success: false, error: error.message };
+            }
+            await trackEvent('signup_complete', 'email_form', email);
+            return { success: true };
+          } catch (err) {
+            return { success: false, error: err.message };
+          }
+        }
+
+        /* ============================================
+         UTM-BASED CONDITION PILLS
+         Show relevant conditions based on ad targeting
+         ============================================ */
+        function updateConditionPills() {
+          const params = new URLSearchParams(window.location.search);
+          const utmContent =
+            params.get('utm_content') || params.get('utm_term') || '';
+          const utmSource = params.get('utm_source') || '';
+
+          // Condition mappings based on subreddit/UTM targeting
+          const conditionMap = {
+            // Specific condition targeting
+            fibromyalgia: ['Fibromyalgia', 'Chronic Pain', 'ME/CFS'],
+            fibro: ['Fibromyalgia', 'Chronic Pain', 'ME/CFS'],
+            long_covid: ['Long COVID', 'Post-Viral', 'ME/CFS'],
+            longcovid: ['Long COVID', 'Post-Viral', 'ME/CFS'],
+            endo: ['Endometriosis', 'PCOS', 'Chronic Pain'],
+            endometriosis: ['Endometriosis', 'PCOS', 'Chronic Pain'],
+            pots: ['POTS', 'Dysautonomia', 'ME/CFS'],
+            eds: ['EDS', 'Hypermobility', 'Chronic Pain'],
+            mecfs: ['ME/CFS', 'Chronic Fatigue', 'Long COVID'],
+            // Default fallback
+            default: ['Long COVID', 'ME/CFS', 'Fibromyalgia', 'POTS', 'EDS'],
+          };
+
+          // Find matching condition set
+          let conditions = conditionMap.default;
+          const searchTerms = [utmContent, utmSource].map((s) =>
+            s.toLowerCase()
+          );
+
+          for (const [key, value] of Object.entries(conditionMap)) {
+            if (searchTerms.some((term) => term.includes(key))) {
+              conditions = value;
+              break;
+            }
+          }
+
+          // Update pills in DOM
+          const pillsContainer = document.getElementById('conditionPills');
+          if (pillsContainer) {
+            pillsContainer.innerHTML = conditions
+              .map((c) => `<span class="condition-pill">${c}</span>`)
+              .join('');
+          }
+        }
+
+        /* ============================================
+         A/B HEADLINE TESTING
+         Toggle headlines based on UTM or random
+         ============================================ */
+        function updateHeadlines() {
+          const params = new URLSearchParams(window.location.search);
+          const variant = params.get('headline') || 'default';
+
+          document.querySelectorAll('h1[data-variant]').forEach((el) => {
+            el.classList.toggle('hidden', el.dataset.variant !== variant);
+          });
+        }
+
+        function updatePersona() {
+          const params = new URLSearchParams(window.location.search);
+          const personaParam = params.get('persona') || '2'; // Default to IMG_1272 (Maya)
+          
+          // Map persona parameter to image filename
+          // Supports: 0,1,2 OR marcus,jordan,maya
+          const personaMap = {
+            '0': 'IMG_1270.PNG',
+            '1': 'IMG_1271.PNG',
+            '2': 'IMG_1272.PNG',
+            'marcus': 'IMG_1270.PNG',
+            'jordan': 'IMG_1271.PNG',
+            'maya': 'IMG_1272.PNG'
+          };
+          
+          const personaImage = personaMap[personaParam.toLowerCase()] || personaMap['2'];
+          const personaImg = document.getElementById('heroPersonaImage');
+          
+          if (personaImg) {
+            personaImg.src = `personas/${personaImage}`;
+          }
+        }
+
+        /* ============================================
+         INITIALIZE
+         ============================================ */
+        captureUTMParams();
+        trackEvent('page_view', PAGE_ID, 'Flare Forecast Landing');
+        updateConditionPills();
+        updateHeadlines();
+        updatePersona();
+
+        // Expose tracking API globally
+        window.ChronicLifeTracking = { trackEvent, submitSignup, getStoredUTM };
+
+        /* ============================================
+         MODAL HANDLING
+         ============================================ */
+        const modal = document.getElementById('emailModal');
+        const modalContainer = modal.querySelector('.modal-container');
+        const modalClose = document.getElementById('modalClose');
+        const modalForm = document.getElementById('modalForm');
+        const modalSuccess = document.getElementById('modalSuccess');
+        const emailForm = document.getElementById('emailForm');
+        const emailInput = document.getElementById('emailInput');
+        const emailError = document.getElementById('emailError');
+        const submitBtn = document.getElementById('submitBtn');
+        const modalDone = document.getElementById('modalDone');
+
+        function openModal() {
+          modal.classList.add('active');
+          modalContainer.classList.add('active');
+          modal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => emailInput.focus(), 300);
+        }
+
+        function closeModal() {
+          modal.classList.remove('active');
+          modalContainer.classList.remove('active');
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+          setTimeout(() => {
+            modalForm.classList.remove('hidden');
+            modalSuccess.classList.remove('active');
+            emailInput.value = '';
+            emailInput.classList.remove('error');
+            emailError.classList.add('hidden');
+          }, 300);
+        }
+
+        function isValidEmail(email) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        emailForm.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          const email = emailInput.value.trim();
+          if (!isValidEmail(email)) {
+            emailInput.classList.add('error');
+            emailError.classList.remove('hidden');
+            return;
+          }
+          emailInput.classList.remove('error');
+          emailError.classList.add('hidden');
+          submitBtn.disabled = true;
+          submitBtn.innerHTML =
+            '<span class="material-symbols-outlined animate-spin">progress_activity</span> Submitting...';
+
+          let result = { success: true };
+          if (window.ChronicLifeTracking) {
+            result = await window.ChronicLifeTracking.submitSignup(email);
+          }
+
+          if (result.success) {
+            modalForm.classList.add('hidden');
+            modalSuccess.classList.add('active');
+          } else {
+            emailError.textContent = result.error?.includes('duplicate')
+              ? 'This email is already on the waitlist!'
+              : 'Something went wrong. Please try again.';
+            emailError.classList.remove('hidden');
+            emailInput.classList.add('error');
+          }
+          submitBtn.disabled = false;
+          submitBtn.innerHTML =
+            'Get early access <span class="material-symbols-outlined text-lg">arrow_forward</span>';
+        });
+
+        emailInput.addEventListener('input', function () {
+          emailInput.classList.remove('error');
+          emailError.classList.add('hidden');
+          emailError.textContent = 'Please enter a valid email address';
+        });
+
+        modalClose.addEventListener('click', closeModal);
+        modalDone.addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) {
+          if (e.target === modal) closeModal();
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && modal.classList.contains('active'))
+            closeModal();
+        });
+
+        // Attach modal triggers to all CTAs
+        document
+          .querySelectorAll('[data-modal-trigger]')
+          .forEach((btn, index) => {
+            btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              const elementId =
+                btn.dataset.ctaId ||
+                btn.id ||
+                btn.closest('section')?.id ||
+                `cta_${index}`;
+              const elementText =
+                btn.dataset.ctaText ||
+                btn.textContent?.trim().substring(0, 50) ||
+                'Unknown CTA';
+              if (window.ChronicLifeTracking) {
+                window.ChronicLifeTracking.trackEvent(
+                  'cta_click',
+                  elementId,
+                  elementText
+                );
+              }
+              openModal();
+            });
+          });
+      })();
+    </script>
+  </body>
+</html>
