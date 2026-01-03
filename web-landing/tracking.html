@@ -967,7 +967,7 @@
 
           renderDashboard(allEvents, allSignups);
           document.getElementById('lastUpdated').textContent =
-            new Date().toLocaleString();
+            new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
         } catch (err) {
           console.error('Error loading data:', err);
           document.getElementById('campaignTable').innerHTML = `
@@ -1175,12 +1175,7 @@
         } else {
           document.getElementById('signupsTable').innerHTML = recentSignups
             .map((s) => {
-              const date = new Date(s.created_at).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              });
+              const date = formatUTCDate(s.created_at);
               const emailEncoded = (s.email || '').replace(/"/g, '&quot;');
               return `
             <tr class="border-b border-primary/5 user-row-clickable" 
@@ -1548,6 +1543,26 @@
         if (seconds < 3600) return `${Math.round(seconds / 60)}m ${Math.round(seconds % 60)}s`;
         return `${Math.round(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`;
       }
+      
+      // Format date in UTC for consistency across timezones
+      function formatUTCDate(isoString) {
+        const d = new Date(isoString);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = months[d.getUTCMonth()];
+        const day = d.getUTCDate();
+        const hours = d.getUTCHours().toString().padStart(2, '0');
+        const mins = d.getUTCMinutes().toString().padStart(2, '0');
+        return `${month} ${day}, ${hours}:${mins} UTC`;
+      }
+      
+      // Format time only in UTC
+      function formatUTCTime(isoString) {
+        const d = new Date(isoString);
+        const hours = d.getUTCHours().toString().padStart(2, '0');
+        const mins = d.getUTCMinutes().toString().padStart(2, '0');
+        const secs = d.getUTCSeconds().toString().padStart(2, '0');
+        return `${hours}:${mins}:${secs} UTC`;
+      }
 
       // ===== USER JOURNEY MODAL =====
       async function showUserJourney(email) {
@@ -1608,9 +1623,7 @@
         document.getElementById('userAttrDevice').textContent = parseUserAgent(signup.user_agent);
         
         // Simple timeline
-        const date = new Date(signup.created_at).toLocaleString('en-US', {
-          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
+        const date = formatUTCDate(signup.created_at);
         
         document.getElementById('userJourneyTimeline').innerHTML = `
           <div class="journey-step step-signup">
@@ -1664,9 +1677,7 @@
         let prevTime = null;
         const timelineHtml = sessionEvents.map((event, index) => {
           const eventTime = new Date(event.created_at);
-          const timeStr = eventTime.toLocaleTimeString('en-US', { 
-            hour: '2-digit', minute: '2-digit', second: '2-digit' 
-          });
+          const timeStr = formatUTCTime(event.created_at);
           
           // Calculate time delta
           let timeDelta = '';
