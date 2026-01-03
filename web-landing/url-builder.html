@@ -293,10 +293,11 @@
               id="headlineSelect"
               class="w-full p-3 rounded-xl border border-primary/10 bg-bg-cream text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent-purple/50"
             >
-              <option value="">Default headline</option>
-              <option value="alt-1">Alternative 1</option>
-              <option value="alt-2">Alternative 2</option>
+              <!-- Options populated dynamically based on landing page -->
             </select>
+            <p id="headlinePreview" class="text-sm text-primary mt-3 p-3 bg-bg-cream rounded-xl border border-primary/10 italic">
+              <!-- Headline preview shown here -->
+            </p>
             <p class="text-xs text-text-muted mt-2">
               Each page has multiple headline variants for A/B testing
             </p>
@@ -478,6 +479,26 @@
     </main>
 
     <script>
+      // Headline variants for each landing page
+      // Maps landing page ID to its available headline variants
+      const headlineVariants = {
+        'flare-forecast': {
+          '': { label: 'Default', text: 'Your flares have a forecast.' },
+          'alt-1': { label: 'Early Warning', text: 'See flares coming 48 hours early.' },
+          'alt-2': { label: 'No Surprise', text: 'Stop being blindsided by flares.' },
+        },
+        'top-suspect': {
+          '': { label: 'Default', text: 'Stop guessing what\'s making you sick.' },
+          'alt-1': { label: 'The Culprit', text: 'Find the culprit behind your flares.' },
+          'alt-2': { label: 'Food/Stress', text: 'Was it the pizza or the stress?' },
+        },
+        'crash-prevention': {
+          '': { label: 'Default', text: 'Know when to stop before it\'s too late.' },
+          'alt-1': { label: 'Break Cycle', text: 'Break the boom-bust cycle.' },
+          'alt-2': { label: 'Tomorrow', text: 'Stop paying tomorrow for today.' },
+        },
+      };
+
       // State
       let config = {
         landing: 'flare-forecast',
@@ -497,6 +518,8 @@
       const copyToast = document.getElementById('copyToast');
       const urlHistory = document.getElementById('urlHistory');
       const clearHistoryBtn = document.getElementById('clearHistory');
+      const headlineSelect = document.getElementById('headlineSelect');
+      const headlinePreview = document.getElementById('headlinePreview');
 
       // Generate URL
       function generateURL() {
@@ -534,6 +557,33 @@
         urlPreview.textContent = url;
       }
 
+      // Populate headline dropdown based on selected landing page
+      function populateHeadlineVariants() {
+        const variants = headlineVariants[config.landing] || {};
+        headlineSelect.innerHTML = '';
+        
+        Object.entries(variants).forEach(([value, data]) => {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = `${data.label}: "${data.text.substring(0, 40)}${data.text.length > 40 ? '...' : ''}"`;
+          headlineSelect.appendChild(option);
+        });
+        
+        // Reset headline selection when landing page changes
+        config.headline = '';
+        headlineSelect.value = '';
+        updateHeadlinePreview();
+      }
+
+      // Update headline preview text
+      function updateHeadlinePreview() {
+        const variants = headlineVariants[config.landing] || {};
+        const selected = variants[config.headline] || variants[''];
+        if (selected) {
+          headlinePreview.textContent = `"${selected.text}"`;
+        }
+      }
+
       // Landing page selection
       document.querySelectorAll('input[name="landing"]').forEach((radio) => {
         radio.addEventListener('change', (e) => {
@@ -553,6 +603,8 @@
             'bg-accent-purple/10'
           );
 
+          // Repopulate headline variants for new landing page
+          populateHeadlineVariants();
           updateURL();
         });
       });
@@ -586,12 +638,11 @@
         .classList.add('selected');
 
       // Headline select
-      document
-        .getElementById('headlineSelect')
-        .addEventListener('change', (e) => {
-          config.headline = e.target.value;
-          updateURL();
-        });
+      headlineSelect.addEventListener('change', (e) => {
+        config.headline = e.target.value;
+        updateHeadlinePreview();
+        updateURL();
+      });
 
       // UTM inputs
       [
@@ -735,6 +786,7 @@
       });
 
       // Initialize
+      populateHeadlineVariants();
       updateURL();
       renderHistory();
     </script>
