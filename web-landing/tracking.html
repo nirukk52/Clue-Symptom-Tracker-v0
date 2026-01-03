@@ -129,6 +129,110 @@
       .campaign-row-clickable:hover {
         background-color: rgba(243, 240, 250, 0.7) !important;
       }
+      
+      /* User row clickable */
+      .user-row-clickable {
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .user-row-clickable:hover {
+        background-color: rgba(208, 189, 244, 0.2) !important;
+      }
+      
+      /* User journey modal */
+      .user-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(32, 19, 46, 0.95);
+        backdrop-filter: blur(8px);
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+      .user-modal.hidden {
+        display: none;
+      }
+      .user-modal-content {
+        background: white;
+        border-radius: 24px;
+        max-width: 700px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Journey timeline */
+      .journey-timeline {
+        position: relative;
+        padding-left: 2rem;
+      }
+      .journey-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #D0BDF4, #B8E3D6);
+        border-radius: 2px;
+      }
+      .journey-step {
+        position: relative;
+        padding-bottom: 1.5rem;
+      }
+      .journey-step:last-child {
+        padding-bottom: 0;
+      }
+      .journey-step::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 0.25rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #D0BDF4;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #D0BDF4;
+      }
+      .journey-step.step-signup::before {
+        background: #B8E3D6;
+        box-shadow: 0 0 0 2px #B8E3D6;
+      }
+      .journey-step.step-click::before {
+        background: #E8974F;
+        box-shadow: 0 0 0 2px #E8974F;
+      }
+      
+      /* Funnel visualization */
+      .funnel-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+      }
+      .funnel-stage {
+        text-align: center;
+        position: relative;
+      }
+      .funnel-bar {
+        height: 80px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        margin: 0 auto;
+      }
+      .funnel-arrow {
+        color: #ccc;
+        font-size: 2rem;
+        margin: 0 0.5rem;
+      }
     </style>
   </head>
   <body class="bg-bg-cream text-text-main antialiased min-h-screen">
@@ -199,6 +303,247 @@
           >
           Refresh
         </button>
+      </div>
+
+      <!-- ===== EXPERIMENT RESULTS SECTION ===== -->
+      <div class="bg-gradient-to-br from-accent-purple/10 to-accent-mint/10 rounded-3xl border border-accent-purple/20 p-8 mb-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-accent-purple/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-2xl">science</span>
+          </div>
+          <div>
+            <h2 class="font-display text-2xl font-semibold text-primary">Experiment Results</h2>
+            <p class="text-text-muted text-sm">The Clarity Experiment — $100 budget, 10 days</p>
+          </div>
+        </div>
+
+        <!-- Winner Banner -->
+        <div class="bg-accent-mint/30 rounded-2xl p-6 mb-6 border border-accent-mint/50">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-teal-700 text-xl">emoji_events</span>
+            <span class="font-bold text-teal-800 uppercase text-sm tracking-wide">Winner: Pattern Discovery</span>
+          </div>
+          <p class="font-display text-xl font-semibold text-primary mb-2">
+            Users want to <span class="text-teal-700">predict flares and find triggers</span> — not just track symptoms.
+          </p>
+          <p class="text-text-muted text-sm">
+            "Predict Flares" dominated with 59 clicks at $0.05 CPC. The "prediction" angle resonates 4.5x better than energy-saving or doctor-proof messaging.
+          </p>
+        </div>
+
+        <!-- Campaign Results Grid -->
+        <div class="grid md:grid-cols-3 gap-4">
+          
+          <!-- Ad Group 3: Pattern Discovery - WINNER -->
+          <div class="bg-white rounded-2xl p-5 border-2 border-accent-mint shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 right-0 bg-accent-mint text-teal-900 text-xs font-bold px-3 py-1 rounded-bl-xl">
+              🏆 WINNER
+            </div>
+            <div class="flex items-center gap-2 mb-3 mt-2">
+              <span class="material-symbols-outlined text-accent-mint">visibility</span>
+              <span class="font-semibold text-primary">Pattern Discovery</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-bg-cream rounded-xl p-3 text-center">
+                <p class="text-2xl font-display font-bold text-teal-700">72</p>
+                <p class="text-xs text-text-muted">Clicks</p>
+              </div>
+              <div class="bg-bg-cream rounded-xl p-3 text-center">
+                <p class="text-2xl font-display font-bold text-teal-700">$0.05</p>
+                <p class="text-xs text-text-muted">CPC</p>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-text-muted">predict_flares</span>
+                <span class="font-semibold text-accent-mint">59 clicks</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">find_triggers</span>
+                <span class="font-semibold text-primary">13 clicks</span>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-primary/10">
+              <p class="text-xs text-text-muted leading-relaxed">
+                <strong>AI Summary:</strong> Users strongly resonate with the promise of predicting flares before they happen. The "early warning system" angle outperformed all other messaging by 4x.
+              </p>
+            </div>
+          </div>
+
+          <!-- Ad Group 1: Exhaustion & Brain Fog -->
+          <div class="bg-white rounded-2xl p-5 border border-primary/10">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-outlined text-accent-peach">battery_low</span>
+              <span class="font-semibold text-primary">Exhaustion & Brain Fog</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-bg-cream rounded-xl p-3 text-center">
+                <p class="text-2xl font-display font-bold text-text-muted">8</p>
+                <p class="text-xs text-text-muted">Clicks</p>
+              </div>
+              <div class="bg-bg-cream rounded-xl p-3 text-center">
+                <p class="text-2xl font-display font-bold text-text-muted">$0.12</p>
+                <p class="text-xs text-text-muted">CPC</p>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-text-muted">spoon_saver</span>
+                <span class="text-text-muted">5 clicks</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">foggy_minds</span>
+                <span class="text-text-muted">3 clicks</span>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-primary/10">
+              <p class="text-xs text-text-muted leading-relaxed">
+                <strong>AI Summary:</strong> "Save energy" messaging didn't resonate. Users already know tracking is hard — they want solutions, not sympathy. Pivot away from this angle.
+              </p>
+            </div>
+          </div>
+
+          <!-- Ad Group 2: Doctor Mistrust -->
+          <div class="bg-white rounded-2xl p-5 border border-primary/10">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-outlined text-accent-rose">medical_information</span>
+              <span class="font-semibold text-primary">Doctor Mistrust</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-bg-cream rounded-xl p-3 text-center">
+                <p class="text-2xl font-display font-bold text-text-muted">11</p>
+                <p class="text-xs text-text-muted">Clicks</p>
+              </div>
+              <div class="bg-bg-cream rounded-xl p-3 text-center">
+                <p class="text-2xl font-display font-bold text-text-muted">$0.09</p>
+                <p class="text-xs text-text-muted">CPC</p>
+              </div>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-text-muted">doctor_proof</span>
+                <span class="text-text-muted">7 clicks</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">appointment_prep</span>
+                <span class="text-text-muted">4 clicks</span>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-primary/10">
+              <p class="text-xs text-text-muted leading-relaxed">
+                <strong>AI Summary:</strong> Doctor-proof messaging had moderate interest but lacks urgency. Users want personal insight first — doctor communication is a "nice to have," not primary.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Key Insights -->
+        <div class="mt-6 bg-white rounded-2xl p-5 border border-primary/10">
+          <h3 class="font-semibold text-primary mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">lightbulb</span>
+            Key Takeaways
+          </h3>
+          <div class="grid md:grid-cols-2 gap-4 text-sm">
+            <div class="flex gap-3">
+              <span class="material-symbols-outlined text-accent-mint text-lg mt-0.5">check_circle</span>
+              <div>
+                <p class="font-medium text-primary">Product Direction: Prediction Engine</p>
+                <p class="text-text-muted">Build flare forecasting and trigger detection as core features.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <span class="material-symbols-outlined text-accent-mint text-lg mt-0.5">check_circle</span>
+              <div>
+                <p class="font-medium text-primary">Messaging: "Know Before It Hits"</p>
+                <p class="text-text-muted">Lead with prediction/foresight, not energy savings.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <span class="material-symbols-outlined text-accent-peach text-lg mt-0.5">cancel</span>
+              <div>
+                <p class="font-medium text-primary">Deprioritize: "Save Spoons" Angle</p>
+                <p class="text-text-muted">Energy-saving messaging underperformed significantly.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <span class="material-symbols-outlined text-accent-blue text-lg mt-0.5">arrow_forward</span>
+              <div>
+                <p class="font-medium text-primary">Next Test: Prediction Depth</p>
+                <p class="text-text-muted">Testing: Flare Forecast vs Top Suspect vs Crash Prevention.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ===== END EXPERIMENT RESULTS ===== -->
+
+      <!-- Conversion Funnel Visualization -->
+      <div class="bg-white rounded-3xl border border-primary/5 p-6 mb-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-accent-purple/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary">filter_alt</span>
+          </div>
+          <div>
+            <h2 class="font-display text-xl font-semibold text-primary">Conversion Funnel</h2>
+            <p class="text-text-muted text-sm">Track visitors through to Beta signup</p>
+          </div>
+        </div>
+        
+        <div class="funnel-container">
+          <!-- Stage 1: Page Views -->
+          <div class="funnel-stage flex-1">
+            <div class="funnel-bar bg-accent-purple/20" style="width: 100%;">
+              <div class="text-center">
+                <p class="font-display text-2xl font-bold text-primary" id="funnelViews">-</p>
+                <p class="text-xs text-text-muted">Page Views</p>
+              </div>
+            </div>
+            <p class="text-xs text-text-muted mt-2" id="funnelViewsSessions">- unique sessions</p>
+          </div>
+          
+          <div class="funnel-arrow">→</div>
+          
+          <!-- Stage 2: CTA Clicks -->
+          <div class="funnel-stage flex-1">
+            <div class="funnel-bar bg-accent-peach/30" id="funnelClicksBar" style="width: 80%;">
+              <div class="text-center">
+                <p class="font-display text-2xl font-bold text-primary" id="funnelClicks">-</p>
+                <p class="text-xs text-text-muted">CTA Clicks</p>
+              </div>
+            </div>
+            <p class="text-xs text-text-muted mt-2"><span id="funnelClickRate">-</span> click rate</p>
+          </div>
+          
+          <div class="funnel-arrow">→</div>
+          
+          <!-- Stage 3: Signups (Final CTA) -->
+          <div class="funnel-stage flex-1">
+            <div class="funnel-bar bg-accent-mint/40" id="funnelSignupsBar" style="width: 60%;">
+              <div class="text-center">
+                <p class="font-display text-2xl font-bold text-teal-700" id="funnelSignups">-</p>
+                <p class="text-xs text-text-muted">Beta Signups</p>
+              </div>
+            </div>
+            <p class="text-xs text-accent-mint font-semibold mt-2"><span id="funnelConvRate">-</span> of clickers</p>
+          </div>
+        </div>
+        
+        <!-- Funnel insights -->
+        <div class="mt-6 pt-4 border-t border-primary/5 grid grid-cols-3 gap-4 text-center">
+          <div>
+            <p class="text-2xl font-display font-bold text-primary" id="funnelOverallConv">-</p>
+            <p class="text-xs text-text-muted">Overall Conversion</p>
+          </div>
+          <div>
+            <p class="text-2xl font-display font-bold text-accent-peach" id="funnelAvgClicks">-</p>
+            <p class="text-xs text-text-muted">Avg clicks before signup</p>
+          </div>
+          <div>
+            <p class="text-2xl font-display font-bold text-accent-purple" id="funnelTimeToConv">-</p>
+            <p class="text-xs text-text-muted">Avg time to signup</p>
+          </div>
+        </div>
       </div>
 
       <!-- Summary Cards -->
@@ -392,10 +737,18 @@
 
       <!-- Recent Signups -->
       <div class="bg-white rounded-3xl border border-primary/5 overflow-hidden">
-        <div class="px-6 py-4 border-b border-primary/5">
-          <h2 class="font-display text-xl font-semibold text-primary">
-            Recent Signups
-          </h2>
+        <div class="px-6 py-4 border-b border-primary/5 flex items-center justify-between">
+          <div>
+            <h2 class="font-display text-xl font-semibold text-primary">
+              Recent Signups
+            </h2>
+            <p class="text-text-muted text-sm mt-1">Click on a user to view their complete journey</p>
+          </div>
+          <div class="flex items-center gap-2 text-accent-mint">
+            <span class="material-symbols-outlined text-lg">celebration</span>
+            <span class="font-semibold" id="signupCount">0</span>
+            <span class="text-text-muted text-sm">total</span>
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full">
@@ -426,11 +779,16 @@
                 >
                   Date
                 </th>
+                <th
+                  class="px-6 py-3 text-right text-sm font-semibold text-text-muted"
+                >
+                  Journey
+                </th>
               </tr>
             </thead>
             <tbody id="signupsTable">
               <tr>
-                <td colspan="5" class="px-6 py-8 text-center text-text-muted">
+                <td colspan="6" class="px-6 py-8 text-center text-text-muted">
                   <span class="material-symbols-outlined animate-spin"
                     >progress_activity</span
                   >
@@ -473,6 +831,70 @@
         <div class="overflow-y-auto flex-1 px-6 py-4">
           <div id="referrerBreakdown">
             <p class="text-text-muted text-center py-8">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Journey Modal -->
+    <div class="user-modal hidden" id="userModal">
+      <div class="user-modal-content">
+        <div class="px-6 py-4 border-b border-primary/5 flex items-center justify-between bg-gradient-to-r from-accent-purple/10 to-accent-mint/10">
+          <div>
+            <h2 class="font-display text-xl font-semibold text-primary" id="userModalTitle">
+              User Journey
+            </h2>
+            <p class="text-text-muted text-sm mt-1" id="userModalEmail">-</p>
+          </div>
+          <button
+            onclick="closeUserModal()"
+            class="p-2 hover:bg-primary-light rounded-full transition-colors"
+          >
+            <span class="material-symbols-outlined text-primary">close</span>
+          </button>
+        </div>
+        
+        <!-- User summary stats -->
+        <div class="px-6 py-4 border-b border-primary/5 bg-bg-cream">
+          <div class="grid grid-cols-4 gap-4">
+            <div class="text-center">
+              <p class="font-display text-xl font-bold text-primary" id="userStatsEvents">-</p>
+              <p class="text-xs text-text-muted">Total Events</p>
+            </div>
+            <div class="text-center">
+              <p class="font-display text-xl font-bold text-accent-peach" id="userStatsClicks">-</p>
+              <p class="text-xs text-text-muted">CTA Clicks</p>
+            </div>
+            <div class="text-center">
+              <p class="font-display text-xl font-bold text-accent-purple" id="userStatsTime">-</p>
+              <p class="text-xs text-text-muted">Time to Signup</p>
+            </div>
+            <div class="text-center">
+              <p class="font-display text-xl font-bold text-accent-mint" id="userStatsSource">-</p>
+              <p class="text-xs text-text-muted">Source</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Journey timeline -->
+        <div class="overflow-y-auto flex-1 px-6 py-6">
+          <h3 class="font-semibold text-primary mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">timeline</span>
+            Complete Journey
+          </h3>
+          <div class="journey-timeline" id="userJourneyTimeline">
+            <p class="text-text-muted text-center py-8">Loading journey...</p>
+          </div>
+        </div>
+        
+        <!-- Attribution details -->
+        <div class="px-6 py-4 border-t border-primary/5 bg-bg-cream">
+          <h4 class="font-semibold text-primary text-sm mb-2">Attribution</h4>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div><span class="text-text-muted">Campaign:</span> <span class="font-medium" id="userAttrCampaign">-</span></div>
+            <div><span class="text-text-muted">Content:</span> <span class="font-medium" id="userAttrContent">-</span></div>
+            <div><span class="text-text-muted">Landing URL:</span> <span class="font-medium truncate block" id="userAttrUrl">-</span></div>
+            <div><span class="text-text-muted">Device:</span> <span class="font-medium" id="userAttrDevice">-</span></div>
           </div>
         </div>
       </div>
@@ -566,6 +988,10 @@
         document.getElementById('totalViews').textContent = pageViews.length;
         document.getElementById('totalClicks').textContent = clicks.length;
         document.getElementById('totalSignups').textContent = signups.length;
+        document.getElementById('signupCount').textContent = signups.length;
+
+        // Render funnel visualization
+        renderFunnel(events, signups);
 
         // Render CTA clicks breakdown
         renderCtaClicksTable(clicks);
@@ -741,7 +1167,7 @@
         if (recentSignups.length === 0) {
           document.getElementById('signupsTable').innerHTML = `
           <tr>
-            <td colspan="5" class="px-6 py-8 text-center text-text-muted">
+            <td colspan="6" class="px-6 py-8 text-center text-text-muted">
               No signups yet. Keep pushing!
             </td>
           </tr>
@@ -755,13 +1181,28 @@
                 hour: '2-digit',
                 minute: '2-digit',
               });
+              const emailEncoded = (s.email || '').replace(/"/g, '&quot;');
               return `
-            <tr class="border-b border-primary/5 hover:bg-bg-cream/50">
-              <td class="px-6 py-4 font-medium text-primary">${escapeHtml(s.email)}</td>
+            <tr class="border-b border-primary/5 user-row-clickable" 
+                data-email="${emailEncoded}"
+                onclick="showUserJourney('${emailEncoded}')">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full bg-accent-purple/20 flex items-center justify-center text-sm font-semibold text-primary">
+                    ${(s.email || '?')[0].toUpperCase()}
+                  </div>
+                  <span class="font-medium text-primary">${escapeHtml(s.email)}</span>
+                </div>
+              </td>
               <td class="px-6 py-4">${escapeHtml(s.utm_campaign || 'Direct')}</td>
               <td class="px-6 py-4 text-text-muted">${escapeHtml(s.utm_content || '-')}</td>
               <td class="px-6 py-4 text-text-muted">${escapeHtml(s.utm_source || 'Direct')}</td>
               <td class="px-6 py-4 text-text-muted">${date}</td>
+              <td class="px-6 py-4 text-right">
+                <span class="inline-flex items-center gap-1 text-accent-purple text-sm font-medium">
+                  View <span class="material-symbols-outlined text-base">arrow_forward</span>
+                </span>
+              </td>
             </tr>
           `;
             })
@@ -881,6 +1322,13 @@
             '/doctor-proof.html': 'Doctor Proof',
             '/find-triggers': 'Find Triggers',
             '/find-triggers.html': 'Find Triggers',
+            // New prediction depth test pages
+            '/flare-forecast': 'Flare Forecast',
+            '/flare-forecast.html': 'Flare Forecast',
+            '/top-suspect': 'Top Suspect',
+            '/top-suspect.html': 'Top Suspect',
+            '/crash-prevention': 'Crash Prevention',
+            '/crash-prevention.html': 'Crash Prevention',
           };
 
           return pageMap[pathname] || pathname.replace(/\//g, '') || 'Homepage';
@@ -907,6 +1355,10 @@
           'Appointment Prep': 'bg-accent-rose/20 text-rose-700',
           'Doctor Proof': 'bg-yellow-100 text-yellow-700',
           'Find Triggers': 'bg-indigo-100 text-indigo-700',
+          // New prediction depth test pages
+          'Flare Forecast': 'bg-accent-purple/20 text-purple-700',
+          'Top Suspect': 'bg-accent-peach/20 text-orange-700',
+          'Crash Prevention': 'bg-accent-mint/20 text-teal-700',
         };
         return colorMap[pageName] || 'bg-primary-light text-primary';
       }
@@ -1008,6 +1460,280 @@
             }
           });
         }
+        // Also setup user modal close
+        const userModal = document.getElementById('userModal');
+        if (userModal) {
+          userModal.addEventListener('click', function (e) {
+            if (e.target === this) {
+              closeUserModal();
+            }
+          });
+        }
+      }
+
+      // ===== FUNNEL VISUALIZATION =====
+      function renderFunnel(events, signups) {
+        const pageViews = events.filter(e => e.event_type === 'page_view');
+        const clicks = events.filter(e => e.event_type === 'cta_click');
+        
+        // Count unique sessions
+        const viewSessions = new Set(pageViews.map(e => e.session_id)).size;
+        const clickSessions = new Set(clicks.map(e => e.session_id)).size;
+        const signupCount = signups.length;
+        
+        // Update funnel numbers
+        document.getElementById('funnelViews').textContent = pageViews.length;
+        document.getElementById('funnelViewsSessions').textContent = `${viewSessions} unique sessions`;
+        document.getElementById('funnelClicks').textContent = clicks.length;
+        document.getElementById('funnelSignups').textContent = signupCount;
+        
+        // Calculate rates
+        const clickRate = viewSessions > 0 ? ((clickSessions / viewSessions) * 100).toFixed(1) : 0;
+        const convRate = clickSessions > 0 ? ((signupCount / clickSessions) * 100).toFixed(1) : 0;
+        const overallConv = viewSessions > 0 ? ((signupCount / viewSessions) * 100).toFixed(2) : 0;
+        
+        document.getElementById('funnelClickRate').textContent = `${clickRate}%`;
+        document.getElementById('funnelConvRate').textContent = `${convRate}%`;
+        document.getElementById('funnelOverallConv').textContent = `${overallConv}%`;
+        
+        // Calculate avg clicks before signup (from signup sessions only)
+        const signupEmails = signups.map(s => s.email);
+        const signupEvents = events.filter(e => 
+          e.event_type === 'signup_complete' && 
+          signupEmails.some(email => e.element_text && e.element_text.includes(email.split('@')[0]))
+        );
+        const signupSessionIds = new Set(signupEvents.map(e => e.session_id));
+        
+        let totalClicksBeforeSignup = 0;
+        signupSessionIds.forEach(sessionId => {
+          const sessionClicks = events.filter(e => 
+            e.session_id === sessionId && e.event_type === 'cta_click'
+          );
+          totalClicksBeforeSignup += sessionClicks.length;
+        });
+        const avgClicks = signupSessionIds.size > 0 
+          ? (totalClicksBeforeSignup / signupSessionIds.size).toFixed(1) 
+          : '-';
+        document.getElementById('funnelAvgClicks').textContent = avgClicks;
+        
+        // Calculate avg time to conversion
+        let totalTime = 0;
+        let validTimes = 0;
+        signupSessionIds.forEach(sessionId => {
+          const sessionEvents = events.filter(e => e.session_id === sessionId)
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          
+          if (sessionEvents.length >= 2) {
+            const firstEvent = new Date(sessionEvents[0].created_at);
+            const signupEvent = sessionEvents.find(e => e.event_type === 'signup_complete');
+            if (signupEvent) {
+              const timeDiff = (new Date(signupEvent.created_at) - firstEvent) / 1000; // seconds
+              totalTime += timeDiff;
+              validTimes++;
+            }
+          }
+        });
+        const avgTime = validTimes > 0 ? formatDuration(totalTime / validTimes) : '-';
+        document.getElementById('funnelTimeToConv').textContent = avgTime;
+        
+        // Adjust funnel bar widths based on ratios
+        const clickBarWidth = Math.max(20, Math.min(100, clickRate * 2));
+        const signupBarWidth = Math.max(15, Math.min(80, convRate * 2));
+        document.getElementById('funnelClicksBar').style.width = `${clickBarWidth}%`;
+        document.getElementById('funnelSignupsBar').style.width = `${signupBarWidth}%`;
+      }
+      
+      function formatDuration(seconds) {
+        if (seconds < 60) return `${Math.round(seconds)}s`;
+        if (seconds < 3600) return `${Math.round(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+        return `${Math.round(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`;
+      }
+
+      // ===== USER JOURNEY MODAL =====
+      async function showUserJourney(email) {
+        const modal = document.getElementById('userModal');
+        modal.classList.remove('hidden');
+        
+        // Set email in modal
+        document.getElementById('userModalEmail').textContent = email;
+        document.getElementById('userJourneyTimeline').innerHTML = `
+          <p class="text-text-muted text-center py-8">
+            <span class="material-symbols-outlined animate-spin">progress_activity</span>
+            <br>Loading journey...
+          </p>
+        `;
+        
+        // Find signup data
+        const signup = allSignups.find(s => s.email === email);
+        if (!signup) {
+          document.getElementById('userJourneyTimeline').innerHTML = `
+            <p class="text-text-muted text-center py-8">Signup data not found.</p>
+          `;
+          return;
+        }
+        
+        // Find session ID from signup_complete event
+        const signupEvent = allEvents.find(e => 
+          e.event_type === 'signup_complete' && 
+          e.element_text && e.element_text.includes(email.split('@')[0])
+        );
+        
+        if (!signupEvent) {
+          // No session tracking, show signup info only
+          renderUserJourneyNoSession(signup);
+          return;
+        }
+        
+        const sessionId = signupEvent.session_id;
+        
+        // Get all events for this session
+        const sessionEvents = allEvents
+          .filter(e => e.session_id === sessionId)
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        
+        renderUserJourney(signup, sessionEvents);
+      }
+      
+      function renderUserJourneyNoSession(signup) {
+        // Update stats
+        document.getElementById('userStatsEvents').textContent = '1';
+        document.getElementById('userStatsClicks').textContent = '-';
+        document.getElementById('userStatsTime').textContent = '-';
+        document.getElementById('userStatsSource').textContent = signup.utm_source || 'Direct';
+        
+        // Attribution
+        document.getElementById('userAttrCampaign').textContent = signup.utm_campaign || 'Direct';
+        document.getElementById('userAttrContent').textContent = signup.utm_content || '-';
+        document.getElementById('userAttrUrl').textContent = signup.landing_url || '-';
+        document.getElementById('userAttrDevice').textContent = parseUserAgent(signup.user_agent);
+        
+        // Simple timeline
+        const date = new Date(signup.created_at).toLocaleString('en-US', {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        
+        document.getElementById('userJourneyTimeline').innerHTML = `
+          <div class="journey-step step-signup">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="font-semibold text-primary flex items-center gap-2">
+                  <span class="material-symbols-outlined text-accent-mint text-lg">check_circle</span>
+                  Beta Signup
+                </p>
+                <p class="text-text-muted text-sm mt-1">${escapeHtml(signup.email)}</p>
+              </div>
+              <p class="text-xs text-text-muted">${date}</p>
+            </div>
+          </div>
+          <p class="text-text-muted text-sm mt-4 italic">
+            Note: Session tracking data not available for this signup.
+          </p>
+        `;
+      }
+      
+      function renderUserJourney(signup, sessionEvents) {
+        // Calculate stats
+        const totalEvents = sessionEvents.length;
+        const clickEvents = sessionEvents.filter(e => e.event_type === 'cta_click');
+        const totalClicks = clickEvents.length;
+        
+        // Time to signup
+        let timeToSignup = '-';
+        if (sessionEvents.length >= 2) {
+          const firstEvent = new Date(sessionEvents[0].created_at);
+          const lastSignup = sessionEvents.find(e => e.event_type === 'signup_complete');
+          if (lastSignup) {
+            const timeDiff = (new Date(lastSignup.created_at) - firstEvent) / 1000;
+            timeToSignup = formatDuration(timeDiff);
+          }
+        }
+        
+        // Update stats
+        document.getElementById('userStatsEvents').textContent = totalEvents;
+        document.getElementById('userStatsClicks').textContent = totalClicks;
+        document.getElementById('userStatsTime').textContent = timeToSignup;
+        document.getElementById('userStatsSource').textContent = signup.utm_source || 'Direct';
+        
+        // Attribution
+        document.getElementById('userAttrCampaign').textContent = signup.utm_campaign || 'Direct';
+        document.getElementById('userAttrContent').textContent = signup.utm_content || '-';
+        document.getElementById('userAttrUrl').textContent = signup.landing_url || '-';
+        document.getElementById('userAttrDevice').textContent = parseUserAgent(signup.user_agent);
+        
+        // Build timeline
+        let prevTime = null;
+        const timelineHtml = sessionEvents.map((event, index) => {
+          const eventTime = new Date(event.created_at);
+          const timeStr = eventTime.toLocaleTimeString('en-US', { 
+            hour: '2-digit', minute: '2-digit', second: '2-digit' 
+          });
+          
+          // Calculate time delta
+          let timeDelta = '';
+          if (prevTime) {
+            const delta = (eventTime - prevTime) / 1000;
+            timeDelta = `+${formatDuration(delta)}`;
+          }
+          prevTime = eventTime;
+          
+          // Determine step type and styling
+          let stepClass = '';
+          let icon = '';
+          let title = '';
+          let subtitle = '';
+          
+          if (event.event_type === 'page_view') {
+            stepClass = '';
+            icon = '<span class="material-symbols-outlined text-accent-purple text-lg">visibility</span>';
+            title = 'Page View';
+            subtitle = extractPageName(event.page_url);
+          } else if (event.event_type === 'cta_click') {
+            stepClass = 'step-click';
+            icon = '<span class="material-symbols-outlined text-accent-peach text-lg">touch_app</span>';
+            title = 'CTA Click';
+            subtitle = cleanElementText(event.element_text) || event.element_id || 'Unknown button';
+          } else if (event.event_type === 'signup_complete') {
+            stepClass = 'step-signup';
+            icon = '<span class="material-symbols-outlined text-accent-mint text-lg">check_circle</span>';
+            title = '✨ Beta Signup';
+            subtitle = event.element_text || signup.email;
+          }
+          
+          return `
+            <div class="journey-step ${stepClass}">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold text-primary flex items-center gap-2">
+                    ${icon}
+                    ${title}
+                  </p>
+                  <p class="text-text-muted text-sm mt-1 truncate">${escapeHtml(subtitle)}</p>
+                  ${event.element_id ? `<p class="text-xs text-text-muted/70 font-mono mt-0.5">${escapeHtml(event.element_id)}</p>` : ''}
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <p class="text-xs text-text-muted">${timeStr}</p>
+                  ${timeDelta ? `<p class="text-xs text-accent-purple font-medium">${timeDelta}</p>` : '<p class="text-xs text-text-muted">Start</p>'}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        document.getElementById('userJourneyTimeline').innerHTML = timelineHtml;
+      }
+      
+      function parseUserAgent(ua) {
+        if (!ua) return 'Unknown';
+        if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+        if (ua.includes('Android')) return 'Android';
+        if (ua.includes('Mac')) return 'Mac';
+        if (ua.includes('Windows')) return 'Windows';
+        if (ua.includes('Linux')) return 'Linux';
+        return 'Unknown';
+      }
+      
+      function closeUserModal() {
+        document.getElementById('userModal').classList.add('hidden');
       }
     </script>
   </body>
