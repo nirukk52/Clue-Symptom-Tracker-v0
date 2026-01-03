@@ -414,7 +414,7 @@ When user indicates an appointment (or it's upcoming):
 | Apple HealthKit | https://developer.apple.com/documentation/healthkit |
 | Google Fit      | https://developers.google.com/fit                   |
 
-https://chronic-life-landing.vercel.app?utm_source=reddit&utm_medium=paid&utm_campaign=chronic_brainfog_v1&utm_content=20sec
+https://chroniclife.app/predict-flares?utm_source=reddit&utm_medium=paid&utm_campaign=clarity_experiment&utm_content=predict_flares
 
 As an expert, mobile AI chat cofounder, with deep expertise in designing and developing mobile experiences that feel modern, personal, and intuitive.
 
