@@ -1271,22 +1271,69 @@
   }
 
   // ============================================
-  // AI SUMMARY
+  // AI SUMMARY (LLM-Powered via Summary Agent)
   // ============================================
+
+  // OpenAI API Key - Set via environment or config
+  // For production: Use Supabase Edge Function to keep key server-side
+  const OPENAI_API_KEY = ''; // TODO: Move to server-side edge function
+
+  /**
+   * Generates personalized conversion summary using LLM
+   * Falls back to template if LLM unavailable or fails
+   */
   async function generateSummary() {
     const summaryContainer = document.getElementById('cmSummaryContent');
+    let result;
 
-    const summary = buildSummary();
+    // Try LLM-powered summary if SummaryAgent is loaded and API key is set
+    if (window.SummaryAgent && OPENAI_API_KEY && modalSessionId) {
+      try {
+        // Assemble complete user context
+        const context = await window.SummaryAgent.assembleContext(
+          supabase,
+          modalSessionId
+        );
 
-    // Log AI generation
-    await logAIGeneration(summary);
+        // Generate personalized summary via LLM
+        result = await window.SummaryAgent.generateSummary(
+          context,
+          OPENAI_API_KEY
+        );
+
+        // Log AI generation with full context
+        await logAIGeneration(result, context);
+      } catch (err) {
+        console.error('LLM summary failed, using fallback:', err);
+        result = null;
+      }
+    }
+
+    // Fallback to template-based summary
+    if (!result) {
+      const fallbackSummary = buildFallbackSummary();
+      result = {
+        summary: {
+          title: fallbackSummary.headline,
+          benefits: fallbackSummary.features,
+          ctaText: 'Get started',
+        },
+        metadata: {
+          modelUsed: 'template_v2',
+          promptTemplateId: 'conversational_flow_v2',
+          tokensUsed: 0,
+          latencyMs: 0,
+        },
+      };
+      await logAIGeneration(result, null);
+    }
 
     // Render summary
     summaryContainer.innerHTML = `
       <div class="cm-summary-text">
-        <p class="cm-summary-headline">${summary.headline}</p>
+        <p class="cm-summary-headline">${result.summary.title}</p>
         <ul class="cm-summary-features">
-          ${summary.features
+          ${result.summary.benefits
             .map(
               (f) => `
             <li>
@@ -1305,10 +1352,12 @@
     authOptions.classList.remove('hidden');
   }
 
-  function buildSummary() {
+  /**
+   * Fallback template-based summary when LLM is unavailable
+   */
+  function buildFallbackSummary() {
     const q1Label = responses.q1?.label || 'your condition';
 
-    // Product-specific templates that incorporate Q1
     const templates = {
       'flare-forecast': {
         headline: `We'll learn your patterns and give you a heads up before ${q1Label.toLowerCase()} flares hit.`,
@@ -1347,24 +1396,34 @@
     return templates[currentProduct] || templates['flare-forecast'];
   }
 
-  async function logAIGeneration(summary) {
+  /**
+   * Logs AI generation to Supabase with full context
+   */
+  async function logAIGeneration(result, context) {
     if (!supabase || !modalSessionId) return;
 
     try {
       await supabase.from('ai_generations').insert({
         modal_session_id: modalSessionId,
         session_id: sessionStorage.getItem('session_id'),
-        context_json: {
+        context_json: context || {
           product: currentProduct,
           responses: responses,
           utm: Object.fromEntries(new URLSearchParams(window.location.search)),
         },
-        generated_headline: summary.headline,
-        generated_features: summary.features,
-        generated_cta: 'Get early access',
-        model_used: 'template_v2',
-        prompt_template_id: 'conversational_flow_v2',
+        generated_headline: result.summary.title,
+        generated_features: result.summary.benefits,
+        generated_cta: result.summary.ctaText || 'Get started',
+        full_output_json: result,
+        model_used: result.metadata.modelUsed,
+        prompt_template_id: result.metadata.promptTemplateId,
+        tokens_used: result.metadata.tokensUsed,
+        latency_ms: result.metadata.latencyMs,
         was_shown: true,
+        summary_variant:
+          result.metadata.modelUsed === 'gpt-4o-mini'
+            ? 'llm_v1'
+            : 'template_v2',
       });
     } catch (err) {
       console.error('Error logging AI generation:', err);
@@ -1449,11 +1508,15 @@
         user_agent: navigator.userAgent,
       });
 
-      // Update AI generation as converted
+      // Update AI generation as converted with CTA tracking
       if (modalSessionId) {
         await supabase
           .from('ai_generations')
-          .update({ converted: true })
+          .update({
+            converted: true,
+            cta_clicked: 'email_create',
+            cta_click_time: new Date().toISOString(),
+          })
           .eq('modal_session_id', modalSessionId);
       }
 
@@ -1512,6 +1575,17 @@
       '<span class="material-symbols-outlined cm-spin">progress_activity</span> Connecting...';
 
     try {
+      // Track CTA click on AI generation before redirect
+      if (modalSessionId) {
+        await supabase
+          .from('ai_generations')
+          .update({
+            cta_clicked: 'google_signin',
+            cta_click_time: new Date().toISOString(),
+          })
+          .eq('modal_session_id', modalSessionId);
+      }
+
       if (window.ChronicLifeTracking) {
         window.ChronicLifeTracking.trackEvent(
           'auth_google_click',
