@@ -518,24 +518,44 @@ Waitlist signups after clicking indicate how well the promise converts to commit
 
 ---
 
-## Quick Reference: All 9 URLs
+## Quick Reference: All 16 URLs (Prediction Depth Test v2)
 
-```
-# Ad Group 1: The Forecast (Time-Based)
-https://chroniclife.app/flare-forecast?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=flare_forecast
-https://chroniclife.app/flare-forecast?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=early_warning
-https://chroniclife.app/flare-forecast?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=2_day_lookahead
+### Ad Group 1: Flare Forecast (Time-Based) — $5-12/day
 
-# Ad Group 2: The Culprit (Variable-Based)
-https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=top_suspect
-https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=the_culprit
-https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=identify_trigger
+| Ad  | Headline                      | UTM Content           | Full URL                                                                                                                                    |
+| :-- | :---------------------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1A  | "Your flares have a forecast" | `forecast_default`    | `https://chroniclife.app/flare-forecast?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=forecast_default`    |
+| 1B  | "See flares 48h early"        | `forecast_48h`        | `https://chroniclife.app/flare-forecast?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=forecast_48h`        |
+| 1C  | "No more surprise flares"     | `forecast_blindsided` | `https://chroniclife.app/flare-forecast?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=forecast_blindsided` |
+| 1D  | "See the storm coming"        | `forecast_storm`      | `https://chroniclife.app/flare-forecast?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=forecast_storm`      |
 
-# Ad Group 3: The Preventer (Action-Based)
-https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=crash_prevention
-https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=rest_day_alert
-https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_test&utm_content=energy_budget
-```
+### Ad Group 2: Top Suspect (Variable-Based) — $5-12/day
+
+| Ad  | Headline                                | UTM Content       | Full URL                                                                                                                             |
+| :-- | :-------------------------------------- | :---------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| 2A  | "Stop guessing what's making you sick"  | `suspect_default` | `https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=suspect_default` |
+| 2B  | "Find the culprit behind your flares"   | `suspect_culprit` | `https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=suspect_culprit` |
+| 2C  | "Was it the pizza or the stress?"       | `suspect_pizza`   | `https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=suspect_pizza`   |
+| 2D  | "Finally know what's really causing it" | `suspect_ranked`  | `https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=suspect_ranked`  |
+
+### Ad Group 3: Crash Prevention (Action-Based) — $5-12/day
+
+| Ad  | Headline                                     | UTM Content            | Full URL                                                                                                                                       |
+| :-- | :------------------------------------------- | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3A  | "The app that tells you when to stop"        | `prevention_default`   | `https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=prevention_default`   |
+| 3B  | "Break the boom-bust cycle"                  | `prevention_boom_bust` | `https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=prevention_boom_bust` |
+| 3C  | "Stop paying tomorrow for today"             | `prevention_tomorrow`  | `https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=prevention_tomorrow`  |
+| 3D  | "The pacing app that tells you when to rest" | `prevention_pacing`    | `https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=prevention_pacing`    |
+
+### Ad Group 4: Spoon Saver (Low-Energy UX) — $5-12/day
+
+| Ad  | Headline                                      | UTM Content      | Full URL                                                                                                                            |
+| :-- | :-------------------------------------------- | :--------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
+| 4A  | "Track symptoms without draining energy"      | `spoon_default`  | `https://chroniclife.app/spoon-saver?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=spoon_default`  |
+| 4B  | "20-second check-ins for spoonies"            | `spoon_20sec`    | `https://chroniclife.app/spoon-saver?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=spoon_20sec`    |
+| 4C  | "Stop spending spoons on tracking"            | `spoon_spending` | `https://chroniclife.app/spoon-saver?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=spoon_spending` |
+| 4D  | "Tracking shouldn't cost you a spoon"         | `spoon_cost`     | `https://chroniclife.app/spoon-saver?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=spoon_cost`     |
+| 4E  | "Finally answer your biggest health question" | `spoon_focus`    | `https://chroniclife.app/spoon-saver?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=spoon_focus`    |
 
 ---
 
@@ -545,32 +565,98 @@ https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_c
 
 - `utm_source`: reddit
 - `utm_medium`: paid
-- `utm_campaign`: prediction_depth_test
-- `utm_content`: [ad-specific identifier]
+- `utm_campaign`: prediction_depth_v2
+- `utm_content`: [ad-specific identifier from table above]
 
-### Event Flow
+### Event Flow (New 2-Step Modal)
 
 ```
-page_view → cta_click → signup_complete
+page_view → landing_visits (log visit + persona)
+    ↓
+cta_click → modal_sessions (start)
+    ↓
+Step 1 (3 questions) → modal_responses
+    ↓
+Step 2 (2 questions) → modal_responses
+    ↓
+AI Summary → ai_generations
+    ↓
+email_submit → beta_signups + ai_generations.converted = true
 ```
 
-### Supabase Tables
+### Supabase Tables (New)
 
-- `marketing_events` — All page views and CTA clicks
-- `beta_signups` — Email submissions with UTM attribution
+| Table              | Purpose                                              |
+| :----------------- | :--------------------------------------------------- |
+| `campaign_config`  | All ad copy, landing copy, modal questions, personas |
+| `landing_visits`   | Enhanced page views with persona, UTM, engagement    |
+| `modal_sessions`   | Modal open/complete tracking with step progression   |
+| `modal_responses`  | Individual question answers with timing              |
+| `ai_generations`   | AI-generated summaries with context and conversion   |
+| `marketing_events` | Legacy: page views, CTA clicks                       |
+| `beta_signups`     | Email submissions with UTM attribution               |
+
+---
+
+## Modal Questions Summary
+
+### Step 1: Universal Questions (All CTAs)
+
+1. **What's your primary condition?** — Fibromyalgia, Long COVID/ME/CFS, PCOS/Endo, Migraine, IBS, Multiple
+2. **How do you track symptoms now?** — Don't, Notes/paper, Other app, Spreadsheet
+3. **How's your energy today?** — Good, Okay, Rough
+
+### Step 2: Product-Specific Questions
+
+**Flare Forecast:**
+
+- "If you could see a flare coming, what would you do?"
+- "How much warning would change your life?"
+
+**Top Suspect:**
+
+- "Which trigger are you most unsure about?"
+- "What would 'proof' look like for you?"
+
+**Crash Prevention:**
+
+- "What would 'permission to rest' look like?"
+- "What's your biggest pacing struggle?"
+
+**Spoon Saver:**
+
+- "What kills tracking for you?"
+- "What's the minimum you'd log on a bad day?"
 
 ---
 
 ## File Reference
 
-| File                                           | Purpose                             |
-| :--------------------------------------------- | :---------------------------------- |
-| `web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md` | This document                       |
-| `web-landing/flare-forecast.html`              | Ad Group 1 landing page (to create) |
-| `web-landing/top-suspect.html`                 | Ad Group 2 landing page (to create) |
-| `web-landing/crash-prevention.html`            | Ad Group 3 landing page (to create) |
-| `web-landing/tracking.html`                    | Campaign dashboard                  |
+| File                                           | Purpose                       |
+| :--------------------------------------------- | :---------------------------- |
+| `web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md` | This document                 |
+| `web-landing/campaign-modal.js`                | Shared 2-step modal component |
+| `web-landing/flare-forecast.html`              | Ad Group 1 landing page ✓     |
+| `web-landing/top-suspect.html`                 | Ad Group 2 landing page ✓     |
+| `web-landing/crash-prevention.html`            | Ad Group 3 landing page ✓     |
+| `web-landing/spoon-saver.html`                 | Ad Group 4 landing page ✓     |
+| `web-landing/tracking.html`                    | Campaign dashboard ✓          |
+| `web-landing/url-builder.html`                 | URL generator tool            |
 
 ---
 
-_Last Updated: January 2, 2026_
+## Campaign Launch Checklist
+
+- [ ] Deploy landing pages to Vercel
+- [ ] Verify all 16 URLs load correctly
+- [ ] Test modal flow on mobile and desktop
+- [ ] Verify Supabase tables are receiving data
+- [ ] Create Reddit ads in Reddit Ads Manager
+- [ ] Set daily budget: $5/ad group (total $20/day)
+- [ ] Target subreddits: r/ChronicIllness, r/Fibromyalgia, r/cfs, r/migraine, r/LongCOVID
+- [ ] Schedule ads to run for 5-10 days
+- [ ] Monitor tracking dashboard daily
+
+---
+
+_Last Updated: January 4, 2026_

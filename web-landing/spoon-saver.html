@@ -254,7 +254,11 @@
         transition:
           background 0.3s ease,
           border-color 0.3s ease,
-          box-shadow 0.3s ease;
+          box-shadow 0.3s ease,
+          top 0.3s ease,
+          left 0.3s ease,
+          right 0.3s ease,
+          border-radius 0.3s ease;
       }
       nav * {
         transition:
@@ -590,6 +594,12 @@
               >
                 Stop spending spoons on tracking.
               </h1>
+              <h1
+                class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.1] mb-4 md:mb-6 hidden"
+                data-variant="alt-focus"
+              >
+                Finally answer your biggest health question.
+              </h1>
 
               <p
                 class="text-lg md:text-xl text-white/80 leading-relaxed mb-6 md:mb-8 max-w-lg mx-auto md:mx-0"
@@ -622,8 +632,22 @@
                   data-modal-trigger
                   data-cta-id="hero_quick_checkin"
                   data-cta-text="Start a 20-second check-in"
+                  data-variant="default"
                 >
                   Start a 20-second check-in
+                  <span class="material-symbols-outlined text-lg"
+                    >arrow_forward</span
+                  >
+                </a>
+                <a
+                  href="#"
+                  class="hero-cta hidden"
+                  data-modal-trigger
+                  data-cta-id="hero_focus_question"
+                  data-cta-text="Set up your first focus question"
+                  data-variant="alt-focus"
+                >
+                  Set up your first focus question
                   <span class="material-symbols-outlined text-lg"
                     >arrow_forward</span
                   >
@@ -1314,6 +1338,9 @@
     </div>
 
     <!-- TRACKING SCRIPTS -->
+    <!-- Campaign Modal Component (2-step progressive disclosure) -->
+    <script src="campaign-modal.js"></script>
+
     <script>
       (function () {
         'use strict';
@@ -1464,14 +1491,26 @@
           // Map utm_content values to headline variants for this page
           const utmToVariantMap = {
             spoon_saver: 'default',
+            spoon_default: 'default',
             '20_second_checkins': 'alt-1',
+            spoon_20sec: 'alt-1',
             stop_spending_spoons: 'alt-2',
+            spoon_spending: 'alt-2',
+            spoon_focus: 'alt-focus', // "Set up your first focus question" CTA
+            focus_question: 'alt-focus',
           };
 
           // Priority: explicit headline param > utm_content mapping > default
           const variant =
             headlineParam || utmToVariantMap[utmContent] || 'default';
+          
+          // Update headline visibility
           document.querySelectorAll('h1[data-variant]').forEach((el) => {
+            el.classList.toggle('hidden', el.dataset.variant !== variant);
+          });
+          
+          // Update hero CTA visibility (matches headline variant)
+          document.querySelectorAll('.hero-cta[data-variant]').forEach((el) => {
             el.classList.toggle('hidden', el.dataset.variant !== variant);
           });
         }
