@@ -266,8 +266,40 @@
   let responses = {};
   let modalSessionId = null;
   let visitId = null;
+  let personaShown = null;
   let startTime = null;
   let questionStartTime = null;
+
+  // ============================================
+  // PERSONA HANDLING (Random A/B assignment)
+  // ============================================
+  function getPersona() {
+    const params = new URLSearchParams(window.location.search);
+    const urlPersona = params.get('persona');
+
+    // Allow URL override for testing
+    if (
+      urlPersona &&
+      ['maya', 'jordan', 'marcus'].includes(urlPersona.toLowerCase())
+    ) {
+      sessionStorage.setItem('assigned_persona', urlPersona.toLowerCase());
+      sessionStorage.setItem('persona_source', 'url_param');
+      return urlPersona.toLowerCase();
+    }
+
+    // Check if already assigned this session
+    const stored = sessionStorage.getItem('assigned_persona');
+    if (stored) {
+      return stored;
+    }
+
+    // Random assignment (33% each)
+    const personas = ['maya', 'jordan', 'marcus'];
+    const assigned = personas[Math.floor(Math.random() * personas.length)];
+    sessionStorage.setItem('assigned_persona', assigned);
+    sessionStorage.setItem('persona_source', 'random');
+    return assigned;
+  }
 
   // ============================================
   // INITIALIZATION
@@ -282,6 +314,9 @@
       .replace(/\//g, '')
       .replace('.html', '');
     currentProduct = PRODUCT_OFFERINGS[path] ? path : 'flare-forecast';
+
+    // Get or assign persona for A/B testing
+    personaShown = getPersona();
 
     createModalDOM();
     attachEventListeners();
@@ -310,6 +345,8 @@
           utm_content: params.get('utm_content'),
           utm_term: params.get('utm_term'),
           headline_variant: params.get('headline') || 'default',
+          persona_shown: personaShown,
+          persona_source: sessionStorage.getItem('persona_source') || 'random',
           user_agent: navigator.userAgent,
           device_type: getDeviceType(),
           referrer: document.referrer || null,
@@ -339,6 +376,7 @@
           visit_id: visitId,
           session_id: sessionStorage.getItem('session_id'),
           product_offering: currentProduct,
+          persona_shown: personaShown,
           utm_content: new URLSearchParams(window.location.search).get(
             'utm_content'
           ),

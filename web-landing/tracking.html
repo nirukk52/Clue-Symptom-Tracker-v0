@@ -768,31 +768,40 @@
             <span class="material-symbols-outlined text-lg">ballot</span>
             Modal Response Distribution
           </h3>
-          <div class="grid md:grid-cols-3 gap-6">
-            <!-- Condition Distribution -->
+          <div class="grid md:grid-cols-4 gap-6">
+            <!-- Q1: Entry Point -->
             <div>
               <p class="text-sm font-semibold text-text-muted mb-3">
-                Primary Condition
+                Q1: What brings you here?
               </p>
-              <div class="space-y-2" id="conditionDistribution">
+              <div class="space-y-2" id="q1Distribution">
                 <p class="text-text-muted text-xs">Loading...</p>
               </div>
             </div>
-            <!-- Tracking Status -->
+            <!-- Q2: Pain Point -->
             <div>
               <p class="text-sm font-semibold text-text-muted mb-3">
-                Current Tracking
+                Q2: Hardest part?
               </p>
-              <div class="space-y-2" id="trackingDistribution">
+              <div class="space-y-2" id="q2Distribution">
                 <p class="text-text-muted text-xs">Loading...</p>
               </div>
             </div>
-            <!-- Energy Level -->
+            <!-- Q3: Product Specific -->
             <div>
               <p class="text-sm font-semibold text-text-muted mb-3">
-                Energy Today
+                Q3: Product Question
               </p>
-              <div class="space-y-2" id="energyDistribution">
+              <div class="space-y-2" id="q3Distribution">
+                <p class="text-text-muted text-xs">Loading...</p>
+              </div>
+            </div>
+            <!-- Q4: Product Specific -->
+            <div>
+              <p class="text-sm font-semibold text-text-muted mb-3">
+                Q4: Outcome Desired
+              </p>
+              <div class="space-y-2" id="q4Distribution">
                 <p class="text-text-muted text-xs">Loading...</p>
               </div>
             </div>
@@ -1508,20 +1517,21 @@
           if (signupsEl) signupsEl.textContent = productSignups.length;
         });
 
-        // Render question distributions
+        // Render question distributions (new v2 question keys)
+        renderQuestionDistribution('q1_entry', 'q1Distribution', responses);
         renderQuestionDistribution(
-          'q1_condition',
-          'conditionDistribution',
+          'q2_pain_point',
+          'q2Distribution',
           responses
         );
         renderQuestionDistribution(
-          'q2_tracking',
-          'trackingDistribution',
+          'q3_product_specific',
+          'q3Distribution',
           responses
         );
         renderQuestionDistribution(
-          'q3_energy',
-          'energyDistribution',
+          'q4_product_specific',
+          'q4Distribution',
           responses
         );
 
