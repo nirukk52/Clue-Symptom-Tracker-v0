@@ -271,13 +271,19 @@
   let questionStartTime = null;
 
   // ============================================
-  // PERSONA HANDLING (Random A/B assignment)
+  // PERSONA HANDLING
+  // ============================================
+  // Available personas for future A/B testing:
+  //   - 'maya'   (default) - 38yo South Asian woman, fibro + long COVID
+  //   - 'jordan' - 28yo non-binary, younger demographic
+  //   - 'marcus' - 40yo Black man, quiet confidence
+  // To enable random 33% rotation, uncomment the random assignment block below.
   // ============================================
   function getPersona() {
     const params = new URLSearchParams(window.location.search);
     const urlPersona = params.get('persona');
 
-    // Allow URL override for testing
+    // Allow URL override for testing (e.g., ?persona=jordan)
     if (
       urlPersona &&
       ['maya', 'jordan', 'marcus'].includes(urlPersona.toLowerCase())
@@ -293,11 +299,13 @@
       return stored;
     }
 
-    // Random assignment (33% each)
-    const personas = ['maya', 'jordan', 'marcus'];
-    const assigned = personas[Math.floor(Math.random() * personas.length)];
+    // Default to Maya for now
+    // To enable random 33% A/B testing, replace the block below with:
+    // const personas = ['maya', 'jordan', 'marcus'];
+    // const assigned = personas[Math.floor(Math.random() * personas.length)];
+    const assigned = 'maya';
     sessionStorage.setItem('assigned_persona', assigned);
-    sessionStorage.setItem('persona_source', 'random');
+    sessionStorage.setItem('persona_source', 'default');
     return assigned;
   }
 
@@ -511,32 +519,63 @@
               <div class="cm-options" id="cmQ4Options"></div>
             </div>
 
-            <!-- Summary + Email screen -->
+            <!-- Summary + Auth screen -->
             <div class="cm-screen" id="cmSummary">
               <div class="cm-summary-content" id="cmSummaryContent">
                 <div class="cm-loading">
                   <span class="material-symbols-outlined cm-spin">progress_activity</span>
                 </div>
               </div>
-              <form id="cmEmailForm" class="cm-email-form hidden">
-                <input
-                  type="email"
-                  id="cmEmailInput"
-                  class="cm-input"
-                  placeholder="your@email.com"
-                  required
-                  autocomplete="email"
-                />
-                <p id="cmEmailError" class="cm-error hidden">Please enter a valid email</p>
-                <button type="submit" class="cm-submit" id="cmSubmitBtn">
-                  Get early access
-                  <span class="material-symbols-outlined">arrow_forward</span>
+
+              <!-- Auth Options Container -->
+              <div id="cmAuthOptions" class="cm-auth-options hidden">
+                <!-- Google Sign In -->
+                <button type="button" class="cm-google-btn" id="cmGoogleBtn">
+                  <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.26c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
+                    <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.002 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+                  </svg>
+                  Continue with Google
                 </button>
+
+                <!-- Divider -->
+                <div class="cm-divider">
+                  <span>or</span>
+                </div>
+
+                <!-- Email/Password Form -->
+                <form id="cmAuthForm" class="cm-auth-form">
+                  <input
+                    type="email"
+                    id="cmEmailInput"
+                    class="cm-input"
+                    placeholder="your@email.com"
+                    required
+                    autocomplete="email"
+                  />
+                  <input
+                    type="password"
+                    id="cmPasswordInput"
+                    class="cm-input"
+                    placeholder="Create a password"
+                    required
+                    autocomplete="new-password"
+                    minlength="6"
+                  />
+                  <p id="cmAuthError" class="cm-error hidden">Please check your email and password</p>
+                  <button type="submit" class="cm-submit" id="cmSubmitBtn">
+                    Create account
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                  </button>
+                </form>
+
                 <p class="cm-privacy">
                   <span class="material-symbols-outlined">lock</span>
-                  No spam, ever. Unsubscribe anytime.
+                  Your data stays private. We never share it.
                 </p>
-              </form>
+              </div>
             </div>
 
             <!-- Success screen -->
@@ -837,6 +876,75 @@
         }
         .cm-privacy .material-symbols-outlined {
           font-size: 0.875rem;
+        }
+
+        /* Auth Options */
+        .cm-auth-options {
+          margin-top: 1.5rem;
+        }
+        .cm-auth-options.hidden {
+          display: none;
+        }
+
+        /* Google Button */
+        .cm-google-btn {
+          width: 100%;
+          padding: 0.875rem 1.25rem;
+          border-radius: 9999px;
+          border: 2px solid rgba(32, 19, 46, 0.1);
+          background: white;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          font-family: 'DM Sans', system-ui, sans-serif;
+          color: #20132E;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          transition: all 0.2s ease;
+        }
+        .cm-google-btn:hover {
+          border-color: #D0BDF4;
+          background: rgba(208, 189, 244, 0.08);
+          box-shadow: 0 4px 12px -2px rgba(32, 20, 46, 0.1);
+        }
+        .cm-google-btn:active {
+          transform: scale(0.98);
+        }
+        .cm-google-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* Divider */
+        .cm-divider {
+          display: flex;
+          align-items: center;
+          margin: 1.25rem 0;
+        }
+        .cm-divider::before,
+        .cm-divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: rgba(32, 19, 46, 0.1);
+        }
+        .cm-divider span {
+          padding: 0 1rem;
+          font-size: 0.8125rem;
+          color: rgba(85, 75, 102, 0.6);
+          font-weight: 500;
+        }
+
+        /* Auth Form */
+        .cm-auth-form {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+        .cm-auth-form .cm-input {
+          margin-bottom: 0;
         }
 
         /* Summary content */
@@ -1167,7 +1275,6 @@
   // ============================================
   async function generateSummary() {
     const summaryContainer = document.getElementById('cmSummaryContent');
-    const emailForm = document.getElementById('cmEmailForm');
 
     const summary = buildSummary();
 
@@ -1193,8 +1300,9 @@
       </div>
     `;
 
-    // Show email form
-    emailForm.classList.remove('hidden');
+    // Show auth options
+    const authOptions = document.getElementById('cmAuthOptions');
+    authOptions.classList.remove('hidden');
   }
 
   function buildSummary() {
@@ -1264,32 +1372,72 @@
   }
 
   // ============================================
-  // EMAIL SUBMISSION
+  // AUTH SUBMISSION (Email/Password)
   // ============================================
   // eslint-disable-next-line max-lines-per-function -- Complex form handling
-  async function handleEmailSubmit(e) {
+  async function handleAuthSubmit(e) {
     e.preventDefault();
 
     const emailInput = document.getElementById('cmEmailInput');
-    const emailError = document.getElementById('cmEmailError');
+    const passwordInput = document.getElementById('cmPasswordInput');
+    const authError = document.getElementById('cmAuthError');
     const submitBtn = document.getElementById('cmSubmitBtn');
     const email = emailInput.value.trim();
+    const password = passwordInput.value;
 
-    // Validate
+    // Validate email
     if (!isValidEmail(email)) {
       emailInput.classList.add('error');
-      emailError.classList.remove('hidden');
+      authError.textContent = 'Please enter a valid email address';
+      authError.classList.remove('hidden');
+      return;
+    }
+
+    // Validate password
+    if (password.length < 6) {
+      passwordInput.classList.add('error');
+      authError.textContent = 'Password must be at least 6 characters';
+      authError.classList.remove('hidden');
       return;
     }
 
     // Submit
     submitBtn.disabled = true;
     submitBtn.innerHTML =
-      '<span class="material-symbols-outlined cm-spin">progress_activity</span> Submitting...';
+      '<span class="material-symbols-outlined cm-spin">progress_activity</span> Creating account...';
 
     try {
+      // Sign up with Supabase Auth
+      const { data: _authData, error: signUpError } =
+        await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              signup_source: 'campaign_modal',
+              product_offering: currentProduct,
+            },
+          },
+        });
+
+      if (signUpError) {
+        if (signUpError.message.includes('already registered')) {
+          authError.textContent =
+            'This email is already registered. Try signing in.';
+        } else {
+          authError.textContent =
+            signUpError.message || 'Something went wrong. Please try again.';
+        }
+        authError.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML =
+          'Create account <span class="material-symbols-outlined">arrow_forward</span>';
+        return;
+      }
+
+      // Also insert into beta_signups for marketing attribution
       const utm = new URLSearchParams(window.location.search);
-      const { error } = await supabase.from('beta_signups').insert({
+      await supabase.from('beta_signups').insert({
         email: email,
         utm_source: utm.get('utm_source'),
         utm_medium: utm.get('utm_medium'),
@@ -1300,15 +1448,6 @@
         referrer: document.referrer || null,
         user_agent: navigator.userAgent,
       });
-
-      if (error && error.message.includes('duplicate')) {
-        emailError.textContent = 'This email is already on the waitlist!';
-        emailError.classList.remove('hidden');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML =
-          'Get early access <span class="material-symbols-outlined">arrow_forward</span>';
-        return;
-      }
 
       // Update AI generation as converted
       if (modalSessionId) {
@@ -1321,7 +1460,7 @@
       // Track event
       if (window.ChronicLifeTracking) {
         window.ChronicLifeTracking.trackEvent(
-          'signup_complete',
+          'auth_signup_email',
           'campaign_modal_v2',
           email
         );
@@ -1329,14 +1468,90 @@
 
       goToSuccess();
     } catch (err) {
-      console.error('Signup error:', err);
-      emailError.textContent = 'Something went wrong. Please try again.';
-      emailError.classList.remove('hidden');
+      console.error('Auth error:', err);
+      authError.textContent = 'Something went wrong. Please try again.';
+      authError.classList.remove('hidden');
     }
 
     submitBtn.disabled = false;
     submitBtn.innerHTML =
-      'Get early access <span class="material-symbols-outlined">arrow_forward</span>';
+      'Create account <span class="material-symbols-outlined">arrow_forward</span>';
+  }
+
+  // ============================================
+  // GOOGLE SIGN IN
+  // ============================================
+  function storeUtmParamsForOAuth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmParams = {
+      source:
+        urlParams.get('utm_source') ||
+        sessionStorage.getItem('utm_source') ||
+        '',
+      campaign:
+        urlParams.get('utm_campaign') ||
+        sessionStorage.getItem('utm_campaign') ||
+        '',
+      content:
+        urlParams.get('utm_content') ||
+        sessionStorage.getItem('utm_content') ||
+        '',
+    };
+    Object.entries(utmParams).forEach(([key, value]) => {
+      if (value) sessionStorage.setItem(`utm_${key}`, value);
+    });
+    if (modalSessionId)
+      sessionStorage.setItem('modal_session_id', modalSessionId);
+    sessionStorage.setItem('product_offering', currentProduct);
+  }
+
+  async function handleGoogleSignIn() {
+    const googleBtn = document.getElementById('cmGoogleBtn');
+    googleBtn.disabled = true;
+    googleBtn.innerHTML =
+      '<span class="material-symbols-outlined cm-spin">progress_activity</span> Connecting...';
+
+    try {
+      if (window.ChronicLifeTracking) {
+        window.ChronicLifeTracking.trackEvent(
+          'auth_google_click',
+          'campaign_modal_v2',
+          'google_signin'
+        );
+      }
+      storeUtmParamsForOAuth();
+
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/auth-callback.html',
+        },
+      });
+
+      if (oauthError) {
+        console.error('Google auth error:', oauthError);
+        const authError = document.getElementById('cmAuthError');
+        authError.textContent = 'Google sign in failed. Please try again.';
+        authError.classList.remove('hidden');
+      }
+      // If successful, user will be redirected to Google
+    } catch (err) {
+      console.error('Google auth error:', err);
+      const authError = document.getElementById('cmAuthError');
+      authError.textContent = 'Something went wrong. Please try again.';
+      authError.classList.remove('hidden');
+    }
+
+    googleBtn.disabled = false;
+    googleBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+        <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.26c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
+        <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.96H.957C.347 6.175 0 7.55 0 9.002c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+        <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.002 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+      </svg>
+      Continue with Google
+    `;
   }
 
   // ============================================
@@ -1372,10 +1587,15 @@
       if (e.key === 'Escape') closeModal();
     });
 
-    // Email form
+    // Auth form (email/password)
     document
-      .getElementById('cmEmailForm')
-      ?.addEventListener('submit', handleEmailSubmit);
+      .getElementById('cmAuthForm')
+      ?.addEventListener('submit', handleAuthSubmit);
+
+    // Google Sign In button
+    document
+      .getElementById('cmGoogleBtn')
+      ?.addEventListener('click', handleGoogleSignIn);
 
     // Done button
     document.getElementById('cmDoneBtn')?.addEventListener('click', closeModal);
@@ -1383,8 +1603,16 @@
     // Email input reset
     document.getElementById('cmEmailInput')?.addEventListener('input', () => {
       document.getElementById('cmEmailInput').classList.remove('error');
-      document.getElementById('cmEmailError').classList.add('hidden');
+      document.getElementById('cmAuthError').classList.add('hidden');
     });
+
+    // Password input reset
+    document
+      .getElementById('cmPasswordInput')
+      ?.addEventListener('input', () => {
+        document.getElementById('cmPasswordInput').classList.remove('error');
+        document.getElementById('cmAuthError').classList.add('hidden');
+      });
   }
 
   // ============================================
@@ -1411,11 +1639,13 @@
       .forEach((s) => s.classList.remove('active'));
     document.getElementById('cmQ1').classList.add('active');
 
-    // Reset email form
-    document.getElementById('cmEmailForm').classList.add('hidden');
+    // Reset auth form
+    document.getElementById('cmAuthOptions').classList.add('hidden');
     document.getElementById('cmEmailInput').value = '';
+    document.getElementById('cmPasswordInput').value = '';
     document.getElementById('cmEmailInput').classList.remove('error');
-    document.getElementById('cmEmailError').classList.add('hidden');
+    document.getElementById('cmPasswordInput').classList.remove('error');
+    document.getElementById('cmAuthError').classList.add('hidden');
 
     // Start session
     await startModalSession();

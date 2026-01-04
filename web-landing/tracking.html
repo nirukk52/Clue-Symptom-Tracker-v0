@@ -214,6 +214,18 @@
         background: #e8974f;
         box-shadow: 0 0 0 2px #e8974f;
       }
+      .journey-step.step-google::before {
+        background: #4285F4;
+        box-shadow: 0 0 0 2px #4285F4;
+      }
+
+      /* Campaign filter dropdown */
+      #campaignFilter {
+        background-image: none;
+      }
+      #campaignFilter:focus {
+        box-shadow: 0 0 0 2px rgba(208, 189, 244, 0.3);
+      }
 
       /* Funnel visualization */
       .funnel-container {
@@ -307,15 +319,39 @@
           </h1>
           <p class="text-text-muted">Reddit ad performance for Chronic Life</p>
         </div>
-        <button
-          onclick="refreshData()"
-          class="flex items-center gap-2 px-4 py-2 bg-white border border-primary/10 rounded-full hover:bg-primary-light transition-colors"
-        >
-          <span class="material-symbols-outlined text-lg" id="refreshIcon"
-            >refresh</span
+        <div class="flex items-center gap-3">
+          <!-- Campaign Filter Dropdown -->
+          <div class="relative">
+            <select
+              id="campaignFilter"
+              onchange="filterByCampaign()"
+              class="appearance-none bg-white border border-primary/10 rounded-full px-4 py-2 pr-10 text-sm font-medium text-primary focus:outline-none focus:border-accent-purple cursor-pointer min-w-[200px]"
+            >
+              <option value="all">All Campaigns</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none text-lg">expand_more</span>
+          </div>
+          <button
+            onclick="refreshData()"
+            class="flex items-center gap-2 px-4 py-2 bg-white border border-primary/10 rounded-full hover:bg-primary-light transition-colors"
           >
-          Refresh
-        </button>
+            <span class="material-symbols-outlined text-lg" id="refreshIcon"
+              >refresh</span
+            >
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Filter Badge -->
+      <div id="activeFilterBadge" class="hidden mb-6">
+        <div class="inline-flex items-center gap-2 bg-accent-purple/10 border border-accent-purple/20 rounded-full px-4 py-2">
+          <span class="material-symbols-outlined text-accent-purple text-lg">filter_alt</span>
+          <span class="text-sm font-medium text-primary">Filtering by: <span id="activeFilterName" class="text-accent-purple">-</span></span>
+          <button onclick="clearCampaignFilter()" class="ml-2 p-1 hover:bg-accent-purple/20 rounded-full transition-colors">
+            <span class="material-symbols-outlined text-text-muted text-sm">close</span>
+          </button>
+        </div>
       </div>
 
       <!-- ===== EXPERIMENT RESULTS SECTION ===== -->
@@ -1382,6 +1418,12 @@
       // Store events and signups globally for referrer breakdown
       let allEvents = [];
       let allSignups = [];
+      let allLandingVisits = [];
+      let allModalSessions = [];
+      let allModalResponses = [];
+
+      // Current campaign filter
+      let selectedCampaign = 'all';
 
       // ===== PASSWORD GATE =====
       const passwordOverlay = document.getElementById('passwordOverlay');
@@ -1444,19 +1486,18 @@
           if (eventsError) throw eventsError;
           if (signupsError) throw signupsError;
 
-          // Store globally for referrer breakdown
+          // Store globally for referrer breakdown and filtering
           allEvents = events || [];
           allSignups = signups || [];
+          allLandingVisits = landingVisits || [];
+          allModalSessions = modalSessions || [];
+          allModalResponses = modalResponses || [];
 
-          renderDashboard(allEvents, allSignups);
+          // Populate campaign filter dropdown
+          populateCampaignFilter();
 
-          // Render Prediction Depth Test v2 section
-          renderPredictionDepthTest(
-            landingVisits || [],
-            modalSessions || [],
-            modalResponses || [],
-            signups || []
-          );
+          // Apply current filter and render
+          applyFilterAndRender();
 
           document.getElementById('lastUpdated').textContent =
             new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
@@ -1470,6 +1511,109 @@
           </tr>
         `;
         }
+      }
+
+      // ===== CAMPAIGN FILTER FUNCTIONS =====
+      function populateCampaignFilter() {
+        const campaignSelect = document.getElementById('campaignFilter');
+
+        // Collect all unique campaigns from events and signups
+        const campaigns = new Set();
+
+        allEvents.forEach(e => {
+          if (e.utm_campaign) campaigns.add(e.utm_campaign);
+        });
+        allSignups.forEach(s => {
+          if (s.utm_campaign) campaigns.add(s.utm_campaign);
+        });
+        allLandingVisits.forEach(v => {
+          if (v.utm_campaign) campaigns.add(v.utm_campaign);
+        });
+
+        // Sort campaigns alphabetically
+        const sortedCampaigns = Array.from(campaigns).sort();
+
+        // Build options HTML
+        let optionsHtml = '<option value="all">All Campaigns</option>';
+        optionsHtml += '<option value="direct">Direct (No Campaign)</option>';
+
+        sortedCampaigns.forEach(campaign => {
+          const selected = selectedCampaign === campaign ? 'selected' : '';
+          optionsHtml += `<option value="${escapeHtml(campaign)}" ${selected}>${escapeHtml(campaign)}</option>`;
+        });
+
+        campaignSelect.innerHTML = optionsHtml;
+
+        // Restore selected value
+        campaignSelect.value = selectedCampaign;
+      }
+
+      function filterByCampaign() {
+        const campaignSelect = document.getElementById('campaignFilter');
+        selectedCampaign = campaignSelect.value;
+
+        // Show/hide active filter badge
+        const badge = document.getElementById('activeFilterBadge');
+        const filterName = document.getElementById('activeFilterName');
+
+        if (selectedCampaign === 'all') {
+          badge.classList.add('hidden');
+        } else {
+          badge.classList.remove('hidden');
+          filterName.textContent = selectedCampaign === 'direct' ? 'Direct (No Campaign)' : selectedCampaign;
+        }
+
+        applyFilterAndRender();
+      }
+
+      function clearCampaignFilter() {
+        selectedCampaign = 'all';
+        document.getElementById('campaignFilter').value = 'all';
+        document.getElementById('activeFilterBadge').classList.add('hidden');
+        applyFilterAndRender();
+      }
+
+      function getFilteredData() {
+        if (selectedCampaign === 'all') {
+          return {
+            events: allEvents,
+            signups: allSignups,
+            landingVisits: allLandingVisits,
+            modalSessions: allModalSessions,
+            modalResponses: allModalResponses
+          };
+        }
+
+        const isDirect = selectedCampaign === 'direct';
+
+        const filterFn = (item) => {
+          if (isDirect) {
+            return !item.utm_campaign || item.utm_campaign === '';
+          }
+          return item.utm_campaign === selectedCampaign;
+        };
+
+        return {
+          events: allEvents.filter(filterFn),
+          signups: allSignups.filter(filterFn),
+          landingVisits: allLandingVisits.filter(filterFn),
+          modalSessions: allModalSessions.filter(filterFn),
+          modalResponses: allModalResponses.filter(filterFn)
+        };
+      }
+
+      function applyFilterAndRender() {
+        const filtered = getFilteredData();
+
+        renderDashboard(filtered.events, filtered.signups);
+
+        // Render Prediction Depth Test v2 section with filtered data
+        renderPredictionDepthTest(
+          filtered.landingVisits,
+          filtered.modalSessions,
+          filtered.modalResponses,
+          filtered.signups
+        );
       }
 
       // ===== PREDICTION DEPTH TEST V2 RENDERING =====
@@ -1616,6 +1760,8 @@
         // Calculate totals
         const pageViews = events.filter((e) => e.event_type === 'page_view');
         const clicks = events.filter((e) => e.event_type === 'cta_click');
+        const authGoogleClicks = events.filter((e) => e.event_type === 'auth_google_click');
+        const authEmailSignups = events.filter((e) => e.event_type === 'auth_signup_email');
 
         document.getElementById('totalViews').textContent = pageViews.length;
         document.getElementById('totalClicks').textContent = clicks.length;
@@ -1625,8 +1771,13 @@
         // Render funnel visualization
         renderFunnel(events, signups);
 
-        // Render CTA clicks breakdown
-        renderCtaClicksTable(clicks);
+        // Render CTA clicks breakdown (include auth events)
+        const allClicksForBreakdown = [
+          ...clicks,
+          ...authGoogleClicks,
+          ...authEmailSignups
+        ];
+        renderCtaClicksTable(allClicksForBreakdown);
 
         const convRate =
           clicks.length > 0
@@ -1854,7 +2005,9 @@
 
       // ===== CTA CLICKS BREAKDOWN =====
       function renderCtaClicksTable(clicks) {
-        const totalClicks = clicks.length;
+        // Include auth events in the clicks breakdown
+        const allClickEvents = [...clicks];
+        const totalClicks = allClickEvents.length;
 
         if (totalClicks === 0) {
           document.getElementById('ctaClicksTable').innerHTML = `
@@ -1870,12 +2023,20 @@
         // Group clicks by page + element
         const ctaGroups = {};
 
-        clicks.forEach((click) => {
+        allClickEvents.forEach((click) => {
           // Extract page name from URL
           const pageName = extractPageName(click.page_url);
-          const elementId = click.element_id || 'unknown';
-          const elementText =
-            cleanElementText(click.element_text) || 'Unknown Button';
+          let elementId = click.element_id || 'unknown';
+          let elementText = cleanElementText(click.element_text) || 'Unknown Button';
+
+          // Handle auth event types with friendly names
+          if (click.event_type === 'auth_google_click') {
+            elementId = 'google_signin';
+            elementText = 'Continue with Google';
+          } else if (click.event_type === 'auth_signup_email') {
+            elementId = 'email_signup';
+            elementText = 'Create Account (Email)';
+          }
 
           const key = `${pageName}|${elementId}|${elementText}`;
 
@@ -2102,10 +2263,12 @@
       function renderFunnel(events, signups) {
         const pageViews = events.filter((e) => e.event_type === 'page_view');
         const clicks = events.filter((e) => e.event_type === 'cta_click');
+        const authEmailSignups = events.filter((e) => e.event_type === 'auth_signup_email');
 
         // Count unique sessions
         const viewSessions = new Set(pageViews.map((e) => e.session_id)).size;
         const clickSessions = new Set(clicks.map((e) => e.session_id)).size;
+        // Total signups = beta_signups table + auth email signups
         const signupCount = signups.length;
 
         // Update funnel numbers
@@ -2398,6 +2561,18 @@
                 cleanElementText(event.element_text) ||
                 event.element_id ||
                 'Unknown button';
+            } else if (event.event_type === 'auth_google_click') {
+              stepClass = 'step-google';
+              icon =
+                '<span class="material-symbols-outlined text-blue-600 text-lg">login</span>';
+              title = 'Google Sign In';
+              subtitle = 'Initiated Google OAuth';
+            } else if (event.event_type === 'auth_signup_email') {
+              stepClass = 'step-signup';
+              icon =
+                '<span class="material-symbols-outlined text-accent-mint text-lg">person_add</span>';
+              title = '✨ Account Created (Email)';
+              subtitle = event.element_text || signup.email;
             } else if (event.event_type === 'signup_complete') {
               stepClass = 'step-signup';
               icon =

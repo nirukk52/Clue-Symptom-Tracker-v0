@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signing in... - Chronic Life</title>
+    <meta name="robots" content="noindex, nofollow" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#20132E',
+              'bg-cream': '#FDFBF9',
+              'accent-purple': '#D0BDF4',
+              'accent-mint': '#B8E3D6',
+              'text-muted': '#554b66',
+            },
+            fontFamily: {
+              display: ['Fraunces', 'Georgia', 'serif'],
+              body: ['DM Sans', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body { font-family: 'DM Sans', sans-serif; }
+      .font-display { font-family: 'Fraunces', Georgia, serif; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .animate-spin { animation: spin 1s linear infinite; }
+      @keyframes scaleIn {
+        from { transform: scale(0); }
+        to { transform: scale(1); }
+      }
+      .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    </style>
+  </head>
+  <body class="bg-bg-cream min-h-screen flex items-center justify-center p-4">
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center">
+      <div class="w-16 h-16 rounded-full bg-accent-purple/20 flex items-center justify-center mx-auto mb-6">
+        <span class="material-symbols-outlined text-primary text-3xl animate-spin">progress_activity</span>
+      </div>
+      <h1 class="font-display text-2xl font-semibold text-primary mb-2">Signing you in...</h1>
+      <p class="text-text-muted">Just a moment while we set things up</p>
+    </div>
+
+    <!-- Success State -->
+    <div id="successState" class="text-center hidden">
+      <div class="w-20 h-20 rounded-full bg-gradient-to-br from-accent-mint to-accent-purple/50 flex items-center justify-center mx-auto mb-6 animate-scale-in">
+        <span class="material-symbols-outlined text-white text-4xl">check</span>
+      </div>
+      <h1 class="font-display text-2xl font-semibold text-primary mb-2">You're all set!</h1>
+      <p class="text-text-muted mb-6">Your account has been created successfully.</p>
+      <p class="text-sm text-text-muted mb-8">We'll reach out when Chronic Life is ready for you.</p>
+      <a href="/" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-semibold hover:bg-primary/90 transition-colors">
+        Back to home
+        <span class="material-symbols-outlined text-lg">arrow_forward</span>
+      </a>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="text-center hidden">
+      <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-6">
+        <span class="material-symbols-outlined text-red-600 text-3xl">error</span>
+      </div>
+      <h1 class="font-display text-2xl font-semibold text-primary mb-2">Something went wrong</h1>
+      <p id="errorMessage" class="text-text-muted mb-6">We couldn't complete the sign in.</p>
+      <a href="/" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-semibold hover:bg-primary/90 transition-colors">
+        Try again
+        <span class="material-symbols-outlined text-lg">refresh</span>
+      </a>
+    </div>
+
+    <script>
+      (function() {
+        'use strict';
+
+        const SUPABASE_URL = 'https://zvpudxinbcsrfyojrhhv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cHVkeGluYmNzcmZ5b2pyaGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTE3MjksImV4cCI6MjA4MjUyNzcyOX0.5vV65qusPzu7847VxbiodRU0DZG1AryUuoklX3qFAWk';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const loadingState = document.getElementById('loadingState');
+        const successState = document.getElementById('successState');
+        const errorState = document.getElementById('errorState');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function showSuccess() {
+          loadingState.classList.add('hidden');
+          successState.classList.remove('hidden');
+        }
+
+        function showError(message) {
+          loadingState.classList.add('hidden');
+          errorMessage.textContent = message || 'We couldn\'t complete the sign in.';
+          errorState.classList.remove('hidden');
+        }
+
+        async function handleAuthCallback() {
+          try {
+            // Get session from URL hash (Supabase puts tokens in hash)
+            const { data: { session }, error } = await supabase.auth.getSession();
+
+            if (error) {
+              console.error('Auth callback error:', error);
+              showError(error.message);
+              return;
+            }
+
+            if (!session) {
+              // Try to exchange code for session (PKCE flow)
+              const hashParams = new URLSearchParams(window.location.hash.substring(1));
+              const queryParams = new URLSearchParams(window.location.search);
+
+              const accessToken = hashParams.get('access_token');
+              const refreshToken = hashParams.get('refresh_token');
+
+              if (accessToken) {
+                const { error: setError } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
+
+                if (setError) {
+                  console.error('Set session error:', setError);
+                  showError(setError.message);
+                  return;
+                }
+              } else {
+                showError('No authentication data received.');
+                return;
+              }
+            }
+
+            // Get user info
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+              showError('Could not retrieve user information.');
+              return;
+            }
+
+            // Get UTM params from sessionStorage (stored before OAuth redirect)
+            const utmSource = sessionStorage.getItem('utm_source') || null;
+            const utmCampaign = sessionStorage.getItem('utm_campaign') || null;
+            const utmContent = sessionStorage.getItem('utm_content') || null;
+            const productOffering = sessionStorage.getItem('product_offering') || null;
+
+            // Record signup in beta_signups for marketing attribution
+            await supabase.from('beta_signups').insert({
+              email: user.email,
+              utm_source: utmSource,
+              utm_medium: 'oauth',
+              utm_campaign: utmCampaign,
+              utm_content: utmContent,
+              landing_url: document.referrer || window.location.origin,
+              referrer: document.referrer || null,
+              user_agent: navigator.userAgent,
+            });
+
+            // Track the conversion event
+            const sessionId = sessionStorage.getItem('session_id');
+            await supabase.from('marketing_events').insert({
+              event_type: 'auth_signup_google',
+              utm_source: utmSource,
+              utm_medium: 'oauth',
+              utm_campaign: utmCampaign,
+              utm_content: utmContent,
+              element_id: 'google_oauth_callback',
+              element_text: user.email,
+              page_url: window.location.href,
+              referrer: document.referrer || null,
+              session_id: sessionId,
+            });
+
+            // Update AI generation as converted if modal_session_id exists
+            const modalSessionId = sessionStorage.getItem('modal_session_id');
+            if (modalSessionId) {
+              await supabase
+                .from('ai_generations')
+                .update({ converted: true })
+                .eq('modal_session_id', modalSessionId);
+
+              // Clean up after use
+              sessionStorage.removeItem('modal_session_id');
+            }
+
+            // Clean up product_offering after use
+            if (productOffering) {
+              sessionStorage.removeItem('product_offering');
+            }
+
+            showSuccess();
+
+          } catch (err) {
+            console.error('Unexpected error:', err);
+            showError('An unexpected error occurred.');
+          }
+        }
+
+        // Run on page load
+        handleAuthCallback();
+      })();
+    </script>
+  </body>
+</html>
