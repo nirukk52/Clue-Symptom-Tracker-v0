@@ -88,20 +88,19 @@
       .font-display {
         font-family: 'Fraunces', Georgia, serif;
       }
-      ::-webkit-scrollbar {
-        width: 8px;
+      /* Hide scrollbars across browsers while keeping scroll functionality */
+      html {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background-color: rgba(32, 19, 46, 0.15);
-        border-radius: 20px;
+      html::-webkit-scrollbar,
+      body::-webkit-scrollbar {
+        display: none; /* Safari and Chrome */
       }
 
       .hero-wrapper {
         background-color: #fdfbf9;
-        min-height: 100vh;
+        position: relative;
       }
       .hero-visible {
         background-color: #8ba4a8;
@@ -117,17 +116,20 @@
         .hero-visible {
           min-height: 100vh;
           border-radius: 0;
+          padding-top: 5rem;
+          padding-bottom: 0;
         }
       }
 
       @media (max-width: 767px) {
         .hero-wrapper {
           padding: 0.75rem;
-          padding-top: 5rem;
+          padding-top: 0.75rem;
         }
         .hero-visible {
           border-radius: 1.5rem;
-          min-height: calc(100vh - 6rem);
+          min-height: calc(100vh - 1.5rem);
+          padding-top: 5rem;
         }
       }
 
@@ -140,7 +142,7 @@
         .hero-persona {
           position: absolute;
           right: 0;
-          bottom: 0;
+          bottom: -1.5rem;
           height: 85vh;
           max-height: 750px;
           width: auto;
@@ -150,12 +152,18 @@
         }
       }
 
+      @media (min-width: 1280px) {
+        .hero-persona {
+          bottom: -2.5rem;
+        }
+      }
+
       @media (max-width: 767px) {
         .hero-persona {
           position: relative;
           width: 70%;
           max-width: 280px;
-          margin: 1.5rem auto 0;
+          margin: 1.5rem auto -1rem;
           display: block;
         }
       }
@@ -202,10 +210,67 @@
         transform: scale(0.98);
       }
 
-      .glass-nav {
-        background: rgba(255, 255, 255, 0.9);
+      .nav-transparent {
+        background: transparent;
+        border-color: transparent;
+      }
+      .nav-transparent .nav-logo-text,
+      .nav-transparent .nav-link {
+        color: white;
+      }
+      .nav-transparent .nav-logo-icon {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(4px);
+      }
+      .nav-transparent .nav-cta {
+        background: #f5e6a3;
+        color: #20132e;
+      }
+
+      .nav-solid {
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+        border-color: rgba(32, 19, 46, 0.05);
+        box-shadow: 0 2px 12px -2px rgba(32, 20, 46, 0.08);
+      }
+      .nav-solid .nav-logo-text,
+      .nav-solid .nav-link {
+        color: #20132e;
+      }
+      .nav-solid .nav-logo-icon {
+        background: #20132e;
+      }
+      .nav-solid .nav-cta {
+        background: #20132e;
+        color: white;
+      }
+
+      nav {
+        transition:
+          background 0.3s ease,
+          border-color 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+      nav * {
+        transition:
+          color 0.3s ease,
+          background 0.3s ease;
+      }
+
+      @media (max-width: 767px) {
+        #mainNav {
+          top: 0.75rem;
+          left: 0.75rem;
+          right: 0.75rem;
+          border-radius: 1.5rem 1.5rem 0 0;
+        }
+        #mainNav.nav-solid {
+          top: 0;
+          left: 0;
+          right: 0;
+          border-radius: 0;
+        }
       }
       .gradient-section {
         background: linear-gradient(
@@ -466,43 +531,44 @@
       ></iframe
     ></noscript>
 
-    <!-- Navigation -->
+    <!-- Navigation - starts transparent, becomes solid on scroll past hero -->
     <nav
-      class="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-primary/5"
+      id="mainNav"
+      class="fixed top-0 left-0 right-0 z-50 nav-transparent border-b"
     >
       <div
         class="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between"
       >
         <a href="/" class="flex items-center gap-2">
           <div
-            class="w-9 h-9 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-primary flex items-center justify-center"
+            class="nav-logo-icon w-9 h-9 md:w-10 md:h-10 rounded-xl md:rounded-2xl flex items-center justify-center transition-colors"
           >
             <span class="text-white font-display font-bold text-base md:text-lg"
               >C</span
             >
           </div>
           <span
-            class="text-lg md:text-xl font-display font-semibold text-primary"
+            class="nav-logo-text text-lg md:text-xl font-display font-semibold transition-colors"
             >Chronic Life</span
           >
         </a>
-        <div
-          class="hidden md:flex items-center gap-8 text-sm font-semibold text-text-muted"
-        >
-          <a href="#pacing" class="hover:text-primary transition-colors"
+        <div class="hidden md:flex items-center gap-8 text-sm font-semibold">
+          <a href="#pacing" class="nav-link hover:opacity-80 transition-all"
             >How it works</a
           >
-          <a href="#flare-mode" class="hover:text-primary transition-colors"
+          <a href="#flare-mode" class="nav-link hover:opacity-80 transition-all"
             >Flare Mode</a
           >
-          <a href="#doctor-pack" class="hover:text-primary transition-colors"
+          <a
+            href="#doctor-pack"
+            class="nav-link hover:opacity-80 transition-all"
             >Doctor Pack</a
           >
         </div>
         <div class="flex items-center gap-3">
           <a
             href="#"
-            class="bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 md:px-5 py-2 md:py-2.5 rounded-pill transition-all hover:shadow-lg active:scale-95"
+            class="nav-cta text-sm font-bold px-4 md:px-5 py-2 md:py-2.5 rounded-pill transition-all hover:shadow-lg active:scale-95"
             data-modal-trigger
             data-cta-id="nav_get_started"
             data-cta-text="Get Started"
@@ -518,11 +584,11 @@
     </nav>
 
     <!-- HERO SECTION -->
-    <header class="hero-wrapper">
-      <div class="hero-visible pt-24 md:pt-32">
-        <div class="max-w-7xl mx-auto px-4 md:px-8 relative">
+    <header id="heroSection" class="hero-wrapper">
+      <div class="hero-visible">
+        <div class="max-w-7xl mx-auto px-4 md:px-8 relative pt-4 md:pt-12">
           <div
-            class="flex flex-col md:flex-row md:items-center md:min-h-[calc(100vh-8rem)]"
+            class="flex flex-col md:flex-row md:items-center md:min-h-[calc(100vh-10rem)]"
           >
             <!-- Left: Text Content -->
             <div
@@ -1596,6 +1662,42 @@
               openModal();
             });
           });
+
+        // ========================================
+        // NAV SCROLL BEHAVIOR
+        // Transitions from transparent (in hero) to solid white (past hero)
+        // ========================================
+        const mainNav = document.getElementById('mainNav');
+        const heroSection = document.getElementById('heroSection');
+
+        function updateNavState() {
+          if (!mainNav || !heroSection) return;
+
+          const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+          const scrollY = window.scrollY;
+          const navHeight = mainNav.offsetHeight;
+
+          if (scrollY > heroBottom - navHeight - 50) {
+            mainNav.classList.remove('nav-transparent');
+            mainNav.classList.add('nav-solid');
+          } else {
+            mainNav.classList.remove('nav-solid');
+            mainNav.classList.add('nav-transparent');
+          }
+        }
+
+        let ticking = false;
+        window.addEventListener('scroll', function () {
+          if (!ticking) {
+            window.requestAnimationFrame(function () {
+              updateNavState();
+              ticking = false;
+            });
+            ticking = true;
+          }
+        });
+
+        updateNavState();
       })();
     </script>
   </body>
