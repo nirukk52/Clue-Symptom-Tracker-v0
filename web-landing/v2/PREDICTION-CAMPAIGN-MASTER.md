@@ -518,9 +518,18 @@ Waitlist signups after clicking indicate how well the promise converts to commit
 
 ---
 
-## Quick Reference: All 16 URLs (Prediction Depth Test v2)
+## Quick Reference: All 17 URLs (Prediction Depth Test v2)
 
 ### Ad Group 1: Flare Forecast (Time-Based) — $5-12/day
+
+**Keywords:**
+
+- `predict flare`, `flare forecast`, `symptom weather`
+- `chronic illness forecast`, `fibromyalgia flare prediction`
+- `when will i crash`, `health weather report`
+- `anticipate flare`, `flare warning signs`
+- `early warning chronic illness`, `body weather system`
+- `symptom prediction app`
 
 | Ad  | Headline                      | UTM Content           | Full URL                                                                                                                                    |
 | :-- | :---------------------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -531,6 +540,17 @@ Waitlist signups after clicking indicate how well the promise converts to commit
 
 ### Ad Group 2: Top Suspect (Variable-Based) — $5-12/day
 
+**Keywords:**
+
+- `find symptom triggers`, `food sensitivity tracker`
+- `migraine triggers`, `what triggers flares`
+- `symptom correlation`, `autoimmune trigger finder`
+- `sleep vs pain`, `hidden flare causes`
+- `diet symptom diary`, `why do i feel sick`
+- `isolate food sensitivity`, `weather pain correlation`
+- `cycle symptoms correlation`, `stress symptom correlation`
+- `what's making me worse`
+
 | Ad  | Headline                                | UTM Content       | Full URL                                                                                                                             |
 | :-- | :-------------------------------------- | :---------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
 | 2A  | "Stop guessing what's making you sick"  | `suspect_default` | `https://chroniclife.app/top-suspect?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=suspect_default` |
@@ -540,6 +560,17 @@ Waitlist signups after clicking indicate how well the promise converts to commit
 
 ### Ad Group 3: Crash Prevention (Action-Based) — $5-12/day
 
+**Keywords:**
+
+- `pacing chronic fatigue`, `prevent crash`
+- `spoon theory app`, `energy management`
+- `avoiding pem`, `rest pacing`
+- `daily energy budget`, `activity symptom correlation`
+- `when to rest`, `push vs rest day`
+- `chronic fatigue energy budget`, `spoon theory planner`
+- `avoiding crashes`, `pem prevention`
+- `boom bust cycle`
+
 | Ad  | Headline                                     | UTM Content            | Full URL                                                                                                                                       |
 | :-- | :------------------------------------------- | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
 | 3A  | "The app that tells you when to stop"        | `prevention_default`   | `https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=prevention_default`   |
@@ -548,6 +579,16 @@ Waitlist signups after clicking indicate how well the promise converts to commit
 | 3D  | "The pacing app that tells you when to rest" | `prevention_pacing`    | `https://chroniclife.app/crash-prevention?utm_source=reddit&utm_medium=paid&utm_campaign=prediction_depth_v2&utm_content=prevention_pacing`    |
 
 ### Ad Group 4: Spoon Saver (Low-Energy UX) — $5-12/day
+
+**Keywords:**
+
+- `low energy tracking`, `brain fog friendly app`
+- `symptom tracking fatigue`, `easy health tracking`
+- `quick symptom log`, `voice health diary`
+- `chronic illness app simple`, `minimal symptom tracker`
+- `bad day tracking`, `spoon counting app`
+- `energy tracking app`, `chronic fatigue tracker`
+- `one tap symptom log`
 
 | Ad  | Headline                                      | UTM Content      | Full URL                                                                                                                            |
 | :-- | :-------------------------------------------- | :--------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
@@ -648,7 +689,7 @@ email_submit → beta_signups + ai_generations.converted = true
 ## Campaign Launch Checklist
 
 - [ ] Deploy landing pages to Vercel
-- [ ] Verify all 16 URLs load correctly
+- [ ] Verify all 17 URLs load correctly
 - [ ] Test modal flow on mobile and desktop
 - [ ] Verify Supabase tables are receiving data
 - [ ] Create Reddit ads in Reddit Ads Manager
@@ -656,6 +697,107 @@ email_submit → beta_signups + ai_generations.converted = true
 - [ ] Target subreddits: r/ChronicIllness, r/Fibromyalgia, r/cfs, r/migraine, r/LongCOVID
 - [ ] Schedule ads to run for 5-10 days
 - [ ] Monitor tracking dashboard daily
+
+---
+
+## Tracking Audit: Complete User Journey
+
+### Journey Flow (Ad Click → Chat)
+
+```
+Reddit Ad → Landing Page → Modal Q1-Q4 → Summary → Auth → Chat
+    ↓            ↓             ↓           ↓        ↓      ↓
+utm_content  landing_visits  modal_     ai_gen-  beta_   chat_
+captured     + marketing_    sessions   erations signups conver-
+             events          + modal_           + user_  sations
+                             responses          contexts + chat_
+                                                         messages
+```
+
+### Supabase Tables & What They Track
+
+| Table                | Events Tracked                   | Key Fields                                                                              |
+| :------------------- | :------------------------------- | :-------------------------------------------------------------------------------------- |
+| `landing_visits`     | Page view + persona + engagement | `session_id`, `utm_content`, `product_offering`, `persona_shown`, `cta_clicked`         |
+| `marketing_events`   | CTA clicks + auth events         | `event_type`, `utm_content`, `session_id`, `element_id`                                 |
+| `modal_sessions`     | Modal open/progress/completion   | `visit_id`, `step_reached`, `completed`, `time_to_complete_ms`, `utm_content`           |
+| `modal_responses`    | Individual Q1-Q4 answers         | `modal_session_id`, `question_key`, `answer_value`, `time_to_answer_ms`                 |
+| `ai_generations`     | Summary shown + conversion       | `modal_session_id`, `generated_headline`, `converted`, `cta_clicked`, `summary_variant` |
+| `beta_signups`       | Email submission + attribution   | `email`, `utm_source`, `utm_campaign`, `utm_content`                                    |
+| `user_contexts`      | Q1-Q4 answers persisted per user | `email`, `q1_condition`, `q2_painpoint`, `product_offering`                             |
+| `chat_conversations` | Conversation start + attribution | `modal_session_id`, `user_email`, `utm_content`, `product_offering`                     |
+| `chat_messages`      | Each message in conversation     | `conversation_id`, `role`, `content`, `selected_chip`, `was_chip_selection`             |
+
+### Tracking Verification (January 2026)
+
+**✅ Working Correctly:**
+
+1. **Landing Visit Tracking** — `landing_visits` captures session_id, UTM params, product_offering, persona_shown
+2. **Modal Session Tracking** — `modal_sessions` tracks open, step progression, completion, abandonment
+3. **Modal Response Tracking** — `modal_responses` captures Q1-Q4 answers with timing data
+4. **AI Generation Tracking** — `ai_generations` logs headline/features/CTA with conversion flag
+5. **Beta Signup Attribution** — `beta_signups` captures email with full UTM attribution
+6. **User Context Persistence** — `user_contexts` stores Q1-Q4 answers per email for returning users
+7. **Chat Conversation Tracking** — `chat_conversations` links to modal_session + UTM attribution
+8. **Chat Message Tracking** — `chat_messages` captures role, content, chip selections
+
+**⚠️ Known Gaps (Minor):**
+
+1. **Chat conversation → modal_session_id**: Currently stored as text, not FK-linked (doesn't affect analysis)
+2. **OAuth chat redirect**: UTM params preserved via sessionStorage, verified working
+3. **marketing_events table**: Legacy table, still captures CTA clicks for backwards compatibility
+
+### Key Analytics Queries
+
+**Conversion Funnel by UTM Content:**
+
+```sql
+SELECT
+  lv.utm_content,
+  COUNT(DISTINCT lv.session_id) as visits,
+  COUNT(DISTINCT ms.id) as modal_opens,
+  COUNT(DISTINCT CASE WHEN ms.completed THEN ms.id END) as modal_completions,
+  COUNT(DISTINCT ag.id) as summaries_shown,
+  COUNT(DISTINCT CASE WHEN ag.converted THEN ag.id END) as signups,
+  ROUND(100.0 * COUNT(DISTINCT CASE WHEN ag.converted THEN ag.id END) / NULLIF(COUNT(DISTINCT lv.session_id), 0), 1) as conversion_rate
+FROM landing_visits lv
+LEFT JOIN modal_sessions ms ON lv.session_id = ms.session_id
+LEFT JOIN ai_generations ag ON ms.id = ag.modal_session_id
+WHERE lv.utm_campaign = 'prediction_depth_v2'
+GROUP BY lv.utm_content
+ORDER BY signups DESC;
+```
+
+**Q1 Answer Distribution by Product:**
+
+```sql
+SELECT
+  mr.product_offering,
+  mr.answer_label as condition,
+  COUNT(*) as responses,
+  ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY mr.product_offering), 1) as pct
+FROM modal_responses mr
+WHERE mr.question_key = 'q1_entry'
+GROUP BY mr.product_offering, mr.answer_label
+ORDER BY mr.product_offering, responses DESC;
+```
+
+**Chat Engagement by Product:**
+
+```sql
+SELECT
+  cc.product_offering,
+  COUNT(DISTINCT cc.id) as conversations,
+  COUNT(cm.id) as total_messages,
+  ROUND(AVG(message_counts.msg_count), 1) as avg_messages_per_conv
+FROM chat_conversations cc
+LEFT JOIN chat_messages cm ON cc.id = cm.conversation_id
+LEFT JOIN (
+  SELECT conversation_id, COUNT(*) as msg_count
+  FROM chat_messages GROUP BY conversation_id
+) message_counts ON cc.id = message_counts.conversation_id
+GROUP BY cc.product_offering;
+```
 
 ---
 
