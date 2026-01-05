@@ -329,6 +329,56 @@
     createModalDOM();
     attachEventListeners();
     logVisit();
+
+    // Check if returning from OAuth and should show chat
+    checkOAuthReturn();
+  }
+
+  /**
+   * Checks if user is returning from OAuth and should go directly to chat
+   */
+  async function checkOAuthReturn() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const showChat = urlParams.get('show_chat');
+
+    if (showChat === 'true') {
+      // Get user email from OAuth
+      const oauthEmail = sessionStorage.getItem('oauth_user_email');
+
+      // First, try to restore responses from sessionStorage (current session)
+      const storedResponses = sessionStorage.getItem('pending_chat_responses');
+      if (storedResponses) {
+        try {
+          const parsed = JSON.parse(storedResponses);
+          Object.assign(responses, parsed);
+        } catch (err) {
+          console.error('Error parsing stored responses:', err);
+        }
+      }
+
+      // If no session responses but we have email, try loading from Supabase (returning user)
+      if (!storedResponses && oauthEmail) {
+        await loadUserContext(oauthEmail);
+      }
+
+      // Clean up sessionStorage
+      sessionStorage.removeItem('pending_chat_redirect');
+      sessionStorage.removeItem('pending_chat_return_url');
+      sessionStorage.removeItem('pending_chat_responses');
+      sessionStorage.removeItem('oauth_user_email');
+
+      // Clean up URL (remove show_chat param)
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+
+      // Open modal directly to chat
+      openModal();
+
+      // Small delay to ensure modal is rendered, then go to chat
+      setTimeout(() => {
+        goToChat(oauthEmail);
+      }, 100);
+    }
   }
 
   // ============================================
@@ -578,16 +628,36 @@
               </div>
             </div>
 
-            <!-- Success screen -->
-            <div class="cm-screen" id="cmSuccess">
-              <div class="cm-success-content">
-                <div class="cm-success-icon">
-                  <span class="material-symbols-outlined">check</span>
+            <!-- Chat screen (replaces success) -->
+            <div class="cm-screen" id="cmChat">
+              <div class="cm-chat-container">
+                <!-- Chat messages area -->
+                <div class="cm-chat-messages" id="cmChatMessages">
+                  <!-- Messages will be inserted here -->
                 </div>
-                <h3 class="cm-title">You're on the list!</h3>
-                <p class="cm-subtitle">We'll reach out when Chronic Life is ready for you.</p>
-                <button class="cm-submit" id="cmDoneBtn">
-                  Done
+
+                <!-- Quick reply chips -->
+                <div class="cm-chat-chips" id="cmChatChips">
+                  <!-- Dynamic chips based on Q1 answer -->
+                </div>
+
+                <!-- Chat input -->
+                <div class="cm-chat-input-wrapper">
+                  <input
+                    type="text"
+                    id="cmChatInput"
+                    class="cm-chat-input"
+                    placeholder="Or type your own..."
+                    autocomplete="off"
+                  />
+                  <button type="button" id="cmChatSend" class="cm-chat-send">
+                    <span class="material-symbols-outlined">send</span>
+                  </button>
+                </div>
+
+                <!-- Done button (shown after a few exchanges) -->
+                <button class="cm-chat-done hidden" id="cmChatDone">
+                  Got it, thanks!
                   <span class="material-symbols-outlined">check</span>
                 </button>
               </div>
@@ -994,28 +1064,208 @@
           flex-shrink: 0;
         }
 
-        /* Success */
-        .cm-success-content {
-          text-align: center;
+        /* Chat Screen */
+        .cm-chat-container {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          min-height: 320px;
+          max-height: 60vh;
         }
-        .cm-success-icon {
-          width: 4rem;
-          height: 4rem;
+
+        .cm-chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding-bottom: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        /* Chat bubbles */
+        .cm-chat-bubble {
+          max-width: 85%;
+          padding: 1rem 1.25rem;
+          border-radius: 1.5rem;
+          font-size: 0.9375rem;
+          line-height: 1.5;
+          animation: cmBubbleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .cm-chat-bubble.assistant {
+          align-self: flex-start;
+          background: white;
+          color: #20132E;
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          border-bottom-left-radius: 0.375rem;
+          box-shadow: 0 2px 8px -2px rgba(32, 20, 69, 0.08);
+        }
+
+        .cm-chat-bubble.user {
+          align-self: flex-end;
+          background: #20132E;
+          color: white;
+          border-bottom-right-radius: 0.375rem;
+        }
+
+        .cm-chat-bubble.typing {
+          display: flex;
+          gap: 0.25rem;
+          padding: 1rem 1.5rem;
+        }
+
+        .cm-typing-dot {
+          width: 0.5rem;
+          height: 0.5rem;
           border-radius: 50%;
-          background: linear-gradient(135deg, #B8E3D6 0%, #A4C8D8 100%);
+          background: #A4C8D8;
+          animation: cmTypingPulse 1.4s infinite ease-in-out;
+        }
+
+        .cm-typing-dot:nth-child(1) { animation-delay: 0s; }
+        .cm-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .cm-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes cmTypingPulse {
+          0%, 60%, 100% { transform: scale(1); opacity: 0.4; }
+          30% { transform: scale(1.2); opacity: 1; }
+        }
+
+        @keyframes cmBubbleIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        /* Quick reply chips */
+        .cm-chat-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-bottom: 0.75rem;
+          justify-content: center;
+        }
+
+        .cm-chat-chip {
+          padding: 0.625rem 1rem;
+          border-radius: 9999px;
+          border: 1px solid rgba(32, 19, 46, 0.15);
+          background: white;
+          color: #20132E;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+
+        .cm-chat-chip:hover {
+          border-color: #D0BDF4;
+          background: rgba(208, 189, 244, 0.1);
+          transform: translateY(-1px);
+        }
+
+        .cm-chat-chip:active {
+          transform: scale(0.97);
+        }
+
+        .cm-chat-chip.selected {
+          background: #E0D4FC;
+          border-color: #20132E;
+        }
+
+        /* Chat input */
+        .cm-chat-input-wrapper {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .cm-chat-input {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          border-radius: 9999px;
+          border: 1px solid rgba(32, 19, 46, 0.15);
+          background: white;
+          font-size: 0.9375rem;
+          color: #20132E;
+          outline: none;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .cm-chat-input:focus {
+          border-color: #D0BDF4;
+          box-shadow: 0 0 0 3px rgba(208, 189, 244, 0.2);
+        }
+
+        .cm-chat-input::placeholder {
+          color: #999;
+        }
+
+        .cm-chat-send {
+          width: 2.75rem;
+          height: 2.75rem;
+          border-radius: 50%;
+          background: #20132E;
+          border: none;
+          color: white;
+          cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 0 auto 1.5rem;
-          animation: cmScaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.2s ease;
+          flex-shrink: 0;
         }
-        .cm-success-icon .material-symbols-outlined {
-          font-size: 2rem;
-          color: white;
+
+        .cm-chat-send:hover {
+          background: #352648;
+          transform: scale(1.05);
         }
-        @keyframes cmScaleIn {
-          from { transform: scale(0); }
-          to { transform: scale(1); }
+
+        .cm-chat-send:active {
+          transform: scale(0.95);
+        }
+
+        .cm-chat-send:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .cm-chat-send .material-symbols-outlined {
+          font-size: 1.25rem;
+        }
+
+        /* Done button */
+        .cm-chat-done {
+          width: 100%;
+          margin-top: 1rem;
+          padding: 0.875rem 1.5rem;
+          border-radius: 9999px;
+          background: linear-gradient(135deg, #B8E3D6 0%, #A4C8D8 100%);
+          border: none;
+          color: #20132E;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          transition: all 0.2s ease;
+        }
+
+        .cm-chat-done:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px -2px rgba(32, 20, 46, 0.15);
+        }
+
+        .cm-chat-done.hidden {
+          display: none;
         }
 
         /* Color utilities */
@@ -1259,34 +1509,701 @@
       .forEach((s) => s.classList.remove('active'));
     document.getElementById('cmSummary').classList.add('active');
 
+    // Show auth options IMMEDIATELY (no delay)
+    const authOptions = document.getElementById('cmAuthOptions');
+    authOptions.classList.remove('hidden');
+
+    // Generate summary in background (doesn't block auth)
     generateSummary();
   }
 
-  function goToSuccess() {
+  // ============================================
+  // CHAT SCREEN (Post-Signup)
+  // ============================================
+
+  // Chat state
+  let chatConversationId = null;
+  let chatMessages = [];
+  let chatUserEmail = null;
+  let chatMessageCount = 0;
+
+  // Dynamic chips based on Q1 answer
+  const CHAT_CHIPS_BY_Q1 = {
+    fatigue: ['Low energy', 'Brain fog', 'Just tired'],
+    flares: ['Starting to flare', 'Feeling okay', 'Not sure'],
+    migraines: ['Head hurts', 'Aura symptoms', 'Feeling fine'],
+    ibs_gut: ['Stomach issues', 'Bloated', 'Doing okay'],
+    multiple: ['Rough day', 'Managing', 'Better today'],
+    other: ['Not great', 'Okay', 'Pretty good'],
+  };
+
+  /**
+   * Transitions to the chat screen after successful signup
+   */
+  async function goToChat(email = null) {
+    chatUserEmail = email;
+    chatMessages = [];
+    chatMessageCount = 0;
+
+    // Show chat screen
     document
       .querySelectorAll('.cm-screen')
       .forEach((s) => s.classList.remove('active'));
-    document.getElementById('cmSuccess').classList.add('active');
+    document.getElementById('cmChat').classList.add('active');
+
+    // Create conversation in Supabase
+    await createChatConversation();
+
+    // Store user context for future sessions
+    await storeUserContext();
+
+    // Attach input listeners
+    attachChatListeners();
+
+    // Show typing indicator while generating LLM greeting
+    showTypingIndicator();
+
+    // Generate LLM-powered greeting with dynamic chips
+    const { greeting, chips } = await generateLLMGreeting();
+
+    // Hide typing indicator
+    hideTypingIndicator();
+
+    // Setup chips from LLM response
+    setupDynamicChips(chips);
+
+    // Show the greeting
+    await addAssistantMessage(greeting);
+
+    // Mark modal session as completed
     updateModalSession(true);
   }
 
+  /**
+   * Creates a new chat conversation in Supabase
+   */
+  async function createChatConversation() {
+    if (!supabase) return;
+
+    try {
+      const utm = new URLSearchParams(window.location.search);
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .insert({
+          modal_session_id: modalSessionId,
+          user_email: chatUserEmail,
+          utm_source: utm.get('utm_source'),
+          utm_medium: utm.get('utm_medium'),
+          utm_campaign: utm.get('utm_campaign'),
+          utm_content: utm.get('utm_content'),
+          product_offering: currentProduct,
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        chatConversationId = data.id;
+      }
+    } catch (err) {
+      console.error('Error creating chat conversation:', err);
+    }
+  }
+
+  /**
+   * Stores user context in Supabase for cross-session persistence
+   * Allows personalized experience when user returns
+   */
+  async function storeUserContext() {
+    if (!supabase || !chatUserEmail) return;
+
+    try {
+      const context = buildChatContext();
+
+      await supabase.from('user_contexts').upsert(
+        {
+          email: chatUserEmail,
+          q1_condition: context.conditionValue,
+          q1_label: context.condition,
+          q2_painpoint: context.painPointValue,
+          q2_label: context.painPoint,
+          q3_warning: context.warningPreferenceValue,
+          q3_label: context.warningPreference,
+          q4_action: context.actionPlanValue,
+          q4_label: context.actionPlan,
+          product_offering: context.product,
+          last_conversation_id: chatConversationId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'email' }
+      );
+    } catch (err) {
+      console.error('Error storing user context:', err);
+    }
+  }
+
+  /**
+   * Loads user context from Supabase for returning users
+   * Call this when user is identified (e.g., after OAuth)
+   */
+  async function loadUserContext(email) {
+    if (!supabase || !email) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_contexts')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (error || !data) return null;
+
+      // Restore responses from stored context
+      if (data.q1_condition) {
+        responses.q1 = { value: data.q1_condition, label: data.q1_label };
+      }
+      if (data.q2_painpoint) {
+        responses.q2 = { value: data.q2_painpoint, label: data.q2_label };
+      }
+      if (data.q3_warning) {
+        responses.q3 = { value: data.q3_warning, label: data.q3_label };
+      }
+      if (data.q4_action) {
+        responses.q4 = { value: data.q4_action, label: data.q4_label };
+      }
+      if (data.product_offering) {
+        currentProduct = data.product_offering;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Error loading user context:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Generates an LLM-powered personalized greeting with dynamic chips
+   * Uses full Q1-Q4 context for better personalization
+   */
+  async function generateLLMGreeting() {
+    const context = buildChatContext();
+
+    // Fallback if no API key
+    if (!OPENAI_API_KEY) {
+      return getFallbackGreeting(context);
+    }
+
+    try {
+      const systemPrompt = `You are a warm, empathetic health companion for Chronic Life, a symptom prediction app.
+
+USER CONTEXT (from their signup):
+- Main health concern: ${context.condition}
+- Biggest challenge: ${context.painPoint}
+- How much warning they need: ${context.warningPreference || 'not specified'}
+- What they'd do with advance notice: ${context.actionPlan || 'not specified'}
+- Product they're interested in: ${context.product}
+
+YOUR TASK:
+Generate a personalized welcome message and 3 quick-reply chips.
+
+REQUIREMENTS:
+1. Greeting should be 1-2 sentences MAX
+2. Acknowledge their specific situation naturally (don't list everything)
+3. Ask about how they're feeling RIGHT NOW
+4. Be warm and human, not clinical or robotic
+5. Chips should be contextual to their condition (e.g., for fatigue: energy-related options)
+
+RESPOND IN THIS EXACT JSON FORMAT (no markdown, just JSON):
+{"greeting": "Your personalized message here", "chips": ["Option 1", "Option 2", "Option 3"]}`;
+
+      const response = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + OPENAI_API_KEY,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'system', content: systemPrompt }],
+            temperature: 0.8,
+            max_tokens: 200,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('OpenAI API error');
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content || '';
+
+      // Parse JSON response
+      try {
+        const parsed = JSON.parse(content);
+        return {
+          greeting: parsed.greeting || getFallbackGreeting(context).greeting,
+          chips: parsed.chips || getFallbackGreeting(context).chips,
+        };
+      } catch (parseErr) {
+        console.error('Failed to parse LLM response:', parseErr);
+        return getFallbackGreeting(context);
+      }
+    } catch (err) {
+      console.error('LLM greeting generation failed:', err);
+      return getFallbackGreeting(context);
+    }
+  }
+
+  /**
+   * Fallback greeting when LLM is unavailable
+   */
+  function getFallbackGreeting(context) {
+    const q1Label = context.condition || 'your symptoms';
+    const q2Label = context.painPoint || '';
+
+    let greeting;
+    if (q2Label) {
+      greeting = `Great to have you here. Managing ${q1Label.toLowerCase()} is tough, especially when ${q2Label.toLowerCase()}. How are you feeling right now?`;
+    } else {
+      greeting = `Welcome! Since you mentioned dealing with ${q1Label.toLowerCase()}, let's get your first data point. What's your biggest symptom right now?`;
+    }
+
+    // Use static chips as fallback
+    const q1Value = responses.q1?.value || 'other';
+    const chips = CHAT_CHIPS_BY_Q1[q1Value] || CHAT_CHIPS_BY_Q1.other;
+
+    return { greeting, chips };
+  }
+
+  /**
+   * Sets up dynamic chips from LLM response
+   */
+  function setupDynamicChips(chips) {
+    const container = document.getElementById('cmChatChips');
+
+    // Ensure we have valid chips array
+    const validChips =
+      Array.isArray(chips) && chips.length > 0
+        ? chips
+        : CHAT_CHIPS_BY_Q1[responses.q1?.value] || CHAT_CHIPS_BY_Q1.other;
+
+    container.innerHTML = validChips
+      .map(
+        (chip) =>
+          `<button type="button" class="cm-chat-chip" data-chip="${chip}">${chip}</button>`
+      )
+      .join('');
+
+    // Attach click handlers
+    container.querySelectorAll('.cm-chat-chip').forEach((btn) => {
+      btn.addEventListener('click', () => handleChipClick(btn.dataset.chip));
+    });
+  }
+
+  /**
+   * Legacy: Sets up the quick reply chips based on Q1 answer (fallback)
+   * Kept for backwards compatibility but replaced by setupDynamicChips
+   */
+  function _setupChatChips() {
+    const q1Value = responses.q1?.value || 'other';
+    const chips = CHAT_CHIPS_BY_Q1[q1Value] || CHAT_CHIPS_BY_Q1.other;
+    setupDynamicChips(chips);
+  }
+
+  /**
+   * Attaches event listeners for chat input
+   */
+  function attachChatListeners() {
+    const input = document.getElementById('cmChatInput');
+    const sendBtn = document.getElementById('cmChatSend');
+    const doneBtn = document.getElementById('cmChatDone');
+
+    // Send on button click
+    sendBtn.addEventListener('click', () => {
+      const text = input.value.trim();
+      if (text) {
+        handleUserMessage(text, false);
+        input.value = '';
+      }
+    });
+
+    // Send on Enter
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const text = input.value.trim();
+        if (text) {
+          handleUserMessage(text, false);
+          input.value = '';
+        }
+      }
+    });
+
+    // Done button
+    doneBtn.addEventListener('click', closeModal);
+  }
+
+  /**
+   * Handles chip selection
+   */
+  function handleChipClick(chipText) {
+    // Mark chip as selected briefly
+    document.querySelectorAll('.cm-chat-chip').forEach((chip) => {
+      chip.classList.remove('selected');
+      if (chip.dataset.chip === chipText) {
+        chip.classList.add('selected');
+      }
+    });
+
+    handleUserMessage(chipText, true);
+  }
+
+  /**
+   * Handles user message (from input or chip)
+   */
+  async function handleUserMessage(text, wasChip = false) {
+    // Add user message to UI
+    addMessageToUI('user', text);
+
+    // Store in Supabase
+    await saveChatMessage('user', text, wasChip ? text : null);
+
+    // Increment message count
+    chatMessageCount++;
+
+    // Hide chips after first response
+    document.getElementById('cmChatChips').style.display = 'none';
+
+    // Show typing indicator
+    showTypingIndicator();
+
+    // Get LLM response
+    const response = await generateChatResponse(text);
+
+    // Remove typing indicator
+    hideTypingIndicator();
+
+    // Add assistant response
+    await addAssistantMessage(response);
+
+    // Show done button after 2+ exchanges
+    if (chatMessageCount >= 2) {
+      document.getElementById('cmChatDone').classList.remove('hidden');
+    }
+
+    // Update chips for next round (contextual)
+    updateChipsForContext(text);
+  }
+
+  /**
+   * Adds an assistant message to the chat
+   */
+  async function addAssistantMessage(text) {
+    addMessageToUI('assistant', text);
+    await saveChatMessage('assistant', text, null);
+  }
+
+  /**
+   * Adds a message bubble to the UI
+   */
+  function addMessageToUI(role, text) {
+    const container = document.getElementById('cmChatMessages');
+    const bubble = document.createElement('div');
+    bubble.className = `cm-chat-bubble ${role}`;
+    bubble.textContent = text;
+    container.appendChild(bubble);
+
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+  }
+
+  /**
+   * Shows typing indicator
+   */
+  function showTypingIndicator() {
+    const container = document.getElementById('cmChatMessages');
+    const indicator = document.createElement('div');
+    indicator.className = 'cm-chat-bubble assistant typing';
+    indicator.id = 'cmTypingIndicator';
+    indicator.innerHTML = `
+      <span class="cm-typing-dot"></span>
+      <span class="cm-typing-dot"></span>
+      <span class="cm-typing-dot"></span>
+    `;
+    container.appendChild(indicator);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  /**
+   * Hides typing indicator
+   */
+  function hideTypingIndicator() {
+    const indicator = document.getElementById('cmTypingIndicator');
+    if (indicator) indicator.remove();
+  }
+
+  /**
+   * Saves a chat message to Supabase
+   */
+  async function saveChatMessage(role, content, selectedChip) {
+    if (!supabase || !chatConversationId) return;
+
+    try {
+      await supabase.from('chat_messages').insert({
+        conversation_id: chatConversationId,
+        role: role,
+        content: content,
+        selected_chip: selectedChip,
+        was_chip_selection: !!selectedChip,
+      });
+
+      // Update conversation last_message_at
+      await supabase
+        .from('chat_conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', chatConversationId);
+    } catch (err) {
+      console.error('Error saving chat message:', err);
+    }
+  }
+
+  /**
+   * Generates a chat response using OpenAI
+   */
+  async function generateChatResponse(userMessage) {
+    if (!OPENAI_API_KEY) {
+      return getFallbackResponse(userMessage);
+    }
+
+    try {
+      // Build comprehensive context from Q1-Q4
+      const context = buildChatContext();
+
+      const systemPrompt = `You are a warm, empathetic health companion for Chronic Life, a symptom prediction app.
+
+FULL USER CONTEXT (from their signup):
+- Main health concern: ${context.condition}
+- Biggest challenge: ${context.painPoint}
+- Warning preference: ${context.warningPreference || 'not specified'}
+- What they'd do with warning: ${context.actionPlan || 'not specified'}
+- Product interest: ${context.product}
+- Exchange # in this session: ${context.messageCount + 1}
+
+CONVERSATION STRATEGY:
+- Turn 1-2: Understand their current state (what's bothering them, severity, duration)
+- Turn 3+: Offer to wrap up ("I've got what I need to start learning your patterns")
+
+GUIDELINES:
+- Be brief (1-2 sentences max)
+- Be warm and human, not clinical
+- Ask ONE follow-up question per turn
+- Focus on how they're feeling RIGHT NOW
+- Never give medical advice
+- Use casual, supportive language
+- Reference their specific condition/challenge when natural`;
+
+      const response = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + OPENAI_API_KEY,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...chatMessages.slice(-6), // Last 6 messages for context
+              { role: 'user', content: userMessage },
+            ],
+            temperature: 0.7,
+            max_tokens: 150,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('OpenAI API error');
+
+      const data = await response.json();
+      const assistantMessage =
+        data.choices[0]?.message?.content || getFallbackResponse(userMessage);
+
+      // Track in chat_messages with metadata
+      chatMessages.push({ role: 'user', content: userMessage });
+      chatMessages.push({ role: 'assistant', content: assistantMessage });
+
+      return assistantMessage;
+    } catch (err) {
+      console.error('Chat generation error:', err);
+      return getFallbackResponse(userMessage);
+    }
+  }
+
+  /**
+   * Fallback responses when LLM is unavailable
+   */
+  function getFallbackResponse(_userMessage) {
+    const fallbacks = [
+      'Thanks for sharing that. How long have you been feeling this way today?',
+      'Got it. On a scale of 1-10, how much is this affecting your day?',
+      'I hear you. Is this typical for you, or worse than usual?',
+      "Thanks — that's helpful context. Anything else I should know?",
+      "Perfect, I've captured that. You can close this whenever you're ready.",
+    ];
+
+    return fallbacks[Math.min(chatMessageCount, fallbacks.length - 1)];
+  }
+
+  /**
+   * Updates chips based on conversation context
+   */
+  function updateChipsForContext(_lastMessage) {
+    const container = document.getElementById('cmChatChips');
+
+    // After first exchange, show severity/frequency chips
+    if (chatMessageCount === 1) {
+      const followUpChips = [
+        'Just started',
+        'Few hours',
+        'All day',
+        'Multiple days',
+      ];
+      container.innerHTML = followUpChips
+        .map(
+          (chip) =>
+            `<button type="button" class="cm-chat-chip" data-chip="${chip}">${chip}</button>`
+        )
+        .join('');
+      container.style.display = 'flex';
+
+      container.querySelectorAll('.cm-chat-chip').forEach((btn) => {
+        btn.addEventListener('click', () => handleChipClick(btn.dataset.chip));
+      });
+    } else if (chatMessageCount === 2) {
+      // After second exchange, show severity chips
+      const severityChips = ['Mild', 'Moderate', 'Severe'];
+      container.innerHTML = severityChips
+        .map(
+          (chip) =>
+            `<button type="button" class="cm-chat-chip" data-chip="${chip}">${chip}</button>`
+        )
+        .join('');
+      container.style.display = 'flex';
+
+      container.querySelectorAll('.cm-chat-chip').forEach((btn) => {
+        btn.addEventListener('click', () => handleChipClick(btn.dataset.chip));
+      });
+    } else {
+      // After 3+ exchanges, hide chips
+      container.style.display = 'none';
+    }
+  }
+
+  /**
+   * Builds chat context from Q1-Q4 responses
+   */
+  /**
+   * Builds comprehensive chat context from all Q1-Q4 responses
+   * Used for LLM prompts and cross-session persistence
+   */
+  function buildChatContext() {
+    return {
+      // Q1: Main health concern
+      condition: responses.q1?.label || 'chronic symptoms',
+      conditionValue: responses.q1?.value || 'other',
+
+      // Q2: Biggest challenge/pain point
+      painPoint: responses.q2?.label || 'managing symptoms',
+      painPointValue: responses.q2?.value || '',
+
+      // Q3: Warning preference (how much advance notice they need)
+      warningPreference: responses.q3?.label || '',
+      warningPreferenceValue: responses.q3?.value || '',
+
+      // Q4: Action plan (what they'd do with advance notice)
+      actionPlan: responses.q4?.label || '',
+      actionPlanValue: responses.q4?.value || '',
+
+      // Product context
+      product: currentProduct,
+
+      // Session context
+      conversationId: chatConversationId,
+      messageCount: chatMessageCount,
+      userEmail: chatUserEmail,
+    };
+  }
+
+  // Legacy function name for backwards compatibility (exposed via window.CampaignModal)
+  function _goToSuccess() {
+    goToChat();
+  }
+
   // ============================================
-  // AI SUMMARY
+  // AI SUMMARY (LLM-Powered via Summary Agent)
   // ============================================
+
+  // OpenAI API Key - Set via environment or config
+  // For production: Use Supabase Edge Function to keep key server-side
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''; // Must be set via environment variable or server-side
+
+  /**
+   * Generates personalized conversion summary using LLM
+   * Falls back to template if LLM unavailable or fails
+   */
   async function generateSummary() {
     const summaryContainer = document.getElementById('cmSummaryContent');
+    let result;
 
-    const summary = buildSummary();
+    // Try LLM-powered summary if SummaryAgent is loaded and API key is set
+    if (window.SummaryAgent && OPENAI_API_KEY && modalSessionId) {
+      try {
+        // Assemble complete user context
+        const context = await window.SummaryAgent.assembleContext(
+          supabase,
+          modalSessionId
+        );
 
-    // Log AI generation
-    await logAIGeneration(summary);
+        // Generate personalized summary via LLM
+        result = await window.SummaryAgent.generateSummary(
+          context,
+          OPENAI_API_KEY
+        );
+
+        // Log AI generation with full context
+        await logAIGeneration(result, context);
+      } catch (err) {
+        console.error('LLM summary failed, using fallback:', err);
+        result = null;
+      }
+    }
+
+    // Fallback to template-based summary
+    if (!result) {
+      const fallbackSummary = buildFallbackSummary();
+      result = {
+        summary: {
+          title: fallbackSummary.headline,
+          benefits: fallbackSummary.features,
+          ctaText: 'Get started',
+        },
+        metadata: {
+          modelUsed: 'template_v2',
+          promptTemplateId: 'conversational_flow_v2',
+          tokensUsed: 0,
+          latencyMs: 0,
+        },
+      };
+      await logAIGeneration(result, null);
+    }
 
     // Render summary
     summaryContainer.innerHTML = `
       <div class="cm-summary-text">
-        <p class="cm-summary-headline">${summary.headline}</p>
+        <p class="cm-summary-headline">${result.summary.title}</p>
         <ul class="cm-summary-features">
-          ${summary.features
+          ${result.summary.benefits
             .map(
               (f) => `
             <li>
@@ -1299,16 +2216,15 @@
         </ul>
       </div>
     `;
-
-    // Show auth options
-    const authOptions = document.getElementById('cmAuthOptions');
-    authOptions.classList.remove('hidden');
+    // Auth options already shown by goToSummary()
   }
 
-  function buildSummary() {
+  /**
+   * Fallback template-based summary when LLM is unavailable
+   */
+  function buildFallbackSummary() {
     const q1Label = responses.q1?.label || 'your condition';
 
-    // Product-specific templates that incorporate Q1
     const templates = {
       'flare-forecast': {
         headline: `We'll learn your patterns and give you a heads up before ${q1Label.toLowerCase()} flares hit.`,
@@ -1347,24 +2263,34 @@
     return templates[currentProduct] || templates['flare-forecast'];
   }
 
-  async function logAIGeneration(summary) {
+  /**
+   * Logs AI generation to Supabase with full context
+   */
+  async function logAIGeneration(result, context) {
     if (!supabase || !modalSessionId) return;
 
     try {
       await supabase.from('ai_generations').insert({
         modal_session_id: modalSessionId,
         session_id: sessionStorage.getItem('session_id'),
-        context_json: {
+        context_json: context || {
           product: currentProduct,
           responses: responses,
           utm: Object.fromEntries(new URLSearchParams(window.location.search)),
         },
-        generated_headline: summary.headline,
-        generated_features: summary.features,
-        generated_cta: 'Get early access',
-        model_used: 'template_v2',
-        prompt_template_id: 'conversational_flow_v2',
+        generated_headline: result.summary.title,
+        generated_features: result.summary.benefits,
+        generated_cta: result.summary.ctaText || 'Get started',
+        full_output_json: result,
+        model_used: result.metadata.modelUsed,
+        prompt_template_id: result.metadata.promptTemplateId,
+        tokens_used: result.metadata.tokensUsed,
+        latency_ms: result.metadata.latencyMs,
         was_shown: true,
+        summary_variant:
+          result.metadata.modelUsed === 'gpt-4o-mini'
+            ? 'llm_v1'
+            : 'template_v2',
       });
     } catch (err) {
       console.error('Error logging AI generation:', err);
@@ -1449,11 +2375,15 @@
         user_agent: navigator.userAgent,
       });
 
-      // Update AI generation as converted
+      // Update AI generation as converted with CTA tracking
       if (modalSessionId) {
         await supabase
           .from('ai_generations')
-          .update({ converted: true })
+          .update({
+            converted: true,
+            cta_clicked: 'email_create',
+            cta_click_time: new Date().toISOString(),
+          })
           .eq('modal_session_id', modalSessionId);
       }
 
@@ -1466,7 +2396,7 @@
         );
       }
 
-      goToSuccess();
+      goToChat(email);
     } catch (err) {
       console.error('Auth error:', err);
       authError.textContent = 'Something went wrong. Please try again.';
@@ -1503,6 +2433,16 @@
     if (modalSessionId)
       sessionStorage.setItem('modal_session_id', modalSessionId);
     sessionStorage.setItem('product_offering', currentProduct);
+
+    // Store Q1-Q4 responses for chat personalization after OAuth redirect
+    sessionStorage.setItem('pending_chat_responses', JSON.stringify(responses));
+
+    // Store return URL (without existing query params)
+    const returnUrl = window.location.origin + window.location.pathname;
+    sessionStorage.setItem('pending_chat_return_url', returnUrl);
+
+    // Flag to indicate we want to go to chat after OAuth
+    sessionStorage.setItem('pending_chat_redirect', 'true');
   }
 
   async function handleGoogleSignIn() {
@@ -1512,6 +2452,17 @@
       '<span class="material-symbols-outlined cm-spin">progress_activity</span> Connecting...';
 
     try {
+      // Track CTA click on AI generation before redirect
+      if (modalSessionId) {
+        await supabase
+          .from('ai_generations')
+          .update({
+            cta_clicked: 'google_signin',
+            cta_click_time: new Date().toISOString(),
+          })
+          .eq('modal_session_id', modalSessionId);
+      }
+
       if (window.ChronicLifeTracking) {
         window.ChronicLifeTracking.trackEvent(
           'auth_google_click',
