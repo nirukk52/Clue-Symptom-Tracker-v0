@@ -1871,10 +1871,10 @@ RESPOND IN THIS EXACT JSON FORMAT (no markdown, just JSON):
     // Increment message count
     chatMessageCount++;
 
-    // Reddit Pixel: Track first chat message as custom event
+    // Reddit Pixel: Track first chat message as Lead event
     if (chatMessageCount === 1 && typeof rdt === 'function') {
       // eslint-disable-next-line no-undef
-      rdt('track', 'Custom', { customEventName: 'FirstChatMessage' });
+      rdt('track', 'Lead');
     }
 
     // Hide chips after first response
@@ -2152,7 +2152,9 @@ GUIDELINES:
 
   // OpenAI API Key - Set via environment or config
   // For production: Use Supabase Edge Function to keep key server-side
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''; // Must be set via environment variable or server-side
+  // Note: In browser context, this must be set via window.OPENAI_API_KEY or server-side proxy
+  const OPENAI_API_KEY =
+    (typeof window !== 'undefined' && window.OPENAI_API_KEY) || '';
 
   /**
    * Generates personalized conversion summary using LLM
@@ -2532,12 +2534,6 @@ GUIDELINES:
           const ctaText =
             btn.dataset.ctaText || btn.textContent?.trim().substring(0, 50);
           window.ChronicLifeTracking.trackEvent('cta_click', ctaId, ctaText);
-        }
-
-        // Reddit Pixel: Track Lead event for CTA clicks
-        if (typeof rdt === 'function') {
-          // eslint-disable-next-line no-undef
-          rdt('track', 'Lead');
         }
 
         await openModal();
