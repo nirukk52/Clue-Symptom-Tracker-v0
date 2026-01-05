@@ -271,7 +271,11 @@
         transition:
           background 0.3s ease,
           border-color 0.3s ease,
-          box-shadow 0.3s ease;
+          box-shadow 0.3s ease,
+          top 0.3s ease,
+          left 0.3s ease,
+          right 0.3s ease,
+          border-radius 0.3s ease;
       }
       nav * {
         transition:
@@ -1293,97 +1297,8 @@
       </div>
     </footer>
 
-    <!-- ============================================
-       EMAIL SIGNUP MODAL
-       ============================================ -->
-    <div
-      class="modal-overlay"
-      id="emailModal"
-      aria-hidden="true"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modalTitle"
-    >
-      <div class="modal-container">
-        <div class="modal-content">
-          <div class="modal-blob-1"></div>
-          <div class="modal-blob-2"></div>
-          <button class="modal-close" id="modalClose" aria-label="Close modal">
-            <span class="material-symbols-outlined text-text-muted">close</span>
-          </button>
-          <div class="modal-form" id="modalForm">
-            <div class="text-center mb-6">
-              <div
-                class="w-14 h-14 rounded-2xl bg-accent-purple/20 flex items-center justify-center mx-auto mb-4"
-              >
-                <span class="material-symbols-outlined text-primary text-2xl"
-                  >visibility</span
-                >
-              </div>
-              <h3
-                id="modalTitle"
-                class="font-display text-2xl font-semibold text-primary mb-2"
-              >
-                See your forecast
-              </h3>
-              <p class="text-text-muted text-sm">
-                Join the waitlist for early access. Get a 48-hour heads up on
-                your flares.
-              </p>
-            </div>
-            <form id="emailForm" class="space-y-4">
-              <div>
-                <input
-                  type="email"
-                  id="emailInput"
-                  class="modal-input"
-                  placeholder="your@email.com"
-                  required
-                  autocomplete="email"
-                  aria-label="Email address"
-                />
-                <p
-                  id="emailError"
-                  class="text-accent-peach text-sm mt-2 hidden"
-                >
-                  Please enter a valid email address
-                </p>
-              </div>
-              <button type="submit" class="modal-submit" id="submitBtn">
-                Get early access
-                <span class="material-symbols-outlined text-lg"
-                  >arrow_forward</span
-                >
-              </button>
-            </form>
-            <p class="text-center text-xs text-text-muted/70 mt-4">
-              <span class="material-symbols-outlined text-xs align-middle"
-                >lock</span
-              >
-              No spam, ever. Unsubscribe anytime.
-            </p>
-          </div>
-          <div class="modal-success" id="modalSuccess">
-            <div class="success-icon">
-              <span class="material-symbols-outlined text-white text-3xl"
-                >check</span
-              >
-            </div>
-            <h3 class="font-display text-2xl font-semibold text-primary mb-2">
-              You're on the list!
-            </h3>
-            <p class="text-text-muted mb-6">
-              We'll reach out when Chronic Life is ready. See your flares coming
-              before they hit.
-            </p>
-            <button id="modalDone" class="modal-submit">
-              Done
-              <span class="material-symbols-outlined text-lg">check</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Campaign Modal Component (4-question conversational flow) -->
+    <script src="campaign-modal.js"></script>
 
     <!-- ============================================
        TRACKING & INTERACTION SCRIPTS
@@ -1580,12 +1495,18 @@
           });
         }
 
+        /* ============================================
+         PERSONA SELECTION
+         Available personas (use ?persona= URL param to test):
+           - 'maya' or '2'   (default) - 38yo South Asian woman
+           - 'jordan' or '1' - 28yo non-binary, younger demographic
+           - 'marcus' or '0' - 40yo Black man
+         ============================================ */
         function updatePersona() {
           const params = new URLSearchParams(window.location.search);
-          const personaParam = params.get('persona') || '2'; // Default to IMG_1272 (Maya)
+          const personaParam = params.get('persona') || 'maya'; // Default to Maya
 
           // Map persona parameter to image filename
-          // Supports: 0,1,2 OR marcus,jordan,maya
           const personaMap = {
             0: 'IMG_1280.PNG',
             1: 'IMG_1287.PNG',
@@ -1615,122 +1536,6 @@
 
         // Expose tracking API globally
         window.ChronicLifeTracking = { trackEvent, submitSignup, getStoredUTM };
-
-        /* ============================================
-         MODAL HANDLING
-         ============================================ */
-        const modal = document.getElementById('emailModal');
-        const modalContainer = modal.querySelector('.modal-container');
-        const modalClose = document.getElementById('modalClose');
-        const modalForm = document.getElementById('modalForm');
-        const modalSuccess = document.getElementById('modalSuccess');
-        const emailForm = document.getElementById('emailForm');
-        const emailInput = document.getElementById('emailInput');
-        const emailError = document.getElementById('emailError');
-        const submitBtn = document.getElementById('submitBtn');
-        const modalDone = document.getElementById('modalDone');
-
-        function openModal() {
-          modal.classList.add('active');
-          modalContainer.classList.add('active');
-          modal.setAttribute('aria-hidden', 'false');
-          document.body.style.overflow = 'hidden';
-          setTimeout(() => emailInput.focus(), 300);
-        }
-
-        function closeModal() {
-          modal.classList.remove('active');
-          modalContainer.classList.remove('active');
-          modal.setAttribute('aria-hidden', 'true');
-          document.body.style.overflow = '';
-          setTimeout(() => {
-            modalForm.classList.remove('hidden');
-            modalSuccess.classList.remove('active');
-            emailInput.value = '';
-            emailInput.classList.remove('error');
-            emailError.classList.add('hidden');
-          }, 300);
-        }
-
-        function isValidEmail(email) {
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
-        emailForm.addEventListener('submit', async function (e) {
-          e.preventDefault();
-          const email = emailInput.value.trim();
-          if (!isValidEmail(email)) {
-            emailInput.classList.add('error');
-            emailError.classList.remove('hidden');
-            return;
-          }
-          emailInput.classList.remove('error');
-          emailError.classList.add('hidden');
-          submitBtn.disabled = true;
-          submitBtn.innerHTML =
-            '<span class="material-symbols-outlined animate-spin">progress_activity</span> Submitting...';
-
-          let result = { success: true };
-          if (window.ChronicLifeTracking) {
-            result = await window.ChronicLifeTracking.submitSignup(email);
-          }
-
-          if (result.success) {
-            modalForm.classList.add('hidden');
-            modalSuccess.classList.add('active');
-          } else {
-            emailError.textContent = result.error?.includes('duplicate')
-              ? 'This email is already on the waitlist!'
-              : 'Something went wrong. Please try again.';
-            emailError.classList.remove('hidden');
-            emailInput.classList.add('error');
-          }
-          submitBtn.disabled = false;
-          submitBtn.innerHTML =
-            'Get early access <span class="material-symbols-outlined text-lg">arrow_forward</span>';
-        });
-
-        emailInput.addEventListener('input', function () {
-          emailInput.classList.remove('error');
-          emailError.classList.add('hidden');
-          emailError.textContent = 'Please enter a valid email address';
-        });
-
-        modalClose.addEventListener('click', closeModal);
-        modalDone.addEventListener('click', closeModal);
-        modal.addEventListener('click', function (e) {
-          if (e.target === modal) closeModal();
-        });
-        document.addEventListener('keydown', function (e) {
-          if (e.key === 'Escape' && modal.classList.contains('active'))
-            closeModal();
-        });
-
-        // Attach modal triggers to all CTAs
-        document
-          .querySelectorAll('[data-modal-trigger]')
-          .forEach((btn, index) => {
-            btn.addEventListener('click', function (e) {
-              e.preventDefault();
-              const elementId =
-                btn.dataset.ctaId ||
-                btn.id ||
-                btn.closest('section')?.id ||
-                `cta_${index}`;
-              const elementText =
-                btn.dataset.ctaText ||
-                btn.textContent?.trim().substring(0, 50) ||
-                'Unknown CTA';
-              if (window.ChronicLifeTracking) {
-                window.ChronicLifeTracking.trackEvent(
-                  'cta_click',
-                  elementId,
-                  elementText
-                );
-              }
-              openModal();
-            });
-          });
 
         // ========================================
         // NAV SCROLL BEHAVIOR
