@@ -1871,6 +1871,12 @@ RESPOND IN THIS EXACT JSON FORMAT (no markdown, just JSON):
     // Increment message count
     chatMessageCount++;
 
+    // Reddit Pixel: Track first chat message as custom event
+    if (chatMessageCount === 1 && typeof rdt === 'function') {
+      // eslint-disable-next-line no-undef
+      rdt('track', 'Custom', { customEventName: 'FirstChatMessage' });
+    }
+
     // Hide chips after first response
     document.getElementById('cmChatChips').style.display = 'none';
 
@@ -2451,6 +2457,12 @@ GUIDELINES:
     googleBtn.innerHTML =
       '<span class="material-symbols-outlined cm-spin">progress_activity</span> Connecting...';
 
+    // Reddit Pixel: Track SignUp tap immediately (before any async)
+    if (typeof rdt === 'function') {
+      // eslint-disable-next-line no-undef
+      rdt('track', 'SignUp');
+    }
+
     try {
       // Track CTA click on AI generation before redirect
       if (modalSessionId) {
@@ -2470,6 +2482,7 @@ GUIDELINES:
           'google_signin'
         );
       }
+
       storeUtmParamsForOAuth();
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
@@ -2519,6 +2532,12 @@ GUIDELINES:
           const ctaText =
             btn.dataset.ctaText || btn.textContent?.trim().substring(0, 50);
           window.ChronicLifeTracking.trackEvent('cta_click', ctaId, ctaText);
+        }
+
+        // Reddit Pixel: Track Lead event for CTA clicks
+        if (typeof rdt === 'function') {
+          // eslint-disable-next-line no-undef
+          rdt('track', 'Lead');
         }
 
         await openModal();
