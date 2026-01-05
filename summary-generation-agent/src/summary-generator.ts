@@ -76,7 +76,7 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks):
   "title": "Your personalized headline here",
   "benefits": [
     "First benefit based on Q3",
-    "Second benefit based on landing page feature", 
+    "Second benefit based on landing page feature",
     "Third benefit based on persona/reassurance"
   ],
   "ctaText": "Action-oriented CTA"

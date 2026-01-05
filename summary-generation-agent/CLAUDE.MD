@@ -12,16 +12,16 @@ Transform the template-based summary into a **context-rich, AI-generated convers
 
 ## What We Know About Users (Context Sources)
 
-| Source | Data | DB Table | Key Fields |
-|--------|------|----------|------------|
-| **Ad Campaign** | Which ad brought them | `campaign_config` (config_type='ad') | headline, description, cta |
-| **Landing Page** | Product + messaging they saw | `campaign_config` (config_type='landing') | h1, h2, cta, empathy_copy |
-| **Persona** | Who they connected with | `campaign_config` (config_type='persona') | story, description (NOT name) |
-| **UTM Params** | Campaign attribution | `landing_visits` | utm_source, utm_campaign, utm_content |
-| **Q1 Answer** | What brought them here | `modal_responses` | fatigue, flares, migraines, ibs_gut, multiple, other |
-| **Q2 Answer** | Their hardest pain point | `modal_responses` | contextual to Q1 |
-| **Q3 Answer** | Product-specific question | `modal_responses` | varies by product |
-| **Q4 Answer** | Desired outcome | `modal_responses` | varies by product |
+| Source           | Data                         | DB Table                                  | Key Fields                                           |
+| ---------------- | ---------------------------- | ----------------------------------------- | ---------------------------------------------------- |
+| **Ad Campaign**  | Which ad brought them        | `campaign_config` (config_type='ad')      | headline, description, cta                           |
+| **Landing Page** | Product + messaging they saw | `campaign_config` (config_type='landing') | h1, h2, cta, empathy_copy                            |
+| **Persona**      | Who they connected with      | `campaign_config` (config_type='persona') | story, description (NOT name)                        |
+| **UTM Params**   | Campaign attribution         | `landing_visits`                          | utm_source, utm_campaign, utm_content                |
+| **Q1 Answer**    | What brought them here       | `modal_responses`                         | fatigue, flares, migraines, ibs_gut, multiple, other |
+| **Q2 Answer**    | Their hardest pain point     | `modal_responses`                         | contextual to Q1                                     |
+| **Q3 Answer**    | Product-specific question    | `modal_responses`                         | varies by product                                    |
+| **Q4 Answer**    | Desired outcome              | `modal_responses`                         | varies by product                                    |
 
 ---
 
@@ -58,12 +58,12 @@ Transform the template-based summary into a **context-rich, AI-generated convers
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/types.ts` | TypeScript interfaces for context and output |
-| `src/context-assembler.ts` | Fetches all user context from Supabase |
-| `src/summary-generator.ts` | Calls LLM with context, returns structured output |
-| `prompts/conversion-summary.md` | The prompt template (where the magic is) |
+| File                            | Purpose                                           |
+| ------------------------------- | ------------------------------------------------- |
+| `src/types.ts`                  | TypeScript interfaces for context and output      |
+| `src/context-assembler.ts`      | Fetches all user context from Supabase            |
+| `src/summary-generator.ts`      | Calls LLM with context, returns structured output |
+| `prompts/conversion-summary.md` | The prompt template (where the magic is)          |
 
 ---
 
@@ -71,9 +71,9 @@ Transform the template-based summary into a **context-rich, AI-generated convers
 
 ```typescript
 interface ConversionSummary {
-  title: string;      // "We'll give you a 48-hour heads up before your fatigue crashes"
+  title: string; // "We'll give you a 48-hour heads up before your fatigue crashes"
   benefits: string[]; // 3 personalized benefits
-  ctaText: string;    // "Start predicting"
+  ctaText: string; // "Start predicting"
 }
 ```
 
@@ -82,6 +82,7 @@ interface ConversionSummary {
 ## Important Constraints
 
 ### DO:
+
 - ✅ Reference the user's specific pain point (Q2 answer)
 - ✅ Mirror the ad/landing page language they already resonated with
 - ✅ Use the persona's story for social proof (NOT their name)
@@ -89,6 +90,7 @@ interface ConversionSummary {
 - ✅ Make it feel like the app already understands them
 
 ### DON'T:
+
 - ❌ Use persona names (internal language)
 - ❌ Use generic "we help with chronic illness" language
 - ❌ Make claims that feel like marketing fluff
@@ -99,12 +101,14 @@ interface ConversionSummary {
 ## Supabase Tables Used
 
 ### Read:
+
 - `campaign_config` - Ad copy, landing copy, personas
 - `landing_visits` - UTM params, persona shown
 - `modal_sessions` - Session context
 - `modal_responses` - Q1-Q4 answers
 
 ### Write:
+
 - `ai_generations` - Store generated summary + conversion tracking
 
 ---

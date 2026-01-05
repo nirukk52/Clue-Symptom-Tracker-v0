@@ -205,6 +205,18 @@
               sessionStorage.removeItem('product_offering');
             }
 
+            // Check if we should redirect to chat
+            const pendingChatRedirect = sessionStorage.getItem('pending_chat_redirect');
+            const returnUrl = sessionStorage.getItem('pending_chat_return_url');
+
+            if (pendingChatRedirect === 'true' && returnUrl) {
+              // Store user email for chat
+              sessionStorage.setItem('oauth_user_email', user.email);
+              // Redirect back to landing page with show_chat flag
+              window.location.href = returnUrl + '?show_chat=true';
+              return;
+            }
+
             showSuccess();
 
           } catch (err) {
