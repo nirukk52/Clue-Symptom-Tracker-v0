@@ -2152,7 +2152,9 @@ GUIDELINES:
 
   // OpenAI API Key - Set via environment or config
   // For production: Use Supabase Edge Function to keep key server-side
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''; // Must be set via environment variable or server-side
+  // Note: In browser context, this must be set via window.OPENAI_API_KEY or server-side proxy
+  const OPENAI_API_KEY =
+    (typeof window !== 'undefined' && window.OPENAI_API_KEY) || '';
 
   /**
    * Generates personalized conversion summary using LLM
