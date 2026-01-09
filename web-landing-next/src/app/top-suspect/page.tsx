@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { topSuspectContent } from '@/content/pages/top-suspect';
+
 import { LandingPage } from '@/components/LandingPage';
+import { topSuspectContent } from '@/content/pages/top-suspect';
 
 /**
  * Top Suspect Landing Page

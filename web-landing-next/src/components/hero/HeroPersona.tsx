@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+
 import type { PersonaKey } from '@/types';
 
 /**
@@ -30,7 +31,10 @@ const personaImages: Record<PersonaKey, { src: string; alt: string }> = {
   },
 };
 
-export function HeroPersona({ persona = 'maya', className = '' }: HeroPersonaProps) {
+export function HeroPersona({
+  persona = 'maya',
+  className = '',
+}: HeroPersonaProps) {
   const { src, alt } = personaImages[persona];
 
   return (

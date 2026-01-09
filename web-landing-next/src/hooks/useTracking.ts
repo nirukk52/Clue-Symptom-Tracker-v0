@@ -1,8 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+
 import { supabase } from '@/lib/supabase';
-import { captureUTMParams, getStoredUTM, getSessionId, pushToDataLayer } from '@/lib/tracking';
+import {
+  captureUTMParams,
+  getSessionId,
+  getStoredUTM,
+  pushToDataLayer,
+} from '@/lib/tracking';
 
 /**
  * useTracking - Hook for page view and event tracking
@@ -34,46 +40,48 @@ export function useTracking({ pageId, pageTitle }: UseTrackingOptions) {
   /**
    * Tracks an event to both Supabase and GTM
    */
-  const trackEvent = useCallback(async (
-    eventType: string,
-    elementId: string,
-    elementText?: string
-  ) => {
-    const utm = getStoredUTM();
-    const sessionId = getSessionId();
+  const trackEvent = useCallback(
+    async (eventType: string, elementId: string, elementText?: string) => {
+      const utm = getStoredUTM();
+      const sessionId = getSessionId();
 
-    // Push to GTM dataLayer
-    pushToDataLayer(eventType, {
-      element_id: elementId,
-      element_text: elementText,
-    });
-
-    // Insert to Supabase
-    try {
-      await supabase.from('marketing_events').insert({
-        event_type: eventType,
-        session_id: sessionId,
+      // Push to GTM dataLayer
+      pushToDataLayer(eventType, {
         element_id: elementId,
         element_text: elementText,
-        page_url: typeof window !== 'undefined' ? window.location.href : '',
-        referrer: typeof document !== 'undefined' ? document.referrer : '',
-        utm_source: utm.utm_source,
-        utm_medium: utm.utm_medium,
-        utm_campaign: utm.utm_campaign,
-        utm_content: utm.utm_content,
-        utm_term: utm.utm_term,
       });
-    } catch (error) {
-      console.error('Tracking error:', error);
-    }
-  }, []);
+
+      // Insert to Supabase
+      try {
+        await supabase.from('marketing_events').insert({
+          event_type: eventType,
+          session_id: sessionId,
+          element_id: elementId,
+          element_text: elementText,
+          page_url: typeof window !== 'undefined' ? window.location.href : '',
+          referrer: typeof document !== 'undefined' ? document.referrer : '',
+          utm_source: utm.utm_source,
+          utm_medium: utm.utm_medium,
+          utm_campaign: utm.utm_campaign,
+          utm_content: utm.utm_content,
+          utm_term: utm.utm_term,
+        });
+      } catch (error) {
+        console.error('Tracking error:', error);
+      }
+    },
+    []
+  );
 
   /**
    * Tracks CTA click with standard attributes
    */
-  const trackCTAClick = useCallback((ctaId: string, ctaText: string) => {
-    trackEvent('cta_click', ctaId, ctaText);
-  }, [trackEvent]);
+  const trackCTAClick = useCallback(
+    (ctaId: string, ctaText: string) => {
+      trackEvent('cta_click', ctaId, ctaText);
+    },
+    [trackEvent]
+  );
 
   return {
     trackEvent,

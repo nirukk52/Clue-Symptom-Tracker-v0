@@ -11,13 +11,14 @@ const steps = [
     number: '01',
     icon: 'touch_app',
     title: 'Quick check-in',
-    description: 'Answer 3-4 questions about how you\'re feeling. Takes 20 seconds.',
+    description:
+      "Answer 3-4 questions about how you're feeling. Takes 20 seconds.",
   },
   {
     number: '02',
     icon: 'psychology',
     title: 'We find patterns',
-    description: 'Your app learns your body\'s signals and connects the dots.',
+    description: "Your app learns your body's signals and connects the dots.",
   },
   {
     number: '03',
@@ -29,35 +30,39 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 px-6 bg-bg-cream">
-      <div className="max-w-6xl mx-auto">
+    <section id="how-it-works" className="bg-bg-cream px-6 py-20">
+      <div className="mx-auto max-w-6xl">
         {/* Section header */}
-        <div className="text-center mb-16">
-          <span className="inline-flex items-center gap-2 text-sm font-medium text-accent-purple bg-accent-purple/10 px-4 py-2 rounded-full mb-4">
+        <div className="mb-16 text-center">
+          <span className="text-accent-purple bg-accent-purple/10 mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium">
             <MaterialIcon name="play_circle" size="sm" />
             How it works
           </span>
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-primary">
+          <h2 className="font-display text-primary text-3xl font-semibold md:text-4xl lg:text-5xl">
             Simple enough for your worst days
           </h2>
         </div>
 
         {/* Steps */}
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid gap-8 md:grid-cols-3">
           {steps.map((step) => (
             <div key={step.number} className="relative">
               {/* Step number */}
-              <span className="text-6xl font-display font-bold text-primary/5 absolute -top-4 -left-2">
+              <span className="font-display text-primary/5 absolute -left-2 -top-4 text-6xl font-bold">
                 {step.number}
               </span>
 
               {/* Icon */}
-              <div className="w-14 h-14 bg-accent-purple/10 rounded-2xl flex items-center justify-center mb-4 relative z-10">
-                <MaterialIcon name={step.icon} size="lg" className="text-accent-purple" />
+              <div className="bg-accent-purple/10 relative z-10 mb-4 flex size-14 items-center justify-center rounded-2xl">
+                <MaterialIcon
+                  name={step.icon}
+                  size="lg"
+                  className="text-accent-purple"
+                />
               </div>
 
               {/* Content */}
-              <h3 className="font-display text-xl font-semibold text-primary mb-2">
+              <h3 className="font-display text-primary mb-2 text-xl font-semibold">
                 {step.title}
               </h3>
               <p className="text-text-muted leading-relaxed">

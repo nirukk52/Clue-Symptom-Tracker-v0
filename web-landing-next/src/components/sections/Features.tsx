@@ -1,5 +1,5 @@
-import type { Feature } from '@/types';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import type { Feature } from '@/types';
 
 /**
  * Features - Grid of product features
@@ -20,38 +20,42 @@ export function Features({
   subtitle = 'Every feature designed with limited energy in mind',
 }: FeaturesProps) {
   return (
-    <section id="features" className="py-20 px-6 gradient-section">
-      <div className="max-w-6xl mx-auto">
+    <section id="features" className="gradient-section px-6 py-20">
+      <div className="mx-auto max-w-6xl">
         {/* Section header */}
-        <div className="text-center mb-16">
-          <span className="inline-flex items-center gap-2 text-sm font-medium text-accent-peach bg-accent-peach/10 px-4 py-2 rounded-full mb-4">
+        <div className="mb-16 text-center">
+          <span className="text-accent-peach bg-accent-peach/10 mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium">
             <MaterialIcon name="auto_awesome" size="sm" />
             Features
           </span>
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-primary mb-4">
+          <h2 className="font-display text-primary mb-4 text-3xl font-semibold md:text-4xl lg:text-5xl">
             {title}
           </h2>
-          <p className="text-text-muted text-lg max-w-2xl mx-auto">
+          <p className="text-text-muted mx-auto max-w-2xl text-lg">
             {subtitle}
           </p>
         </div>
 
         {/* Feature grid */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid gap-6 md:grid-cols-2">
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="bg-white rounded-2xl p-6 shadow-card hover-lift"
+              className="shadow-card hover-lift rounded-2xl bg-white p-6"
             >
               <div className="flex gap-4">
                 {/* Icon */}
-                <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <MaterialIcon name={feature.icon} size="md" className="text-primary" />
+                <div className="bg-primary/5 flex size-12 shrink-0 items-center justify-center rounded-xl">
+                  <MaterialIcon
+                    name={feature.icon}
+                    size="md"
+                    className="text-primary"
+                  />
                 </div>
 
                 {/* Content */}
                 <div>
-                  <h3 className="font-display text-lg font-semibold text-primary mb-1">
+                  <h3 className="font-display text-primary mb-1 text-lg font-semibold">
                     {feature.title}
                   </h3>
                   <p className="text-text-muted text-sm leading-relaxed">

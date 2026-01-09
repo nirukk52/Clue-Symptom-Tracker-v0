@@ -1,41 +1,44 @@
-import type { Metadata } from "next";
-import { DM_Sans, Fraunces } from "next/font/google";
-import Script from "next/script";
-import "./globals.css";
+import './globals.css';
+
+import type { Metadata } from 'next';
+import { DM_Sans, Fraunces } from 'next/font/google';
+import Script from 'next/script';
 
 /**
  * Root Layout - Chronic Life Landing Pages
  *
- * Why this exists: Single source for fonts, GTM, and global metadata.
- * Previously duplicated in each HTML file (~50 lines × 5 pages).
+ * Why this exists: Single source for fonts, GTM, Reddit Pixel, Vercel Analytics,
+ * and global metadata. Previously duplicated in each HTML file (~50 lines × 5 pages).
  */
 
 const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  variable: '--font-dm-sans',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 });
 
 const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  variable: '--font-fraunces',
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
 });
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-KFK8WHV5";
-const REDDIT_PIXEL_ID = process.env.NEXT_PUBLIC_REDDIT_PIXEL_ID || "a2_i1xf5fcreuso";
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-KFK8WHV5';
+const REDDIT_PIXEL_ID =
+  process.env.NEXT_PUBLIC_REDDIT_PIXEL_ID || 'a2_i1xf5fcreuso';
 
 export const metadata: Metadata = {
   title: {
-    default: "Chronic Life - Predict your next flare before it hits",
-    template: "%s | Chronic Life",
+    default: 'Chronic Life - Predict your next flare before it hits',
+    template: '%s | Chronic Life',
   },
-  description: "20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.",
-  metadataBase: new URL("https://chroniclife.app"),
+  description:
+    '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.',
+  metadataBase: new URL('https://chroniclife.app'),
   openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "Chronic Life",
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Chronic Life',
   },
 };
 
@@ -67,6 +70,13 @@ export default function RootLayout({
           `}
         </Script>
 
+        {/* Vercel Web Analytics */}
+        <Script
+          src="/_vercel/insights/script.js"
+          strategy="afterInteractive"
+          defer
+        />
+
         {/* Material Symbols for icons */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
@@ -80,7 +90,7 @@ export default function RootLayout({
             src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
             height="0"
             width="0"
-            style={{ display: "none", visibility: "hidden" }}
+            style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
 

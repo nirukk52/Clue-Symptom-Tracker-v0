@@ -89,6 +89,69 @@ export interface TrackingEvent {
   referrer?: string;
 }
 
+/**
+ * Landing visit record - tracks initial page visits
+ * Stored in `landing_visits` table
+ */
+export interface LandingVisit {
+  id?: string;
+  session_id: string;
+  product_offering: ProductKey;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  headline_variant?: string;
+  persona_shown?: PersonaKey;
+  persona_source?: 'url_param' | 'random' | 'default';
+  user_agent?: string;
+  device_type?: 'mobile' | 'tablet' | 'desktop';
+  referrer?: string;
+  created_at?: string;
+}
+
+/**
+ * Modal session record - tracks modal engagement
+ * Stored in `modal_sessions` table
+ */
+export interface ModalSession {
+  id?: string;
+  visit_id?: string;
+  session_id: string;
+  product_offering: ProductKey;
+  persona_shown?: PersonaKey;
+  utm_content?: string;
+  device_type?: 'mobile' | 'tablet' | 'desktop';
+  step_reached: number;
+  total_steps: number;
+  completed?: boolean;
+  completed_at?: string;
+  abandoned_at_step?: number;
+  time_to_complete_ms?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Modal response record - tracks individual question answers
+ * Stored in `modal_responses` table
+ */
+export interface ModalResponse {
+  id?: string;
+  modal_session_id: string;
+  question_number: number;
+  question_key: string;
+  question_text: string;
+  step_number: number;
+  answer_value: string;
+  answer_label: string;
+  previous_answer_value?: string;
+  product_offering: ProductKey;
+  time_to_answer_ms?: number;
+  created_at?: string;
+}
+
 // ============================================
 // MODAL TYPES
 // ============================================
@@ -110,11 +173,105 @@ export interface ProductQuestions {
 
 export interface ModalResponses {
   q1?: string;
+  q1_label?: string;
   q2?: string;
+  q2_label?: string;
   q3?: string;
+  q3_label?: string;
   q4?: string;
+  q4_label?: string;
   email?: string;
 }
+
+// ============================================
+// SUMMARY GENERATION TYPES
+// ============================================
+
+/**
+ * Question answer for summary context
+ */
+export interface QuestionAnswer {
+  questionKey: string;
+  questionText: string;
+  answerValue: string;
+  answerLabel: string;
+}
+
+/**
+ * All modal question responses in structured format for summary generation
+ */
+export interface ModalResponsesStructured {
+  q1: QuestionAnswer;
+  q2: QuestionAnswer;
+  q3: QuestionAnswer;
+  q4: QuestionAnswer;
+}
+
+/**
+ * The conversion summary shown before auth options
+ */
+export interface ConversionSummary {
+  title: string;
+  benefits: [string, string, string];
+  ctaText: string;
+}
+
+/**
+ * Full response from the summary generator
+ */
+export interface SummaryGenerationResult {
+  summary: ConversionSummary;
+  metadata: {
+    modelUsed: string;
+    promptTemplateId: string;
+    tokensUsed: number;
+    latencyMs: number;
+  };
+}
+
+// ============================================
+// CHAT TYPES
+// ============================================
+
+/**
+ * Chat message structure
+ */
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  selectedChip?: string;
+  wasChipSelection?: boolean;
+  createdAt: string;
+}
+
+/**
+ * Chat conversation record
+ */
+export interface ChatConversation {
+  id?: string;
+  modal_session_id?: string;
+  user_email?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  product_offering: ProductKey;
+  last_message_at?: string;
+  created_at?: string;
+}
+
+/**
+ * Dynamic chips based on user's Q1 answer
+ */
+export const CHAT_CHIPS_BY_Q1: Record<string, string[]> = {
+  fatigue: ['Low energy', 'Brain fog', 'Just tired'],
+  flares: ['Starting to flare', 'Feeling okay', 'Not sure'],
+  migraines: ['Head hurts', 'Aura symptoms', 'Feeling fine'],
+  ibs_gut: ['Stomach issues', 'Bloated', 'Doing okay'],
+  multiple: ['Rough day', 'Managing', 'Better today'],
+  other: ['Not great', 'Okay', 'Pretty good'],
+};
 
 // ============================================
 // PERSONA TYPES

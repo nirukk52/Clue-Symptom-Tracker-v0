@@ -4,22 +4,28 @@
  * OptionPill - Selectable option in modal questions
  *
  * Why this exists: Reusable pill component for Q1-Q4 options
- * with hover and selected states.
+ * with hover and selected states. Passes both value and label
+ * for analytics tracking.
  */
 
 interface OptionPillProps {
   label: string;
   value: string;
   isSelected: boolean;
-  onSelect: (value: string) => void;
+  onSelect: (value: string, label: string) => void;
 }
 
-export function OptionPill({ label, value, isSelected, onSelect }: OptionPillProps) {
+export function OptionPill({
+  label,
+  value,
+  isSelected,
+  onSelect,
+}: OptionPillProps) {
   return (
     <button
       type="button"
       className={`option-pill ${isSelected ? 'selected' : ''}`}
-      onClick={() => onSelect(value)}
+      onClick={() => onSelect(value, label)}
     >
       {label}
     </button>

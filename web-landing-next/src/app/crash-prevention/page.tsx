@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { crashPreventionContent } from '@/content/pages/crash-prevention';
+
 import { LandingPage } from '@/components/LandingPage';
+import { crashPreventionContent } from '@/content/pages/crash-prevention';
 
 /**
  * Crash Prevention Landing Page

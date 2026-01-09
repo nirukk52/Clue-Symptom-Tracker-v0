@@ -13,16 +13,18 @@ export const homeContent: LandingPageContent = {
 
   meta: {
     title: 'Predict your next flare before it hits',
-    description: '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.',
+    description:
+      '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.',
   },
 
   hero: {
     headlines: {
       default: 'Predict your next flare before it hits',
-      alt1: 'Finally know what\'s coming',
-      alt2: 'Your body has patterns. Let\'s find them.',
+      alt1: "Finally know what's coming",
+      alt2: "Your body has patterns. Let's find them.",
     },
-    subheadline: '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits.',
+    subheadline:
+      '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits.',
     ctaText: 'Get early access',
     ctaId: 'hero_home',
   },
@@ -33,7 +35,8 @@ export const homeContent: LandingPageContent = {
     {
       icon: 'visibility',
       title: 'Flare Forecasting',
-      description: 'Get a 48-hour heads up based on your body\'s unique patterns.',
+      description:
+        "Get a 48-hour heads up based on your body's unique patterns.",
     },
     {
       icon: 'bolt',
@@ -48,7 +51,8 @@ export const homeContent: LandingPageContent = {
     {
       icon: 'description',
       title: 'Doctor-Ready',
-      description: 'Export findings in a format your doctor will actually read.',
+      description:
+        'Export findings in a format your doctor will actually read.',
     },
   ],
 };

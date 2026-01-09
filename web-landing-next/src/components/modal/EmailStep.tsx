@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import { Button } from '@/components/ui/Button';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
@@ -46,10 +47,10 @@ export function EmailStep({ onSubmit, isLoading = false }: EmailStepProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <div className="w-16 h-16 bg-accent-purple/20 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="bg-accent-purple/20 mx-auto mb-4 flex size-16 items-center justify-center rounded-full">
           <MaterialIcon name="mail" size="lg" className="text-accent-purple" />
         </div>
-        <h2 className="font-display text-2xl font-semibold text-primary mb-2">
+        <h2 className="font-display text-primary mb-2 text-2xl font-semibold">
           You&apos;re in the right place
         </h2>
         <p className="text-text-muted">
@@ -70,7 +71,7 @@ export function EmailStep({ onSubmit, isLoading = false }: EmailStepProps) {
             autoFocus
           />
           {error && (
-            <p className="text-accent-peach text-sm mt-2 flex items-center gap-1">
+            <p className="text-accent-peach mt-2 flex items-center gap-1 text-sm">
               <MaterialIcon name="error" size="sm" />
               {error}
             </p>
@@ -85,7 +86,11 @@ export function EmailStep({ onSubmit, isLoading = false }: EmailStepProps) {
         >
           {isLoading ? (
             <>
-              <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
+              <MaterialIcon
+                name="progress_activity"
+                size="sm"
+                className="animate-spin"
+              />
               Joining...
             </>
           ) : (
@@ -98,7 +103,7 @@ export function EmailStep({ onSubmit, isLoading = false }: EmailStepProps) {
       </form>
 
       {/* Privacy note */}
-      <p className="text-center text-xs text-text-muted">
+      <p className="text-text-muted text-center text-xs">
         No spam. Unsubscribe anytime. We respect your energy.
       </p>
     </div>

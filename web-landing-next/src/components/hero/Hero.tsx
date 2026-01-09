@@ -1,9 +1,10 @@
 'use client';
 
+import { Button } from '@/components/ui/Button';
 import type { HeroContent, PersonaKey } from '@/types';
+
 import { ConditionPills } from './ConditionPills';
 import { HeroPersona } from './HeroPersona';
-import { Button } from '@/components/ui/Button';
 
 /**
  * Hero - Visible-style hero with centered content and persona at bottom
@@ -31,21 +32,24 @@ export function Hero({
   variant = 'default',
 }: HeroProps) {
   // Select headline based on variant
-  const headline = variant === 'default'
-    ? content.headlines.default
-    : variant === 'alt1'
-    ? content.headlines.alt1 || content.headlines.default
-    : variant === 'alt2'
-    ? content.headlines.alt2 || content.headlines.default
-    : content.headlines.altFocus || content.headlines.default;
+  const headline =
+    variant === 'default'
+      ? content.headlines.default
+      : variant === 'alt1'
+        ? content.headlines.alt1 || content.headlines.default
+        : variant === 'alt2'
+          ? content.headlines.alt2 || content.headlines.default
+          : content.headlines.altFocus || content.headlines.default;
 
-  const ctaText = variant === 'altFocus' && content.altCtaText
-    ? content.altCtaText
-    : content.ctaText;
+  const ctaText =
+    variant === 'altFocus' && content.altCtaText
+      ? content.altCtaText
+      : content.ctaText;
 
-  const ctaId = variant === 'altFocus' && content.altCtaId
-    ? content.altCtaId
-    : content.ctaId;
+  const ctaId =
+    variant === 'altFocus' && content.altCtaId
+      ? content.altCtaId
+      : content.ctaId;
 
   return (
     <section className="hero-wrapper">
@@ -53,20 +57,13 @@ export function Hero({
         {/* Hero content - centered on mobile, left-aligned on desktop */}
         <div className="hero-content">
           {/* Main headline */}
-          <h1 className="hero-headline">
-            {headline}
-          </h1>
+          <h1 className="hero-headline">{headline}</h1>
 
           {/* Subheadline */}
-          <p className="hero-subheadline">
-            {content.subheadline}
-          </p>
+          <p className="hero-subheadline">{content.subheadline}</p>
 
           {/* Condition pills */}
-          <ConditionPills
-            conditions={conditions}
-            className="hero-pills"
-          />
+          <ConditionPills conditions={conditions} className="hero-pills" />
 
           {/* CTA Button */}
           <Button

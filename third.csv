@@ -1,0 +1,40 @@
+Campaign Name,Ad Group Name,Ad Name,Keyword,Goal,Total Results,Cost per Result,Impressions,eCPM,Clicks,CPC (USD),CTR,Amount Spent (USD),Lead (Click),Sign Up (Click),Page Visit (Click),Currency
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,energy tracker,-,0,0.0,4,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,spoonie,-,0,0.0,15,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,boom bust,energy pacing,-,0,0.0,5,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,boom bust,fatigue management,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,boom bust,recovery day,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,boom bust,rest day,-,0,0.0,4,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Find the culprit,spoonie,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Spoon Saver,20 sec check in,invisible illness,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Struggles,energy tracker,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Struggles,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Struggles,spoonie,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,not just anxiety,energy tracker,-,0,0.0,2,25.0,1,0.05,0.5,0.05,0,0,0
+Prediction_depth_test_v3,Top Suspect,not just anxiety,invisible illness,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,not just anxiety,spoonie,-,0,0.0,8,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,flares have a forecast,early warning system,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,48h early.,energy tracker,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,48h early.,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,flares have a forecast,early warning system,-,0,0.0,4,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,flares have a forecast,energy tracker,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,flares have a forecast,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,See the storm coming!,early warning system,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Flare Forecast,See the storm coming!,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,energy tracker,-,0,0.0,3,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,spoonie,-,0,0.0,5,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,when to stop,energy pacing,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,when to stop,fatigue management,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,when to stop,rest day,-,0,0.0,3,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Spoon Saver,20 sec check in,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Spoon Saver,20 sec check in,spoonie,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,boom bust,energy tracker,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Pacing App,boom bust,invisible illness,-,0,0.0,1,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,not just anxiety,energy tracker,-,0,0.0,4,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,not just anxiety,invisible illness,-,0,0.0,3,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,not just anxiety,spoonie,-,0,0.0,16,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Find the culprit,energy tracker,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Find the culprit,invisible illness,-,0,0.0,2,0.0,0,0.0,0.0,0.0,0,0,0
+Prediction_depth_test_v3,Top Suspect,Find the culprit,spoonie,-,0,0.0,4,0.0,0,0.0,0.0,0.0,0,0,0

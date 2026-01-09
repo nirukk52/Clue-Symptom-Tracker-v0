@@ -1,0 +1,38 @@
+Campaign Name,Ad Group Name,Ad Name,Goal,Total Results,Cost per Result,Impressions,eCPM,Clicks,CPC (USD),CTR,Amount Spent (USD),Currency
+ChronicLife_Validation_Experiment_v1,Exhaustion & Brain Fog,Spoon Cost,-,0,0.0,2742,4.18,13,0.88,0.004741064916119621,11.468411
+ChronicLife_Validation_Experiment_v1,Exhaustion & Brain Fog,Brain fog,-,0,0.0,8,0.0,0,0.0,0.0,0.0
+ChronicLife_Validation_Experiment_v1,Doctor Mistrust,Doctor Proof,-,0,0.0,9,0.0,0,0.0,0.0,0.0
+ChronicLife_Validation_Experiment_v1,Pattern Discovery,Find Triggers,-,0,0.0,12954,0.51,34,0.19,0.0026246719160104987,6.569696
+ChronicLife_Validation_Experiment_v1,Pattern Discovery,Predict Flares,-,0,0.0,7516,0.73,33,0.17,0.004390633315593401,5.477243
+ChronicLife_Validation_Experiment_v2,Pattern Discovery,Find Triggers,-,0,0.0,17124,0.38,64,0.1,0.003737444522307872,6.491091
+ChronicLife_Validation_Experiment_v2,Pattern Discovery,Predict Flares,-,0,0.0,13215,0.46,60,0.1,0.004540295119182747,6.083853
+ChronicLife_Validation_Experiment_v3,Exhaustion & Brain Fog - v1 ,Brain fog,-,0,0.0,921,1.45,6,0.22,0.006514657980456026,1.338102
+ChronicLife_Validation_Experiment_v3,Pattern Discovery,Predict Flares,-,0,0.0,42819,0.36,324,0.05,0.007566734393610313,15.270934
+ChronicLife_Validation_Experiment_v3,Doctor Mistrust,Doctor Proof,-,0,0.0,3709,1.44,21,0.26,0.0056619034780264225,5.358778
+ChronicLife_Validation_Experiment_v3,Doctor Mistrust,Appointment Prep,-,0,0.0,5336,1.95,28,0.37,0.005247376311844078,10.42178
+ChronicLife_Validation_Experiment_v3,Exhaustion & Brain Fog - v1 ,Spoon Cost,-,0,0.0,3893,2.8,31,0.35,0.007963010531723606,10.898973
+ChronicLife_Validation_Experiment_v3,Pattern Discovery,Find Triggers,-,0,0.0,5583,0.25,25,0.06,0.004477879276374709,1.420962
+Prediction_depth_test_v3,Spoon Saver,cost you a spoon.,-,0,0.0,333,3.83,2,0.64,0.006006006006006006,1.273783
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,-,0,0.0,4382,0.53,49,0.05,0.011182108626198083,2.332477
+Prediction_depth_test_v3,Pacing App,boom bust,-,0,0.0,1717,3.32,19,0.3,0.0110658124635993,5.703165
+Prediction_depth_test_v3,Top Suspect,Find the culprit,-,0,0.0,732,0.27,4,0.05,0.00546448087431694,0.2
+Prediction_depth_test_v3,Spoon Saver,20 sec check in,-,0,0.0,1152,2.96,6,0.57,0.005208333333333333,3.40483
+Prediction_depth_test_v3,Pacing App,pacing app tells you,-,0,0.0,26,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Pacing App,when to stop,-,0,0.0,37,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Top Suspect,Struggles,-,0,0.0,1454,0.24,7,0.05,0.004814305364511692,0.346154
+Prediction_depth_test_v3,Top Suspect,not just anxiety,-,0,0.0,3907,0.23,19,0.05,0.004863066291272076,0.87989
+Prediction_depth_test_v3,Flare Forecast,48h early.,-,0,0.0,236,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Flare Forecast,See the storm coming!,-,0,0.0,685,1.66,2,0.57,0.00291970802919708,1.134052
+Prediction_depth_test_v3,Flare Forecast,flares have a forecast,-,0,0.0,822,4.8,6,0.66,0.0072992700729927005,3.948596
+Prediction_depth_test_v3,Spoon Saver,draining energy,-,0,0.0,260,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Pacing App,pacing app tells you,-,0,0.0,17,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Flare Forecast,48h early.,-,0,0.0,144,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Flare Forecast,flares have a forecast,-,0,0.0,908,3.67,4,0.83,0.004405286343612335,3.330471
+Prediction_depth_test_v3,Flare Forecast,See the storm coming!,-,0,0.0,132,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Top Suspect,Isolate the trigger,-,0,0.0,3504,0.43,13,0.12,0.0037100456621004564,1.500615
+Prediction_depth_test_v3,Pacing App,when to stop,-,0,0.0,879,5.37,7,0.67,0.007963594994311717,4.721045
+Prediction_depth_test_v3,Spoon Saver,20 sec check in,-,0,0.0,785,5.02,7,0.56,0.008917197452229299,3.937209
+Prediction_depth_test_v3,Spoon Saver,cost you a spoon.,-,0,0.0,5,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Pacing App,boom bust,-,0,0.0,158,0.0,0,0.0,0.0,0.0
+Prediction_depth_test_v3,Top Suspect,not just anxiety,-,0,0.0,4165,0.51,18,0.12,0.004321728691476591,2.139416
+Prediction_depth_test_v3,Top Suspect,Find the culprit,-,0,0.0,2210,0.14,3,0.1,0.0013574660633484162,0.304298

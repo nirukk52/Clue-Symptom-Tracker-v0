@@ -1,15 +1,22 @@
 'use client';
 
-import type { LandingPageContent, PersonaKey } from '@/types';
-import { useTracking } from '@/hooks/useTracking';
-import { useModal } from '@/hooks/useModal';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/components/hero/Hero';
-import { HowItWorks } from '@/components/sections/HowItWorks';
-import { Features } from '@/components/sections/Features';
-import { FinalCTA } from '@/components/sections/FinalCTA';
+import { Footer } from '@/components/layout/Footer';
+import { Navbar } from '@/components/layout/Navbar';
 import { CampaignModal } from '@/components/modal/CampaignModal';
+import { DoctorPack } from '@/components/sections/DoctorPack';
+import { EnergyPacing } from '@/components/sections/EnergyPacing';
+import { FinalCTA } from '@/components/sections/FinalCTA';
+import { FlareMode } from '@/components/sections/FlareMode';
+import { Insights } from '@/components/sections/Insights';
+import { MultipleConditions } from '@/components/sections/MultipleConditions';
+import { PatternDetection } from '@/components/sections/PatternDetection';
+import { PredictiveInsights } from '@/components/sections/PredictiveInsights';
+import { QuickEntry } from '@/components/sections/QuickEntry';
+import { useLandingVisit } from '@/hooks/useLandingVisit';
+import { useModal } from '@/hooks/useModal';
+import { useTracking } from '@/hooks/useTracking';
+import type { LandingPageContent, PersonaKey } from '@/types';
 
 /**
  * LandingPage - Template component for all landing pages
@@ -24,25 +31,38 @@ interface LandingPageProps {
   persona?: PersonaKey;
 }
 
-export function LandingPage({ content, persona = 'maya' }: LandingPageProps) {
-  // Initialize tracking
+export function LandingPage({
+  content,
+  persona: propPersona,
+}: LandingPageProps) {
+  // Initialize page view tracking (marketing_events table)
   useTracking({
     pageId: content.pageId,
     pageTitle: content.meta.title,
   });
 
-  // Modal state
+  // Initialize landing visit tracking (landing_visits table)
+  const { persona: assignedPersona } = useLandingVisit({
+    product: content.product,
+  });
+
+  // Use prop persona if provided, otherwise use assigned persona
+  const persona = propPersona || assignedPersona;
+
+  // Modal state with tracking
   const {
     isOpen,
     step,
     questionNumber,
     responses,
+    structuredResponses,
     email,
+    modalSessionId,
     openModal,
     closeModal,
     setResponse,
-    goToSuccess,
-  } = useModal();
+    goToChat,
+  } = useModal({ product: content.product });
 
   return (
     <>
@@ -57,13 +77,37 @@ export function LandingPage({ content, persona = 'maya' }: LandingPageProps) {
         onCtaClick={openModal}
       />
 
-      {/* How It Works */}
-      <HowItWorks />
+      {/* Predictive Insights - Lag effect detection (flare-forecast specific) */}
+      {content.product === 'flare-forecast' && (
+        <PredictiveInsights onCtaClick={openModal} />
+      )}
 
-      {/* Features */}
-      <Features features={content.features} />
+      {/* Pattern Detection - Trigger correlation (top-suspect specific) */}
+      {content.product === 'top-suspect' && (
+        <PatternDetection onCtaClick={openModal} />
+      )}
 
-      {/* Final CTA */}
+      {/* Energy Pacing - Push/rest daily guidance (crash-prevention specific) */}
+      {content.product === 'crash-prevention' && (
+        <EnergyPacing onCtaClick={openModal} />
+      )}
+
+      {/* Quick Entry - Energy-conscious design showcase */}
+      <QuickEntry onCtaClick={openModal} />
+
+      {/* Flare Mode - One-tap logging for bad days */}
+      <FlareMode onCtaClick={openModal} />
+
+      {/* Insights - Evidence-backed patterns */}
+      <Insights onCtaClick={openModal} />
+
+      {/* Doctor Pack - Export summaries for appointments */}
+      <DoctorPack onCtaClick={openModal} />
+
+      {/* Multiple Conditions - Managing comorbidities */}
+      <MultipleConditions onCtaClick={openModal} />
+
+      {/* Final CTA - Save your spoons */}
       <FinalCTA onCtaClick={openModal} />
 
       {/* Footer */}
@@ -76,10 +120,12 @@ export function LandingPage({ content, persona = 'maya' }: LandingPageProps) {
         step={step}
         questionNumber={questionNumber}
         responses={responses}
+        structuredResponses={structuredResponses}
         email={email}
+        modalSessionId={modalSessionId}
         onClose={closeModal}
         onSelectAnswer={setResponse}
-        onGoToSuccess={goToSuccess}
+        onGoToChat={goToChat}
       />
     </>
   );

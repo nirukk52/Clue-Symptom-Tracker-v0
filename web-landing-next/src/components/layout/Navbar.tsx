@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useNavScroll } from '@/hooks/useNavScroll';
+
 import { Button } from '@/components/ui/Button';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useNavScroll } from '@/hooks/useNavScroll';
 
 /**
  * Navbar - Fixed navigation with transparent/solid states
@@ -23,27 +24,33 @@ export function Navbar({ onCtaClick }: NavbarProps) {
   return (
     <nav
       id="mainNav"
-      className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-3 border-b ${
+      className={`fixed inset-x-0 top-0 z-50 border-b px-4 py-3 md:px-6 ${
         isScrolled ? 'nav-solid' : 'nav-transparent'
       }`}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="mx-auto flex max-w-7xl items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="nav-logo-icon w-8 h-8 rounded-full flex items-center justify-center">
+          <div className="nav-logo-icon flex size-8 items-center justify-center rounded-full">
             <MaterialIcon name="monitoring" size="sm" className="text-white" />
           </div>
-          <span className="nav-logo-text font-display font-semibold text-lg">
+          <span className="nav-logo-text font-display text-lg font-semibold">
             Chronic Life
           </span>
         </Link>
 
         {/* Desktop nav links */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link href="#how-it-works" className="nav-link text-sm font-medium hover:opacity-80 transition-opacity">
+        <div className="hidden items-center gap-6 md:flex">
+          <Link
+            href="#how-it-works"
+            className="nav-link text-sm font-medium transition-opacity hover:opacity-80"
+          >
             How it works
           </Link>
-          <Link href="#features" className="nav-link text-sm font-medium hover:opacity-80 transition-opacity">
+          <Link
+            href="#features"
+            className="nav-link text-sm font-medium transition-opacity hover:opacity-80"
+          >
             Features
           </Link>
         </div>

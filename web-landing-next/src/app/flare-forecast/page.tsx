@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { flareForecastContent } from '@/content/pages/flare-forecast';
+
 import { LandingPage } from '@/components/LandingPage';
+import { flareForecastContent } from '@/content/pages/flare-forecast';
 
 /**
  * Flare Forecast Landing Page

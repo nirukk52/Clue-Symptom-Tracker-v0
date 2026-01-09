@@ -1,4 +1,4 @@
-import type { QuestionOption, ProductQuestions } from '@/types';
+import type { ProductQuestions, QuestionOption } from '@/types';
 
 /**
  * Question Data - All modal question options
@@ -20,10 +20,16 @@ export const Q1_OPTIONS: QuestionOption[] = [
 // Q2: Contextual pain points (based on Q1 selection)
 export const Q2_OPTIONS: Record<string, QuestionOption[]> = {
   fatigue: [
-    { value: 'energy_envelope', label: 'I never know how much I can safely do' },
+    {
+      value: 'energy_envelope',
+      label: 'I never know how much I can safely do',
+    },
     { value: 'good_days_trap', label: 'Good days trick me into overdoing it' },
     { value: 'brain_fog', label: 'Brain fog makes everything harder' },
-    { value: 'not_understood', label: "People don't understand why I can't just push through" },
+    {
+      value: 'not_understood',
+      label: "People don't understand why I can't just push through",
+    },
     { value: 'delayed_payback', label: "I pay for today's effort tomorrow" },
   ],
   flares: [
@@ -31,33 +37,72 @@ export const Q2_OPTIONS: Record<string, QuestionOption[]> = {
     { value: 'no_warning', label: 'They hit without warning' },
     { value: 'unknown_triggers', label: "I don't know what's triggering them" },
     { value: 'cancel_constantly', label: 'I cancel on people constantly' },
-    { value: 'anxiety_waiting', label: 'I waste good days waiting for the other shoe to drop' },
+    {
+      value: 'anxiety_waiting',
+      label: 'I waste good days waiting for the other shoe to drop',
+    },
   ],
   migraines: [
-    { value: 'too_late_meds', label: "By the time I notice, it's too late for meds to help" },
-    { value: 'unknown_triggers', label: "I can't figure out what triggers them" },
+    {
+      value: 'too_late_meds',
+      label: "By the time I notice, it's too late for meds to help",
+    },
+    {
+      value: 'unknown_triggers',
+      label: "I can't figure out what triggers them",
+    },
     { value: 'lost_days', label: 'I lose entire days when they hit' },
-    { value: 'miss_warning', label: "I miss the warning signs until it's too late" },
-    { value: 'no_patterns', label: "I've tried tracking but can't find patterns" },
+    {
+      value: 'miss_warning',
+      label: "I miss the warning signs until it's too late",
+    },
+    {
+      value: 'no_patterns',
+      label: "I've tried tracking but can't find patterns",
+    },
   ],
   ibs_gut: [
     { value: 'unsafe_foods', label: "I can't tell which foods are safe" },
-    { value: 'delayed_reactions', label: "Reactions are delayed so I can't connect them" },
-    { value: 'inconsistent', label: 'Same food, different reactions — makes no sense' },
-    { value: 'elimination_exhausting', label: 'Elimination diets are exhausting and inconclusive' },
+    {
+      value: 'delayed_reactions',
+      label: "Reactions are delayed so I can't connect them",
+    },
+    {
+      value: 'inconsistent',
+      label: 'Same food, different reactions — makes no sense',
+    },
+    {
+      value: 'elimination_exhausting',
+      label: 'Elimination diets are exhausting and inconclusive',
+    },
     { value: 'eating_gamble', label: 'Eating out feels like a gamble' },
   ],
   multiple: [
-    { value: 'symptom_overlap', label: "I can't tell which condition is causing what" },
-    { value: 'competing_needs', label: 'What helps one thing makes another worse' },
-    { value: 'tracking_burden', label: 'Tracking everything is a full-time job' },
+    {
+      value: 'symptom_overlap',
+      label: "I can't tell which condition is causing what",
+    },
+    {
+      value: 'competing_needs',
+      label: 'What helps one thing makes another worse',
+    },
+    {
+      value: 'tracking_burden',
+      label: 'Tracking everything is a full-time job',
+    },
     { value: 'medical_silos', label: "My doctors don't connect the dots" },
     { value: 'all_blurs', label: 'It all blurs together into one bad day' },
   ],
   other: [
-    { value: 'still_figuring', label: "I'm still trying to figure out what's wrong" },
+    {
+      value: 'still_figuring',
+      label: "I'm still trying to figure out what's wrong",
+    },
     { value: 'not_believed', label: "I don't feel believed by doctors" },
-    { value: 'tracking_failed', label: "I've tried tracking before but it didn't help" },
+    {
+      value: 'tracking_failed',
+      label: "I've tried tracking before but it didn't help",
+    },
     { value: 'life_disruption', label: "I can't live the life I used to" },
     { value: 'want_answers', label: 'I just want answers' },
   ],
@@ -125,7 +170,10 @@ export const PRODUCT_QUESTIONS: Record<string, ProductQuestions> = {
         { value: 'data_limit', label: "Data showing I'm at my limit" },
         { value: 'push_rest_signal', label: 'A clear push vs. rest signal' },
         { value: 'explain_others', label: 'Something to explain to others' },
-        { value: 'confidence_rest', label: 'Confidence that resting is the right call' },
+        {
+          value: 'confidence_rest',
+          label: 'Confidence that resting is the right call',
+        },
       ],
     },
   },

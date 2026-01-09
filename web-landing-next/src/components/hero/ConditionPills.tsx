@@ -12,7 +12,10 @@ interface ConditionPillsProps {
   className?: string;
 }
 
-export function ConditionPills({ conditions, className = '' }: ConditionPillsProps) {
+export function ConditionPills({
+  conditions,
+  className = '',
+}: ConditionPillsProps) {
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
       {conditions.map((condition) => (

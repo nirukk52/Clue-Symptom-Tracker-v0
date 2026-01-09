@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import type { ProductKey, ModalResponses } from '@/types';
-import { supabase } from '@/lib/supabase';
-import { getStoredUTM, getSessionId, pushToDataLayer } from '@/lib/tracking';
-import { QuestionStep } from './QuestionStep';
-import { EmailStep } from './EmailStep';
-import { SuccessStep } from './SuccessStep';
+import { useEffect } from 'react';
+
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import type {
+  ModalResponses,
+  ModalResponsesStructured,
+  ProductKey,
+} from '@/types';
+
+import { ChatStep } from './ChatStep';
+import { QuestionStep } from './QuestionStep';
+import { SummaryStep } from './SummaryStep';
 
 /**
  * CampaignModal - Main modal component for lead capture
@@ -20,20 +24,22 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  * 2. Q2: Contextual pain point (based on Q1)
  * 3. Q3: Product-specific question
  * 4. Q4: Product-specific question
- * 5. Email capture
- * 6. Success confirmation
+ * 5. Summary: AI-generated personalized summary + auth (Google / email)
+ * 6. Chat: Post-signup conversational flow
  */
 
 interface CampaignModalProps {
   product: ProductKey;
   isOpen: boolean;
-  step: 'questions' | 'email' | 'success';
+  step: 'questions' | 'summary' | 'chat';
   questionNumber: number;
   responses: ModalResponses;
+  structuredResponses: ModalResponsesStructured;
   email: string;
+  modalSessionId: string | null;
   onClose: () => void;
-  onSelectAnswer: (questionId: string, value: string) => void;
-  onGoToSuccess: (email: string) => void;
+  onSelectAnswer: (questionId: string, value: string, label: string) => void;
+  onGoToChat: (email: string) => void;
 }
 
 export function CampaignModal({
@@ -42,13 +48,13 @@ export function CampaignModal({
   step,
   questionNumber,
   responses,
+  structuredResponses,
   email,
+  modalSessionId,
   onClose,
   onSelectAnswer,
-  onGoToSuccess,
+  onGoToChat,
 }: CampaignModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -73,63 +79,31 @@ export function CampaignModal({
     };
   }, [isOpen]);
 
-  // Handle email submission
-  const handleEmailSubmit = useCallback(async (userEmail: string) => {
-    setIsSubmitting(true);
+  // Check for OAuth return (show_chat=true in URL)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-    try {
-      const utm = getStoredUTM();
-      const sessionId = getSessionId();
+    const urlParams = new URLSearchParams(window.location.search);
+    const showChat = urlParams.get('show_chat');
 
-      // Insert to beta_signups table
-      await supabase.from('beta_signups').insert({
-        email: userEmail,
-        session_id: sessionId,
-        product_offering: product,
-        responses: responses,
-        landing_url: typeof window !== 'undefined' ? window.location.href : '',
-        referrer: typeof document !== 'undefined' ? document.referrer : '',
-        utm_source: utm.utm_source,
-        utm_medium: utm.utm_medium,
-        utm_campaign: utm.utm_campaign,
-        utm_content: utm.utm_content,
-        utm_term: utm.utm_term,
-      });
+    if (showChat === 'true') {
+      const oauthEmail = sessionStorage.getItem('oauth_user_email');
 
-      // Track signup event
-      await supabase.from('marketing_events').insert({
-        event_type: 'signup_complete',
-        session_id: sessionId,
-        element_id: 'modal_email_submit',
-        element_text: userEmail,
-        page_url: typeof window !== 'undefined' ? window.location.href : '',
-        utm_source: utm.utm_source,
-        utm_medium: utm.utm_medium,
-        utm_campaign: utm.utm_campaign,
-        utm_content: utm.utm_content,
-        utm_term: utm.utm_term,
-      });
+      // Clean up sessionStorage
+      sessionStorage.removeItem('pending_chat_redirect');
+      sessionStorage.removeItem('pending_chat_return_url');
+      sessionStorage.removeItem('oauth_user_email');
 
-      // Push to GTM for conversion tracking
-      pushToDataLayer('signup_complete', {
-        product_offering: product,
-        email: userEmail,
-      });
+      // Clean up URL
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
 
-      // Trigger Reddit conversion pixel
-      if (typeof window !== 'undefined' && window.rdt) {
-        window.rdt('track', 'SignUp');
+      // Trigger chat with the email
+      if (oauthEmail) {
+        onGoToChat(oauthEmail);
       }
-
-      onGoToSuccess(userEmail);
-    } catch (error) {
-      console.error('Signup error:', error);
-      // Still show success to user - we don't want to lose them
-      onGoToSuccess(userEmail);
-    } finally {
-      setIsSubmitting(false);
     }
-  }, [product, responses, onGoToSuccess]);
+  }, [onGoToChat]);
 
   if (!isOpen) return null;
 
@@ -154,6 +128,20 @@ export function CampaignModal({
             <MaterialIcon name="close" size="sm" />
           </button>
 
+          {/* Progress dots (only for questions step) */}
+          {step === 'questions' && (
+            <div className="modal-progress">
+              {[1, 2, 3, 4].map((num) => (
+                <div
+                  key={num}
+                  className={`modal-dot ${
+                    num < questionNumber ? 'completed' : ''
+                  } ${num === questionNumber ? 'active' : ''}`}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Step content */}
           {step === 'questions' && (
             <QuestionStep
@@ -164,16 +152,22 @@ export function CampaignModal({
             />
           )}
 
-          {step === 'email' && (
-            <EmailStep
-              onSubmit={handleEmailSubmit}
-              isLoading={isSubmitting}
+          {step === 'summary' && (
+            <SummaryStep
+              product={product}
+              responses={structuredResponses}
+              modalSessionId={modalSessionId}
+              onGoogleSuccess={onGoToChat}
+              onEmailSuccess={onGoToChat}
             />
           )}
 
-          {step === 'success' && (
-            <SuccessStep
-              email={email}
+          {step === 'chat' && (
+            <ChatStep
+              product={product}
+              responses={structuredResponses}
+              userEmail={email}
+              modalSessionId={modalSessionId}
               onClose={onClose}
             />
           )}

@@ -8,17 +8,22 @@
 interface MaterialIconProps {
   name: string;
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const sizeClasses = {
+  xs: 'text-sm',
   sm: 'text-lg',
   md: 'text-2xl',
   lg: 'text-3xl',
   xl: 'text-4xl',
 };
 
-export function MaterialIcon({ name, className = '', size = 'md' }: MaterialIconProps) {
+export function MaterialIcon({
+  name,
+  className = '',
+  size = 'md',
+}: MaterialIconProps) {
   return (
     <span
       className={`material-symbols-outlined ${sizeClasses[size]} ${className}`}

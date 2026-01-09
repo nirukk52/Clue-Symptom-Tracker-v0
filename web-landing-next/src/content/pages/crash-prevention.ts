@@ -3,7 +3,7 @@ import type { LandingPageContent } from '@/types';
 /**
  * Crash Prevention Landing Page Content
  *
- * Value prop: "Know when to stop before it's too late"
+ * Why this exists: Product-specific landing page for the "pacing/energy" angle.
  * Target: People who struggle with pacing and boom-bust cycles
  */
 
@@ -12,43 +12,49 @@ export const crashPreventionContent: LandingPageContent = {
   product: 'crash-prevention',
 
   meta: {
-    title: 'Know when to stop before it\'s too late',
-    description: 'Get daily alerts when you\'re approaching your limit. Break the boom-bust cycle.',
+    title: "Chronic Life - Know when to stop before it's too late",
+    description:
+      "Get daily alerts when you're approaching your limit. Break the boom-bust cycle.",
   },
 
   hero: {
     headlines: {
-      default: 'Know when to stop before it\'s too late',
-      alt1: 'Break the boom-bust cycle',
-      alt2: 'Stop paying for good days',
+      default: "Know when to stop before it's too late.",
+      alt1: 'Break the boom-bust cycle.',
+      alt2: 'Stop paying tomorrow for today.',
     },
-    subheadline: 'Get daily alerts when you\'re approaching your limit. Break the boom-bust cycle.',
-    ctaText: 'See how it works',
-    ctaId: 'hero_crash_prevention',
+    subheadline:
+      "Get daily alerts when you're approaching your limit. Break the boom-bust cycle.",
+    ctaText: 'Start preventing crashes',
+    ctaId: 'hero_prevent_crashes',
   },
 
-  conditions: ['ME/CFS', 'Long COVID', 'Fibromyalgia', 'POTS', 'EDS'],
+  conditions: ['Long COVID', 'ME/CFS', 'Fibromyalgia', 'POTS', 'EDS'],
 
   features: [
     {
       icon: 'battery_horiz_075',
       title: 'Energy Tracking',
-      description: 'Log your energy levels in seconds. We learn your patterns and limits.',
+      description:
+        'Log your energy levels in seconds. We learn your patterns and limits.',
     },
     {
       icon: 'warning',
       title: 'Limit Alerts',
-      description: 'Get a gentle nudge when you\'re approaching your energy envelope.',
+      description:
+        "Get a gentle nudge when you're approaching your energy envelope.",
     },
     {
       icon: 'self_improvement',
       title: 'Pacing Coach',
-      description: 'Daily push vs. rest guidance based on your current reserves.',
+      description:
+        'Daily push vs. rest guidance based on your current reserves.',
     },
     {
       icon: 'insights',
       title: 'Crash Analysis',
-      description: 'See what led to past crashes so you can avoid repeating them.',
+      description:
+        'See what led to past crashes so you can avoid repeating them.',
     },
   ],
 };

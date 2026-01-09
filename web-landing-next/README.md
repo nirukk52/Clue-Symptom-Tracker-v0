@@ -1,4 +1,19 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chronic Life - Web Landing Pages (Next.js)
+
+Next.js version of the marketing landing pages for Chronic Life symptom tracker.
+
+## Environment Variables
+
+Create a `.env.local` file with:
+
+```bash
+# Supabase Configuration (required for auth, database, analytics)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# OpenAI API Key (required for AI summary generation and chat)
+NEXT_PUBLIC_OPENAI_API_KEY=sk-...
+```
 
 ## Getting Started
 

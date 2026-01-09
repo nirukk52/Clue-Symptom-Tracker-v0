@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { spoonSaverContent } from '@/content/pages/spoon-saver';
+
 import { LandingPage } from '@/components/LandingPage';
+import { spoonSaverContent } from '@/content/pages/spoon-saver';
 
 /**
  * Spoon Saver Landing Page

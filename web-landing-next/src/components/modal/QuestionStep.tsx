@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
+
+import { PRODUCT_QUESTIONS, Q1_OPTIONS, Q2_OPTIONS } from '@/content/questions';
 import type { ModalResponses, ProductKey } from '@/types';
-import { Q1_OPTIONS, Q2_OPTIONS, PRODUCT_QUESTIONS } from '@/content/questions';
+
 import { OptionPill } from './OptionPill';
-import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 /**
  * QuestionStep - Renders Q1-Q4 with auto-advance on selection
@@ -17,10 +18,15 @@ interface QuestionStepProps {
   step: number;
   product: ProductKey;
   responses: ModalResponses;
-  onSelect: (questionId: string, value: string) => void;
+  onSelect: (questionId: string, value: string, label: string) => void;
 }
 
-export function QuestionStep({ step, product, responses, onSelect }: QuestionStepProps) {
+export function QuestionStep({
+  step,
+  product,
+  responses,
+  onSelect,
+}: QuestionStepProps) {
   // Get question text and options based on step
   const { questionText, options, questionId } = useMemo(() => {
     switch (step) {
@@ -63,26 +69,8 @@ export function QuestionStep({ step, product, responses, onSelect }: QuestionSte
 
   return (
     <div className="space-y-6">
-      {/* Progress indicator */}
-      <div className="flex items-center gap-2">
-        {[1, 2, 3, 4].map((num) => (
-          <div
-            key={num}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              num <= step ? 'bg-accent-purple' : 'bg-primary/10'
-            }`}
-          />
-        ))}
-      </div>
-
-      {/* Question number badge */}
-      <div className="flex items-center gap-2 text-sm text-text-muted">
-        <MaterialIcon name="chat_bubble" size="sm" />
-        <span>Question {step} of 4</span>
-      </div>
-
       {/* Question text */}
-      <h2 className="font-display text-2xl font-semibold text-primary">
+      <h2 className="font-display text-primary text-2xl font-semibold">
         {questionText}
       </h2>
 
@@ -94,7 +82,7 @@ export function QuestionStep({ step, product, responses, onSelect }: QuestionSte
             label={option.label}
             value={option.value}
             isSelected={currentValue === option.value}
-            onSelect={(value) => onSelect(questionId, value)}
+            onSelect={(value, label) => onSelect(questionId, value, label)}
           />
         ))}
       </div>
