@@ -29,6 +29,7 @@ export default defineConfig([
     '.vscode',
     'docs/',
     'cli/',
+    'web-landing-next/',
     'expo-env.d.ts',
   ]),
   expoConfig,

@@ -20,7 +20,8 @@
     "cli",
     "android",
     "ios",
-    "lint-staged.config.js"
+    "lint-staged.config.js",
+    "web-landing-next"
   ],
   "include": [
     "**/*.ts",

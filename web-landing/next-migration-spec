@@ -1,0 +1,114 @@
+Next.js Migration Spec for web-landing/
+Project Structure
+
+web-landing-next/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx              # Root layout (fonts, GTM, metadata)
+│   │   ├── page.tsx                # index.html → /
+│   │   ├── flare-forecast/
+│   │   │   └── page.tsx
+│   │   ├── crash-prevention/
+│   │   │   └── page.tsx
+│   │   ├── top-suspect/
+│   │   │   └── page.tsx
+│   │   ├── spoon-saver/
+│   │   │   └── page.tsx
+│   │   ├── tracking/
+│   │   │   └── page.tsx            # Dashboard (could be auth-protected)
+│   │   └── auth-callback/
+│   │       └── page.tsx
+│   │
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Navbar.tsx          # Transparent → solid scroll behavior
+│   │   │   └── Footer.tsx
+│   │   │
+│   │   ├── hero/
+│   │   │   ├── Hero.tsx            # Shared hero container (mobile card / desktop full)
+│   │   │   ├── HeroContent.tsx     # Text + CTA slot
+│   │   │   ├── HeroPersona.tsx     # Persona image with responsive positioning
+│   │   │   └── ConditionPills.tsx  # Glassmorphic condition tags
+│   │   │
+│   │   ├── sections/
+│   │   │   ├── HowItWorks.tsx
+│   │   │   ├── Features.tsx        # Takes feature array as props
+│   │   │   ├── Testimonials.tsx
+│   │   │   └── FinalCTA.tsx
+│   │   │
+│   │   ├── modal/
+│   │   │   ├── CampaignModal.tsx   # Main modal wrapper
+│   │   │   ├── QuestionStep.tsx    # Q1-Q4 with auto-advance
+│   │   │   ├── SummaryStep.tsx     # AI summary display
+│   │   │   ├── ChatStep.tsx        # Post-signup chat
+│   │   │   └── OptionPill.tsx      # Selectable pill component
+│   │   │
+│   │   └── ui/
+│   │       ├── Button.tsx          # hero-cta, nav-cta variants
+│   │       └── MaterialIcon.tsx    # Material Symbols wrapper
+│   │
+│   ├── lib/
+│   │   ├── supabase.ts             # Supabase client singleton
+│   │   ├── tracking.ts             # UTM capture, event tracking
+│   │   └── gtm.ts                  # GTM dataLayer helpers
+│   │
+│   ├── hooks/
+│   │   ├── useTracking.ts          # UTM + session management
+│   │   ├── useModal.ts             # Modal state + question flow
+│   │   └── useNavScroll.ts         # Navbar scroll detection
+│   │
+│   ├── content/
+│   │   ├── products.ts             # Product configs (icons, colors, questions)
+│   │   ├── questions.ts            # Q1, Q2, Q3, Q4 option data
+│   │   └── pages/
+│   │       ├── home.ts
+│   │       ├── flare-forecast.ts
+│   │       ├── crash-prevention.ts
+│   │       ├── top-suspect.ts
+│   │       └── spoon-saver.ts
+│   │
+│   └── styles/
+│       └── globals.css             # Base styles + custom CSS vars
+│
+├── public/
+│   └── personas/                   # Move from current personas/
+│
+├── tailwind.config.ts              # Single source of truth
+├── next.config.js
+├── package.json
+└── .env.local                      # NEXT_PUBLIC_SUPABASE_URL, etc.
+Key Components
+1. Page Content Config (the DRY win)
+Each landing page becomes ~30 lines of content:
+// src/content/pages/flare-forecast.tsimport type { LandingPageContent } from '@/types';export const flareForcastContent: LandingPageContent = {  pageId: 'flare_forecast_landing',  product: 'flare-forecast',    meta: {    title: 'Chronic Life - Your flares have a forecast',    description: 'Get a 48-hour heads up based on your body\'s patterns.',  },    hero: {    headlines: {      default: 'Your flares have a forecast',      alt1: 'Know before it hits',      alt2: 'Stop being blindsided',    },    subheadline: 'Get a 48-hour heads up based on your body\'s patterns.',    ctaText: 'See how it works',    ctaId: 'hero_flare_forecast',  },    conditions: ['Fibromyalgia', 'Long COVID', 'ME/CFS', 'POTS'],    features: [    {      icon: 'visibility',      title: 'Pattern Detection',      description: 'Your app learns what comes before a flare.',    },    // ...  ],};
+2. Shared Hero Component
+// src/components/hero/Hero.tsxinterface HeroProps {  content: LandingPageContent['hero'];  conditions: string[];  persona?: 'maya' | 'jordan' | 'marcus';  onCtaClick: () => void;}export function Hero({ content, conditions, persona = 'maya', onCtaClick }: HeroProps) {  return (    <section className="hero-wrapper">      <div className="hero-visible">        <HeroContent           headlines={content.headlines}          subheadline={content.subheadline}          ctaText={content.ctaText}          onCtaClick={onCtaClick}        />        <ConditionPills conditions={conditions} />        <HeroPersona persona={persona} />      </div>    </section>  );}
+3. Campaign Modal (React conversion)
+The 2600-line campaign-modal.js becomes:
+// src/components/modal/CampaignModal.tsx'use client';import { useState } from 'react';import { QuestionStep } from './QuestionStep';import { SummaryStep } from './SummaryStep';import { ChatStep } from './ChatStep';import { useTracking } from '@/hooks/useTracking';import { PRODUCT_QUESTIONS } from '@/content/questions';interface Props {  product: string;  isOpen: boolean;  onClose: () => void;}export function CampaignModal({ product, isOpen, onClose }: Props) {  const [step, setStep] = useState(1);  const [responses, setResponses] = useState<Record<string, string>>({});  const { trackEvent } = useTracking();  const handleSelect = (questionId: string, value: string) => {    setResponses(prev => ({ ...prev, [questionId]: value }));    trackEvent('question_answered', { questionId, value });        // Auto-advance after 350ms    setTimeout(() => setStep(s => s + 1), 350);  };  if (!isOpen) return null;  return (    <div className="modal-overlay active">      <div className="modal-container active">        {step <= 4 ? (          <QuestionStep             step={step}            product={product}            responses={responses}            onSelect={handleSelect}          />        ) : step === 5 ? (          <SummaryStep             responses={responses}            onContinue={() => setStep(6)}          />        ) : (          <ChatStep responses={responses} />        )}      </div>    </div>  );}
+4. Tracking Hook (consolidates duplicated code)
+// src/hooks/useTracking.ts'use client';import { useCallback, useEffect } from 'react';import { supabase } from '@/lib/supabase';const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];export function useTracking(pageId: string, pageTitle: string) {  // Capture UTM on mount  useEffect(() => {    captureUTMParams();    trackEvent('page_view', pageId, pageTitle);  }, [pageId, pageTitle]);  const trackEvent = useCallback(async (    eventType: string,    elementId: string,    elementText?: string  ) => {    const utm = getStoredUTM();    const sessionId = getSessionId();    // Supabase insert    await supabase.from('marketing_events').insert({      event_type: eventType,      session_id: sessionId,      element_id: elementId,      element_text: elementText,      ...utm,    });    // GTM dataLayer push    window.dataLayer?.push({      event: eventType,      element_id: elementId,      ...utm,    });  }, []);  return { trackEvent, getStoredUTM };}
+5. Root Layout (GTM + fonts once)
+// src/app/layout.tsximport { DM_Sans, Fraunces } from 'next/font/google';import { GTMScript, GTMNoScript } from '@/components/GTM';import '@/styles/globals.css';const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-body' });const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-display' });export default function RootLayout({ children }: { children: React.ReactNode }) {  return (    <html lang="en" className={`${dmSans.variable} ${fraunces.variable}`}>      <head>        <GTMScript />      </head>      <body>        <GTMNoScript />        {children}      </body>    </html>  );}
+Landing Page File (The Final DRY Result)
+Each page becomes ~20 lines:
+// src/app/flare-forecast/page.tsximport { flareForcastContent } from '@/content/pages/flare-forecast';import { LandingPage } from '@/components/LandingPage';export const metadata = {  title: flareForcastContent.meta.title,  description: flareForcastContent.meta.description,};export default function FlareForecastPage() {  return <LandingPage content={flareForcastContent} />;}
+Migration Order (Recommended)
+Phase	What	Why First
+1	layout.tsx + tailwind.config.ts + globals.css	Foundation - eliminates ~560 lines/page
+2	Hero + Navbar + tracking hooks	Most shared, most bug-prone (your border issue)
+3	CampaignModal conversion	Biggest single file, biggest maintainability win
+4	Page content files + LandingPage component	Easy once 1-3 exist
+5	Sections (HowItWorks, Features, etc.)	Lower risk, less urgency
+6	Migrate tracking.html dashboard	Separate from landing pages
+Environment Variables
+# .env.localNEXT_PUBLIC_SUPABASE_URL=https://zvpudxinbcsrfyojrhhv.supabase.coNEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...NEXT_PUBLIC_GTM_ID=GTM-KFK8WHV5NEXT_PUBLIC_REDDIT_PIXEL_ID=a2_i1xf5fcreuso
+What Changes vs What Stays
+Stays the Same	Changes
+Vercel deployment	Build process (static HTML → Next.js build)
+Domain (chroniclife.app)	File structure
+Supabase tables/queries	Modal: vanilla JS → React component
+GTM container	Fonts: CDN → next/font (better perf)
+Design/CSS	Tailwind: CDN → build-time compilation
+UTM tracking logic	URL structure (.html removed)
+Want me to create a spec file you can commit to the repo, or should we start the migration in Agent mode?
