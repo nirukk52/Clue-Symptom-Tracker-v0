@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /**
  * Chronic Life Landing Pages - Design System
@@ -9,28 +9,28 @@
 
 :root {
   /* Core brand colors */
-  --color-primary: #20132E;
+  --color-primary: #20132e;
   --color-primary-light: #f3f0fa;
 
   /* Backgrounds */
-  --color-bg-cream: #FDFBF9;
-  --color-bg-card: #FFFFFF;
-  --color-hero-bg: #8BA4A8;
+  --color-bg-cream: #fdfbf9;
+  --color-bg-card: #ffffff;
+  --color-hero-bg: #8ba4a8;
 
   /* Accent palette */
-  --color-accent-peach: #E8974F;
-  --color-accent-blue: #A4C8D8;
-  --color-accent-purple: #D0BDF4;
-  --color-accent-mint: #B8E3D6;
-  --color-accent-rose: #F4C4C4;
+  --color-accent-peach: #e8974f;
+  --color-accent-blue: #a4c8d8;
+  --color-accent-purple: #d0bdf4;
+  --color-accent-mint: #b8e3d6;
+  --color-accent-rose: #f4c4c4;
   --color-accent-yellow: #f5e6a3;
 
   /* Interactive states */
-  --color-pill-hover: #F3EFFF;
-  --color-pill-selected: #E0D4FC;
+  --color-pill-hover: #f3efff;
+  --color-pill-selected: #e0d4fc;
 
   /* Text */
-  --color-text-main: #20132E;
+  --color-text-main: #20132e;
   --color-text-muted: #554b66;
 
   /* Shadows */
@@ -131,6 +131,25 @@ body {
   flex-direction: column;
 }
 
+/* Radial gradient overlay - evening sky to sunset night */
+.hero-visible::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(
+    circle at 50% 95%,
+    #6d8ba0 0%,
+    rgba(140, 130, 150, 0.85) 50%,
+    rgba(160, 120, 140, 0.8) 55%,
+    rgba(140, 90, 120, 0.85) 60%,
+    rgba(90, 60, 100, 0.9) 68%,
+    rgba(50, 35, 70, 0.95) 85%,
+    rgba(32, 19, 46, 0.98) 100%
+  );
+  pointer-events: none;
+}
+
 /* Hero content area */
 .hero-content {
   position: relative;
@@ -175,6 +194,8 @@ body {
   align-items: flex-end;
   flex: 1;
   padding-top: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 .hero-persona-image {
@@ -218,6 +239,20 @@ body {
     align-items: center;
     min-height: calc(100vh - 1.5rem);
     border-radius: 1.5rem;
+  }
+
+  /* Desktop: gradient centered on persona (right side) radiating outward */
+  .hero-visible::before {
+    background: radial-gradient(
+      circle at 70% 50%,
+      #6d8ba0 0%,
+      rgba(140, 130, 150, 0.85) 15%,
+      rgba(160, 120, 140, 0.8) 30%,
+      rgba(140, 90, 120, 0.85) 45%,
+      rgba(90, 60, 100, 0.9) 62%,
+      rgba(50, 35, 70, 0.95) 80%,
+      rgba(32, 19, 46, 0.98) 100%
+    );
   }
 
   .hero-content {
@@ -288,7 +323,9 @@ body {
   font-size: 0.875rem;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .condition-pill:hover {
@@ -305,10 +342,13 @@ body {
   font-weight: 700;
   font-size: 1rem;
   box-shadow: var(--shadow-hero-cta);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  margin-top: 0px;
 }
 
 .hero-cta:hover {
@@ -326,13 +366,20 @@ body {
    ============================================ */
 
 nav {
-  transition: background 0.3s ease, border-color 0.3s ease,
-              box-shadow 0.3s ease, top 0.3s ease,
-              left 0.3s ease, right 0.3s ease, border-radius 0.3s ease;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    top 0.3s ease,
+    left 0.3s ease,
+    right 0.3s ease,
+    border-radius 0.3s ease;
 }
 
 nav * {
-  transition: color 0.3s ease, background 0.3s ease;
+  transition:
+    color 0.3s ease,
+    background 0.3s ease;
 }
 
 .nav-transparent {
@@ -399,12 +446,17 @@ nav * {
    ============================================ */
 
 .gradient-section {
-  background: linear-gradient(180deg, #fdfbf9 0%, rgba(164, 200, 216, 0.1) 100%);
+  background: linear-gradient(
+    180deg,
+    #fdfbf9 0%,
+    rgba(164, 200, 216, 0.1) 100%
+  );
 }
 
 .hover-lift {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hover-lift:hover {
@@ -424,7 +476,9 @@ nav * {
   z-index: 100;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
 }
 
 .modal-overlay.active {
@@ -440,7 +494,10 @@ nav * {
   z-index: 101;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.3s ease;
 }
 
 .modal-container.active {
@@ -474,7 +531,9 @@ nav * {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .modal-close:hover {
@@ -492,7 +551,9 @@ nav * {
   background: white;
   color: var(--color-primary);
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .modal-input:focus {
@@ -511,9 +572,18 @@ nav * {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-4px); }
-  40%, 80% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 /* Question option pills in modal */
@@ -569,8 +639,14 @@ nav * {
 
 /* Animation utilities */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateX(10px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .animate-fadeIn {
@@ -638,13 +714,27 @@ nav * {
   animation: typingPulse 1.4s infinite ease-in-out;
 }
 
-.typing-dot:nth-child(1) { animation-delay: 0s; }
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes typingPulse {
-  0%, 60%, 100% { transform: scale(1); opacity: 0.4; }
-  30% { transform: scale(1.2); opacity: 1; }
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  30% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
 }
 
 @keyframes bubbleIn {
@@ -716,7 +806,9 @@ nav * {
   font-size: 0.9375rem;
   color: var(--color-primary);
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .chat-input:focus {
@@ -763,7 +855,11 @@ nav * {
   margin-top: 1rem;
   padding: 0.875rem 1.5rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--color-accent-mint) 0%, var(--color-accent-blue) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-mint) 0%,
+    var(--color-accent-blue) 100%
+  );
   border: none;
   color: var(--color-primary);
   font-size: 1rem;
