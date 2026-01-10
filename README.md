@@ -2,6 +2,8 @@
 
 > **Predict your next flare before it hits.** A symptom tracker that learns your body's patterns and gives you a heads up — so you can prepare, not just react.
 
+# Name of the app is Chronic Life and name of the chat agent is Clue
+
 ---
 
 ## 🎯 Validated Product Direction (Jan 2026)
