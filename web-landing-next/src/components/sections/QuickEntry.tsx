@@ -86,10 +86,10 @@ export function QuickEntry({ onCtaClick }: QuickEntryProps) {
                   Stress
                   <MaterialIcon name="check" size="sm" />
                 </span>
-                <span className="text-text-muted rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium">
+                <span className="text-text-muted flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium">
                   Food
                 </span>
-                <span className="text-text-muted rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium">
+                <span className="text-text-muted flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium">
                   Weather
                 </span>
               </div>
