@@ -80,6 +80,7 @@ export default defineConfig([
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['web-landing-next/**/*'],
     languageOptions: {
       parser: parser,
       parserOptions: {
@@ -98,6 +99,33 @@ export default defineConfig([
           disallowTypeAnnotations: true,
         },
       ],
+    },
+  },
+  {
+    files: ['web-landing-next/**/*.ts', 'web-landing-next/**/*.tsx'],
+    languageOptions: {
+      parser: parser,
+      parserOptions: {
+        project: './web-landing-next/tsconfig.json',
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      ...configs.recommended.rules,
+      '@typescript-eslint/comma-dangle': 'off',
+      '@typescript-eslint/consistent-type-imports': [
+        'warn',
+        {
+          prefer: 'type-imports',
+          fixStyle: 'inline-type-imports',
+          disallowTypeAnnotations: true,
+        },
+      ],
+      'unicorn/filename-case': 'off',
+      'max-lines-per-function': 'off',
+      'max-params': 'off',
+      'import/no-unresolved': 'off',
+      'react/no-unknown-property': ['error', { ignore: ['jsx'] }],
     },
   },
   {
