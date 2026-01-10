@@ -558,3 +558,21 @@ Back Pain Exercises Chronic back pain Stretching/exercise instructions and perfo
 Mobilyze! Depression Machine learning to predict cognitive state from phone sensors and environmental context. Not in source Not in source Cognitive state prediction, proactive intervention. Not in source 29
 BeWell General wellbeing Automated tracking of sleep, physical activity, and social interactions; intelligent feedback. Not in source Not in source Stress management, identifying early signs of health decline. Not in source 29
 JOOL Self-monitoring user Push notifications for reminders and engagement. Not in source Not in source Motivation, demotivation/guilt from push notifications. Not in source 34
+
+“Spoonie” isn’t a single disease — it’s a label used most in communities dealing with chronic fatigue, chronic pain, and fluctuating disability. The conditions most commonly associated include:
+
+Lupus (the Spoon Theory was created to explain lupus-related limitations)
+
+Fibromyalgia
+
+ME/CFS (myalgic encephalomyelitis / chronic fatigue syndrome)
+
+POTS / dysautonomia
+
+Arthritis / autoimmune inflammatory conditions (often grouped under “spoonie” discussions)
+
+Chronic migraine
+
+Common “multi-condition” overlap in tracking communities: IBS / GI disorders, long COVID, etc.
+
+What symptom tracking solutions…
