@@ -423,7 +423,187 @@ const conditions = conditionMap[utmContent] || conditionMap.default;
 
 ---
 
+## Spoon Saver Landing Page Patterns
+
+> **Product Direction:** "Low-effort, non-judgmental, flexible symptom tracking that works on bad days and doesn't create guilt."
+
+### Testimonial Cards (Social Proof)
+
+```jsx
+// Testimonial card with pain point badge
+<div className="hover-lift group rounded-[2rem] border border-primary/5 bg-white p-6 shadow-soft">
+  {/* Pain point badge - colored by category */}
+  <div className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-accent-purple/30 text-purple-800">
+    <span className="size-1.5 rounded-full bg-current" />
+    Feeling judged
+  </div>
+
+  {/* Quote - Fraunces display font */}
+  <blockquote className="font-display text-primary mb-4 text-lg leading-relaxed">
+    "Quote from user"
+  </blockquote>
+
+  {/* Attribution - anonymous avatar (no real faces for privacy) */}
+  <div className="flex items-center gap-3">
+    <div className="flex size-10 items-center justify-center rounded-full bg-accent-purple/20">
+      <Icon name="person" className="text-primary/60" size="sm" />
+    </div>
+    <div>
+      <p className="text-sm font-medium text-primary">r/ChronicIllness</p>
+      <p className="text-xs text-text-muted">Fibromyalgia</p>
+    </div>
+  </div>
+</div>
+```
+
+**Pain Point Color Mapping:**
+| Pain Point | Color Class |
+|------------|-------------|
+| burden | `bg-accent-rose/20 text-red-700` |
+| judgment | `bg-accent-purple/30 text-purple-800` |
+| brain_fog | `bg-accent-blue/30 text-blue-800` |
+| relief | `bg-accent-mint/40 text-teal-800` |
+| aspiration | `bg-accent-peach/40 text-orange-800` |
+| validation | `bg-accent-mint/30 text-teal-700` |
+
+### "No Guilt" Comparison Cards
+
+```jsx
+// Problem card (what other apps do) - NOTE: This shows BAD patterns to avoid
+<div className="rounded-2xl border-2 border-red-200 bg-red-50/50 p-6">
+  <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-red-600">
+    Other Apps
+  </p>
+  <div className="flex items-center gap-3">
+    <Icon name="sentiment_dissatisfied" size="lg" className="text-red-500" />
+    <span className="text-sm text-red-700">Pain Level: 8/10 - AWFUL</span>
+  </div>
+  <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-100 p-2 text-sm text-red-700">
+    <Icon name="warning" size="sm" className="text-red-500" />
+    You broke your 14-day streak!
+  </div>
+</div>
+
+// Solution card (our approach)
+<div className="rounded-2xl border-2 border-accent-mint bg-accent-mint/10 p-6 shadow-soft">
+  <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-teal-700">
+    Chronic Life
+  </p>
+  <div className="flex items-center gap-3">
+    <div className="flex size-8 items-center justify-center rounded-full bg-accent-purple/20">
+      <Icon name="circle" size="sm" className="text-primary/60" />
+    </div>
+    <span className="text-sm text-primary">Intensity: 8/10 - High intensity</span>
+  </div>
+  <div className="mt-2 flex items-center gap-2 rounded-lg bg-accent-mint/30 p-2 text-sm text-teal-800">
+    <Icon name="check_circle" size="sm" className="text-teal-600" />
+    Logged. Tough day — hope you can rest.
+  </div>
+</div>
+```
+
+### Section Badge Pattern
+
+```jsx
+// Standard section badge
+<div className="mb-6 inline-flex items-center gap-2 rounded-full bg-accent-peach/30 px-4 py-2 text-sm font-semibold text-primary">
+  <Icon name="groups" size="sm" />
+  From the Spoonie Community
+</div>
+
+// Badge color by section
+// - Testimonials: bg-accent-peach/30
+// - No Guilt: bg-accent-purple/20
+// - Brain Fog: bg-accent-blue/20
+// - Flare Mode: bg-accent-rose/30
+```
+
+### Onboarding Q3 Widget Patterns
+
+Based on `onboarding-flow.json`, use these widget types:
+
+```jsx
+// Visual Battery Fill (energy_envelope)
+<div className="flex items-center gap-4">
+  <div className="h-16 w-8 rounded-full border-2 border-primary/20 overflow-hidden">
+    <div
+      className="w-full bg-accent-purple transition-all"
+      style={{ height: `${value}%` }}
+    />
+  </div>
+  <span className="text-lg font-medium text-primary">{value}%</span>
+</div>
+
+// Traffic Light Select (stability)
+<div className="flex gap-3">
+  {['green', 'yellow', 'red'].map(color => (
+    <button className={`
+      size-16 rounded-xl transition-all
+      ${selected === color ? 'ring-2 ring-primary scale-110' : ''}
+      ${color === 'green' && 'bg-green-400'}
+      ${color === 'yellow' && 'bg-yellow-400'}
+      ${color === 'red' && 'bg-red-400'}
+    `}>
+      {color === 'green' && 'Go'}
+      {color === 'yellow' && 'Caution'}
+      {color === 'red' && 'Cancel'}
+    </button>
+  ))}
+</div>
+
+// Multi-select chips (triggers)
+<div className="flex flex-wrap gap-2">
+  {options.map(opt => (
+    <button className={`
+      px-4 py-2 rounded-full border transition-all
+      ${selected.includes(opt.value)
+        ? 'bg-pill-selected border-primary text-primary font-semibold'
+        : 'bg-white border-gray-200 text-gray-700'}
+    `}>
+      {opt.label}
+    </button>
+  ))}
+</div>
+```
+
+### Memory Stream Visualization (Brain Fog)
+
+```jsx
+// Pattern connection between past and present
+<div className="rounded-2xl rounded-bl-none border border-primary/5 bg-accent-blue/5 p-4">
+  <p className="text-primary leading-relaxed">
+    You logged{' '}
+    <span className="rounded bg-accent-purple/20 px-1.5 py-0.5 font-medium">
+      Poor Sleep
+    </span>{' '}
+    on Tuesday. Is today's{' '}
+    <span className="rounded bg-accent-rose/20 px-1.5 py-0.5 font-medium">
+      migraine
+    </span>{' '}
+    related?
+  </p>
+</div>;
+
+{
+  /* Pattern detected badge */
+}
+<div className="mt-4 flex items-center gap-2 rounded-lg bg-accent-mint/20 p-3">
+  <Icon name="insights" size="sm" className="text-teal-600" />
+  <span className="text-sm font-medium text-teal-800">
+    Pattern Detected: 70% of your migraines follow poor sleep by 48 hours
+  </span>
+</div>;
+```
+
+---
+
 ## Anti-Patterns (AVOID)
+
+### CRITICAL: No Emojis
+
+- ❌ **NEVER use emojis in UI, code, or content** — Emojis feel juvenile, inconsistent across platforms, and clash with our sophisticated Podia-inspired aesthetic. Use icons from our icon system instead.
+
+### General Design Anti-Patterns
 
 - ❌ Generic fonts (Inter alone is fine, but pair with Fraunces for display)
 - ❌ Pure white backgrounds (use warm cream #FDFBF9)
@@ -436,3 +616,24 @@ const conditions = conditionMap[utmContent] || conditionMap.default;
 - ❌ Stock photos of smiling people (use authentic, hopeful imagery)
 - ❌ Abstract illustrations instead of product UI mockups
 - ❌ Rainbow gradients (stick to single accent color per section)
+
+### Chronic Illness UX Anti-Patterns (CRITICAL)
+
+- ❌ **Judgmental iconography**: Sad faces 😢, red angry faces, "awful" labels
+- ❌ **Streak gamification**: "You broke your streak!" messages
+- ❌ **Color-coded judgment**: Red = bad day (use neutral intensity scales instead)
+- ❌ **Guilt-inducing language**: "You missed 3 days" without empathy
+- ❌ **Complex navigation**: Nested menus requiring multiple taps
+- ❌ **Required daily logging**: Must allow gaps without penalty
+- ❌ **Text-heavy inputs**: Typing is hard with brain fog, use taps
+- ❌ **Bright flashy UI**: Painful during migraines or sensory sensitivity
+- ❌ **Social feeds in tracking**: Users want focus, not distraction
+- ❌ **One-size-fits-all scales**: "6/10 is bad" — but for chronic pain, 6 might be a GOOD day
+
+### Language Anti-Patterns (Per Language of Care guidelines)
+
+- ❌ "Bad day" → Use "High intensity day" (neutral)
+- ❌ "You should..." → Use "You might try..." (permission)
+- ❌ "Track everything" → Use "Track what matters to YOUR question"
+- ❌ Generic messages → Personalize with user's context
+- ❌ Clinical jargon without context → Use accessible language

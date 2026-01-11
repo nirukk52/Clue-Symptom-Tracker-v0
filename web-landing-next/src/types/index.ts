@@ -35,10 +35,70 @@ export interface Feature {
   description: string;
 }
 
+/**
+ * Testimonial from Spoonie community
+ * Why: Social proof using real voices from chronic illness community
+ *
+ * Types:
+ * - Problem quotes: Show the pain points users face
+ * - Flipped quotes: Same pain points but showing how Clue solves them
+ * - Clue insights: Show actual Clue-generated insights
+ */
 export interface Testimonial {
   quote: string;
-  author: string;
+  source: string;
+  /** Condition tag displayed on the card */
   condition?: string;
+  /** Pain point category for styling */
+  painPoint:
+    | 'burden'
+    | 'judgment'
+    | 'brain_fog'
+    | 'relief'
+    | 'aspiration'
+    | 'timing'
+    | 'complexity'
+    | 'validation'
+    | 'setup'
+    | 'insight'
+    | 'sync'
+    | 'doctor';
+  /** Whether this is a "flipped" positive version (showing Clue's solution) */
+  isFlipped?: boolean;
+  /** Whether this is a Clue-generated insight example */
+  isClueInsight?: boolean;
+}
+
+/**
+ * "No Guilt" section content
+ * Why: Key differentiator - emotional safety in tracking
+ */
+export interface NoGuiltContent {
+  headline: string;
+  subheadline: string;
+  features: string[];
+}
+
+/**
+ * "Brain Fog Friendly" section content
+ * Why: Accessibility for cognitive impairment
+ */
+export interface BrainFogContent {
+  headline: string;
+  features: {
+    icon: string;
+    title: string;
+    description: string;
+  }[];
+}
+
+/**
+ * Comparison table for "What Makes Us Different"
+ * Why: Differentiate from Bearable/Daylio competitors
+ */
+export interface ComparisonItem {
+  them: string;
+  us: string;
 }
 
 export interface LandingPageContent {
@@ -49,6 +109,12 @@ export interface LandingPageContent {
   conditions: string[];
   features: Feature[];
   testimonials?: Testimonial[];
+  /** "No Guilt" emotional safety section (spoon-saver specific) */
+  noGuilt?: NoGuiltContent;
+  /** Brain fog accessibility section (spoon-saver specific) */
+  brainFog?: BrainFogContent;
+  /** Comparison with competitors (spoon-saver specific) */
+  comparison?: ComparisonItem[];
 }
 
 // ============================================

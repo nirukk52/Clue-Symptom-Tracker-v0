@@ -4,15 +4,18 @@ import { Hero } from '@/components/hero/Hero';
 import { Footer } from '@/components/layout/Footer';
 import { Navbar } from '@/components/layout/Navbar';
 import { CampaignModal } from '@/components/modal/CampaignModal';
+import { ClueIntroduction } from '@/components/sections/ClueIntroduction';
 import { DoctorPack } from '@/components/sections/DoctorPack';
 import { EnergyPacing } from '@/components/sections/EnergyPacing';
 import { FinalCTA } from '@/components/sections/FinalCTA';
 import { FlareMode } from '@/components/sections/FlareMode';
 import { Insights } from '@/components/sections/Insights';
 import { MultipleConditions } from '@/components/sections/MultipleConditions';
+import { NoGuilt } from '@/components/sections/NoGuilt';
 import { PatternDetection } from '@/components/sections/PatternDetection';
 import { PredictiveInsights } from '@/components/sections/PredictiveInsights';
 import { QuickEntry } from '@/components/sections/QuickEntry';
+import { Testimonials } from '@/components/sections/Testimonials';
 import { useLandingVisit } from '@/hooks/useLandingVisit';
 import { useModal } from '@/hooks/useModal';
 import { useTracking } from '@/hooks/useTracking';
@@ -77,6 +80,23 @@ export function LandingPage({
         onCtaClick={openModal}
       />
 
+      {/* Quick Entry - Energy-conscious design showcase */}
+      <QuickEntry onCtaClick={openModal} />
+
+      {/* No Guilt Zone - Emotional safety (spoon-saver only) */}
+      {content.product === 'spoon-saver' && content.noGuilt && (
+        <NoGuilt content={content.noGuilt} onCtaClick={openModal} />
+      )}
+
+      {/* Flare Mode - One-tap logging for bad days */}
+      <FlareMode onCtaClick={openModal} />
+
+      {/* Clue Introduction - Chat agent showcase (spoon-saver only) */}
+      {content.product === 'spoon-saver' && (
+        <ClueIntroduction onCtaClick={openModal} />
+      )}
+
+      {/* === OTHER PRODUCT SPECIFIC SECTIONS === */}
       {/* Predictive Insights - Lag effect detection (flare-forecast specific) */}
       {content.product === 'flare-forecast' && (
         <PredictiveInsights onCtaClick={openModal} />
@@ -92,17 +112,20 @@ export function LandingPage({
         <EnergyPacing onCtaClick={openModal} />
       )}
 
-      {/* Quick Entry - Energy-conscious design showcase */}
-      <QuickEntry onCtaClick={openModal} />
-
-      {/* Flare Mode - One-tap logging for bad days */}
-      <FlareMode onCtaClick={openModal} />
-
+      {/* === SHARED SECTIONS === */}
       {/* Insights - Evidence-backed patterns */}
       <Insights onCtaClick={openModal} />
 
       {/* Doctor Pack - Export summaries for appointments */}
       <DoctorPack onCtaClick={openModal} />
+
+      {/* Testimonials - Real voices from Spoonie community (after doctor section) */}
+      {content.product === 'spoon-saver' && content.testimonials && (
+        <Testimonials
+          testimonials={content.testimonials}
+          onCtaClick={openModal}
+        />
+      )}
 
       {/* Multiple Conditions - Managing comorbidities */}
       <MultipleConditions onCtaClick={openModal} />

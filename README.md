@@ -4,6 +4,8 @@
 
 # Name of the app is Chronic Life and name of the chat agent is Clue
 
+## Low-effort, non-judgmental, flexible symptom tracking that works on bad days and doesn’t create guilt
+
 ---
 
 ## 🎯 Validated Product Direction (Jan 2026)
