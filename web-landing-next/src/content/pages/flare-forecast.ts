@@ -62,8 +62,9 @@ export const flareForecastContent: LandingPageContent = {
     {
       quote:
         'I finally stopped canceling plans at the last minute. Now I know 2 days ahead.',
-      author: 'Sarah M.',
+      source: 'Sarah M.',
       condition: 'Fibromyalgia',
+      painPoint: 'timing',
     },
   ],
 };

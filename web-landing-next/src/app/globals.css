@@ -201,7 +201,7 @@ body {
 .hero-persona-image {
   width: auto;
   height: auto;
-  max-width: 280px;
+  max-width: 300px;
   max-height: 50vh;
   object-fit: contain;
   object-position: bottom center;
@@ -289,7 +289,7 @@ body {
 
   .hero-persona-image {
     max-width: none;
-    max-height: 85vh;
+    max-height: 95vh;
     height: 100%;
     width: auto;
     object-position: bottom right;
