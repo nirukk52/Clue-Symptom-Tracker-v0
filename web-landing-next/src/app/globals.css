@@ -1163,3 +1163,313 @@ nav * {
   cursor: not-allowed;
   transform: none;
 }
+
+/* ============================================
+   WATCHLIST PREVIEW STYLES
+   Conversion-focused prediction preview
+   ============================================ */
+
+.watch-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.watch-list-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.watch-list-headline {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* Watch Card */
+.watch-list-card {
+  background: white;
+  border-radius: var(--radius-2xl);
+  border: 1px solid rgba(32, 19, 46, 0.06);
+  box-shadow: var(--shadow-card);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.watch-list-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.watch-list-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+}
+
+/* Graph Area */
+.watch-list-graph {
+  padding: 0.5rem 0;
+}
+
+/* Watch Items */
+.watch-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.watch-list-items-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.watch-list-items-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.watch-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-primary);
+}
+
+/* Status */
+.watch-list-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(32, 19, 46, 0.06);
+}
+
+/* CTA Section */
+.watch-list-cta-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.watch-list-cta {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px -2px rgba(32, 20, 46, 0.2);
+}
+
+.watch-list-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(32, 20, 46, 0.25);
+}
+
+.watch-list-cta:active {
+  transform: scale(0.98);
+}
+
+.watch-list-privacy {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+/* Flare Risk Graph */
+.flare-risk-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.flare-risk-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.flare-risk-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.flare-risk-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.flare-risk-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 100px;
+  padding: 0.5rem 0;
+}
+
+.flare-risk-bar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.flare-risk-bar-wrapper {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.flare-risk-bar {
+  width: 100%;
+  max-width: 24px;
+  border-radius: 4px 4px 2px 2px;
+  transition: height 0.5s ease;
+  position: relative;
+}
+
+.flare-risk-indicator {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.flare-risk-indicator-pulse {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent-yellow);
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 230, 163, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(245, 230, 163, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 230, 163, 0);
+  }
+}
+
+.flare-risk-day {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.flare-risk-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.flare-risk-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-xl);
+  margin-top: 0.25rem;
+}
+
+.flare-risk-insight-icon {
+  color: var(--color-accent-purple);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.flare-risk-insight-text {
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Symptom Pattern Graph */
+.symptom-pattern-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.symptom-pattern-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.25rem;
+  height: 40px;
+}
+
+.symptom-pattern-bar-container {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.symptom-pattern-bar {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.4s ease;
+  opacity: 0.8;
+}
+
+.symptom-pattern-insight {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
