@@ -222,9 +222,18 @@ export interface ModalResponse {
 // MODAL TYPES
 // ============================================
 
+/**
+ * QuestionOption - Option for modal questions
+ *
+ * Why label + description: Q1 uses short punchy labels with descriptive
+ * subtext to keep UI scannable while providing context. Q2+ use label only.
+ */
 export interface QuestionOption {
   value: string;
+  /** Main label - short for Q1, longer descriptive text for Q2+ */
   label: string;
+  /** Optional description shown below label (used in Q1 for subtext) */
+  description?: string;
 }
 
 export interface Question {

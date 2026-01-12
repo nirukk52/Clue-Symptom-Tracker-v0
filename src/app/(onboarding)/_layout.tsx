@@ -1,9 +1,9 @@
 /**
  * Onboarding route group layout
- * 
+ *
  * Why it exists: Provides stack navigation for the 6-screen onboarding flow
  * with consistent transitions and no gesture-based back navigation.
- * 
+ *
  * Reference: specs/1-onboarding-flow/PLAN.md §Phase 9
  */
 
@@ -34,4 +34,3 @@ export default function OnboardingLayout() {
     </Stack>
   );
 }
-

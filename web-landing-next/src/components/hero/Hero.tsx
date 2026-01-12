@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/Button';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import type { HeroContent, PersonaKey } from '@/types';
 
 import { ConditionPills } from './ConditionPills';
@@ -56,6 +57,12 @@ export function Hero({
       <div className="hero-visible">
         {/* Hero content - centered on mobile, left-aligned on desktop */}
         <div className="hero-content">
+          {/* Feature badge */}
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
+            <MaterialIcon name="mic" size="sm" />
+            Just talk to log
+          </div>
+
           {/* Main headline */}
           <h1 className="hero-headline">{headline}</h1>
 

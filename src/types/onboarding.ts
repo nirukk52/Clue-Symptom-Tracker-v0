@@ -1,9 +1,9 @@
 /**
  * Type definitions for the onboarding flow
- * 
+ *
  * Why it exists: Provides type safety for onboarding state, ensuring data consistency
  * across screens and persistence layers.
- * 
+ *
  * Reference: specs/1-onboarding-flow/spec.md §Key Entities
  */
 
@@ -143,4 +143,3 @@ export interface OnboardingActions {
   /** Reset onboarding state (for abandonment) */
   reset: () => void;
 }
-
