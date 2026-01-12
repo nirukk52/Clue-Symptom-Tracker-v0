@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/Button';
-import { SpoonBurgerIcon } from '@/components/ui/SpoonBurgerIcon';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { useNavScroll } from '@/hooks/useNavScroll';
 
 /**
@@ -31,7 +31,9 @@ export function Navbar({ onCtaClick }: NavbarProps) {
       <div className="mx-auto flex max-w-7xl items-center justify-between md:pt-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <SpoonBurgerIcon size={28} className="nav-logo-icon" />
+          <div className="nav-logo-icon flex size-8 items-center justify-center rounded-full">
+            <MaterialIcon name="monitoring" size="sm" className="text-white" />
+          </div>
           <span className="nav-logo-text font-display text-lg font-semibold">
             Chronic Life
           </span>

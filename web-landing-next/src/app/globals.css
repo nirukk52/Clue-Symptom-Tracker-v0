@@ -8,37 +8,37 @@
  */
 
 :root {
-  /* Core brand colors - Pastel Theme */
-  --color-primary: #5B4B6E; /* Softer purple/slate for key elements */
-  --color-primary-light: #F0F4F8; /* Light blue-gray */
+  /* Core brand colors */
+  --color-primary: #20132e;
+  --color-primary-light: #f3f0fa;
 
   /* Backgrounds */
-  --color-bg-cream: #F8FAFC; /* Very light cool gray/white */
-  --color-bg-card: #FFFFFF;
-  --color-hero-bg: #E6F4F1; /* Soft Mint/Cyan background */
+  --color-bg-cream: #fdfbf9;
+  --color-bg-card: #ffffff;
+  --color-hero-bg: #8ba4a8;
 
-  /* Accent palette - Pastels */
-  --color-accent-peach: #FFCCB0; /* Soft Peach */
-  --color-accent-blue: #BDE0FE; /* Soft Baby Blue */
-  --color-accent-purple: #D8B4FE; /* Soft Lavender */
-  --color-accent-mint: #C1E1C1; /* Soft Mint */
-  --color-accent-rose: #FFC8DD; /* Soft Pink */
-  --color-accent-yellow: #FEF9C3; /* Soft Lemon */
+  /* Accent palette */
+  --color-accent-peach: #e8974f;
+  --color-accent-blue: #a4c8d8;
+  --color-accent-purple: #d0bdf4;
+  --color-accent-mint: #b8e3d6;
+  --color-accent-rose: #f4c4c4;
+  --color-accent-yellow: #f5e6a3;
 
   /* Interactive states */
-  --color-pill-hover: #E2E8F0;
-  --color-pill-selected: #D8B4FE;
+  --color-pill-hover: #f3efff;
+  --color-pill-selected: #e0d4fc;
 
   /* Text */
-  --color-text-main: #1F2937; /* Dark Gray */
-  --color-text-muted: #6B7280; /* Gray */
+  --color-text-main: #20132e;
+  --color-text-muted: #554b66;
 
-  /* Shadows - Softer, diffused */
-  --shadow-soft: 0 4px 20px -2px rgba(91, 75, 110, 0.05);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-  --shadow-glow: 0 0 60px -10px rgba(216, 180, 254, 0.3);
-  --shadow-hero-cta: 0 10px 15px -3px rgba(193, 225, 193, 0.4);
-  --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  /* Shadows */
+  --shadow-soft: 0 4px 20px -2px rgba(32, 20, 46, 0.08);
+  --shadow-card: 0 2px 12px -2px rgba(32, 20, 69, 0.06);
+  --shadow-glow: 0 0 60px -10px rgba(208, 189, 244, 0.4);
+  --shadow-hero-cta: 0 4px 20px -2px rgba(0, 0, 0, 0.15);
+  --shadow-hover: 0 12px 40px -8px rgba(32, 20, 46, 0.12);
 
   /* Typography */
   --font-display: var(--font-fraunces), Georgia, serif;
@@ -131,17 +131,21 @@ body {
   flex-direction: column;
 }
 
-/* Soft pastel gradient overlay */
+/* Radial gradient overlay - evening sky to sunset night */
 .hero-visible::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
   background: radial-gradient(
-    circle at 50% 50%,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(230, 244, 241, 0.6) 40%,
-    rgba(216, 235, 255, 0.4) 100%
+    circle at 50% 95%,
+    #6d8ba0 0%,
+    rgba(140, 130, 150, 0.85) 50%,
+    rgba(160, 120, 140, 0.8) 55%,
+    rgba(140, 90, 120, 0.85) 60%,
+    rgba(90, 60, 100, 0.9) 68%,
+    rgba(50, 35, 70, 0.95) 85%,
+    rgba(32, 19, 46, 0.98) 100%
   );
   pointer-events: none;
 }
@@ -161,7 +165,7 @@ body {
   font-family: var(--font-display);
   font-size: 2.5rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: white;
   line-height: 1.1;
   margin-bottom: 1rem;
   max-width: 20ch;
@@ -169,7 +173,7 @@ body {
 
 .hero-subheadline {
   font-size: 1rem;
-  color: var(--color-text-muted);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.6;
   margin-bottom: 1.5rem;
   max-width: 32ch;
@@ -237,13 +241,17 @@ body {
     border-radius: 1.5rem;
   }
 
-  /* Desktop: soft light gradient */
+  /* Desktop: gradient centered on persona (right side) radiating outward */
   .hero-visible::before {
     background: radial-gradient(
       circle at 70% 50%,
-      rgba(255, 255, 255, 0.6) 0%,
-      rgba(230, 244, 241, 0.5) 30%,
-      rgba(216, 235, 255, 0.3) 100%
+      #6d8ba0 0%,
+      rgba(140, 130, 150, 0.85) 15%,
+      rgba(160, 120, 140, 0.8) 30%,
+      rgba(140, 90, 120, 0.85) 45%,
+      rgba(90, 60, 100, 0.9) 62%,
+      rgba(50, 35, 70, 0.95) 80%,
+      rgba(32, 19, 46, 0.98) 100%
     );
   }
 
@@ -308,9 +316,9 @@ body {
 .condition-pill {
   padding: 0.5rem 1rem;
   border-radius: 9999px;
-  border: 1px solid rgba(91, 75, 110, 0.1);
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--color-primary);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
   font-weight: 500;
   font-size: 0.875rem;
   backdrop-filter: blur(4px);
@@ -321,8 +329,8 @@ body {
 }
 
 .condition-pill:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: var(--color-accent-purple);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.7);
 }
 
 /* Hero CTA button */
@@ -381,11 +389,12 @@ nav * {
 
 .nav-transparent .nav-logo-text,
 .nav-transparent .nav-link {
-  color: var(--color-primary);
+  color: white;
 }
 
 .nav-transparent .nav-logo-icon {
-  color: var(--color-primary);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
 }
 
 .nav-transparent .nav-cta {
@@ -407,7 +416,7 @@ nav * {
 }
 
 .nav-solid .nav-logo-icon {
-  color: var(--color-primary);
+  background: var(--color-primary);
 }
 
 .nav-solid .nav-cta {
@@ -439,8 +448,8 @@ nav * {
 .gradient-section {
   background: linear-gradient(
     180deg,
-    var(--color-bg-cream) 0%,
-    rgba(189, 224, 254, 0.2) 100%
+    #fdfbf9 0%,
+    rgba(164, 200, 216, 0.1) 100%
   );
 }
 
@@ -827,7 +836,7 @@ nav * {
 }
 
 .chat-send:hover {
-  filter: brightness(0.9);
+  background: #352648;
   transform: scale(1.05);
 }
 

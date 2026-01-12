@@ -114,8 +114,8 @@ export function QuickEntry({ onCtaClick }: QuickEntryProps) {
             </div>
           </div>
 
-          {/* Why It Feels Easy Card - Glassmorphism style */}
-          <div className="hover-lift rounded-[2rem] border border-white/60 bg-gradient-to-br from-white/40 via-white/25 to-white/10 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] ring-1 ring-inset ring-white/50 backdrop-blur-2xl">
+          {/* Why It Feels Easy Card */}
+          <div className="from-accent-peach/20 to-accent-mint/20 border-accent-peach/30 hover-lift rounded-[2rem] border bg-gradient-to-br p-6">
             <h4 className="font-display text-primary mb-4 text-lg font-semibold">
               Why it feels easy
             </h4>

@@ -28,9 +28,6 @@ export function Footer() {
 
           {/* Links */}
           <div className="text-text-muted flex gap-8 text-sm font-medium">
-            <Link href="/blog" className="hover:text-primary transition-colors">
-              Blog
-            </Link>
             <Link
               href="#features"
               className="hover:text-primary transition-colors"
