@@ -18,7 +18,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface ClueIntroductionProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function ClueIntroduction({ onCtaClick }: ClueIntroductionProps) {
@@ -249,7 +249,7 @@ export function ClueIntroduction({ onCtaClick }: ClueIntroductionProps) {
             </div>
 
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('clue_intro_sidebar_cta')}
               className="text-primary mt-4 inline-flex items-center gap-2 text-sm font-semibold transition-all hover:gap-3"
             >
               Try chatting with Clue
@@ -261,7 +261,7 @@ export function ClueIntroduction({ onCtaClick }: ClueIntroductionProps) {
         {/* CTA */}
         <div className="mt-10 text-center">
           <button
-            onClick={onCtaClick}
+            onClick={() => onCtaClick('clue_intro_cta')}
             className="text-primary inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
           >
             Start your first conversation

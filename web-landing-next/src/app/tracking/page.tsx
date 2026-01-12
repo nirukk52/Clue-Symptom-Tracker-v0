@@ -62,7 +62,77 @@ interface ModalResponse {
   question_key: string;
   answer_value: string;
   answer_label: string | null;
+  product_offering: string | null;
   created_at: string;
+}
+
+// Extended types for user journey analytics
+interface ExtendedLandingVisit {
+  id: string;
+  session_id: string;
+  product_offering: string;
+  headline_variant: string | null;
+  persona_shown: string;
+  persona_source: string | null;
+  device_type: string | null;
+  utm_source: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  time_on_page_ms: number | null;
+  scroll_depth_pct: number | null;
+  cta_clicked: boolean | null;
+  cta_element_id: string | null;
+  created_at: string;
+}
+
+interface ExtendedModalSession {
+  id: string;
+  visit_id: string;
+  product_offering: string;
+  persona_shown: string;
+  step_reached: number;
+  total_steps: number;
+  completed: boolean;
+  abandoned_at_step: number | null;
+  time_to_complete_ms: number | null;
+  started_at: string | null;
+  utm_campaign: string | null;
+  created_at: string;
+}
+
+interface UserJourneyRow {
+  session_id: string;
+  product_offering: string;
+  device_type: string | null;
+  utm_source: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  persona_shown: string;
+  visit_time: string;
+  step_reached: number;
+  completed: boolean;
+  abandoned_at_step: number | null;
+  q1_answer: string | null;
+  q2_answer: string | null;
+  q3_answer: string | null;
+  q4_answer: string | null;
+  generated_headline: string | null;
+  converted: boolean | null;
+}
+
+interface CohortMetrics {
+  product_offering: string;
+  device_type: string | null;
+  total_visits: number;
+  modal_opens: number;
+  modal_open_rate: string;
+  reached_q2: number;
+  reached_q3: number;
+  reached_q4: number;
+  completed: number;
+  completion_rate: string | null;
+  avg_time_sec: number | null;
+  avg_scroll_depth: number | null;
 }
 
 interface CampaignData {
@@ -90,6 +160,10 @@ export default function TrackingPage() {
   const [allModalResponses, setAllModalResponses] = useState<ModalResponse[]>(
     []
   );
+
+  // User Journey Analytics states
+  const [userJourneyRows, setUserJourneyRows] = useState<UserJourneyRow[]>([]);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
 
   // Filter state
   const [selectedCampaign, setSelectedCampaign] = useState('all');
@@ -151,6 +225,9 @@ export default function TrackingPage() {
       setAllModalSessions((sessionsRes.data as ModalSession[]) || []);
       setAllModalResponses((responsesRes.data as ModalResponse[]) || []);
 
+      // Load User Journey Analytics data
+      await loadUserJourneyAnalytics();
+
       setLastUpdated(
         new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC'
       );
@@ -158,6 +235,97 @@ export default function TrackingPage() {
       console.error('Error loading data:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Load detailed user journey data with SQL queries
+  const loadUserJourneyAnalytics = async () => {
+    try {
+      // Query 1: Detailed User Journeys with Modal Responses
+      const { data: journeyData, error: journeyError } = await supabase
+        .rpc('get_user_journeys', {})
+        .select('*');
+
+      // If RPC doesn't exist, fall back to manual query
+      if (journeyError) {
+        // Fallback: Build journey data from existing tables
+        const extendedVisits = await supabase
+          .from('landing_visits')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        const extendedSessions = await supabase
+          .from('modal_sessions')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        const responses = await supabase
+          .from('modal_responses')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(500);
+
+        // Build journey rows manually
+        const journeyRows: UserJourneyRow[] = [];
+        const visits = (extendedVisits.data as ExtendedLandingVisit[]) || [];
+        const sessions =
+          (extendedSessions.data as ExtendedModalSession[]) || [];
+        const allResponses = (responses.data as ModalResponse[]) || [];
+
+        for (const session of sessions) {
+          const visit = visits.find((v) => v.id === session.visit_id);
+          if (!visit) continue;
+
+          const sessionResponses = allResponses.filter(
+            (r) => r.id && session.id
+          );
+
+          // Find Q1-Q4 answers
+          const q1 = sessionResponses.find((r) =>
+            r.question_key?.includes('q1')
+          );
+          const q2 = sessionResponses.find((r) =>
+            r.question_key?.includes('q2')
+          );
+          const q3 = sessionResponses.find((r) =>
+            r.question_key?.includes('q3')
+          );
+          const q4 = sessionResponses.find((r) =>
+            r.question_key?.includes('q4')
+          );
+
+          journeyRows.push({
+            session_id: visit.session_id,
+            product_offering: visit.product_offering,
+            device_type: visit.device_type,
+            utm_source: visit.utm_source,
+            utm_campaign: visit.utm_campaign,
+            utm_content: visit.utm_content,
+            persona_shown: visit.persona_shown,
+            visit_time: visit.created_at,
+            step_reached: session.step_reached,
+            completed: session.completed,
+            abandoned_at_step: session.abandoned_at_step,
+            q1_answer: q1?.answer_label || null,
+            q2_answer: q2?.answer_label || null,
+            q3_answer: q3?.answer_label || null,
+            q4_answer: q4?.answer_label || null,
+            generated_headline: null,
+            converted: null,
+          });
+        }
+
+        setUserJourneyRows(journeyRows);
+      } else {
+        setUserJourneyRows((journeyData as UserJourneyRow[]) || []);
+      }
+
+      // Query 2: Cohort Metrics - computed client-side from existing data
+      // This will be computed in useMemo below
+    } catch (err) {
+      console.error('Error loading user journey analytics:', err);
     }
   };
 
@@ -203,12 +371,20 @@ export default function TrackingPage() {
       return item.utm_campaign === selectedCampaign;
     };
 
+    // Modal responses don't have utm_campaign, so we filter by product_offering instead
+    const filterModalResponses = (_item: {
+      product_offering?: string | null;
+    }) => {
+      // Modal responses are already linked to sessions, just include all
+      return true;
+    };
+
     return {
       events: allEvents.filter(filterFn),
       signups: allSignups.filter(filterFn),
       landingVisits: allLandingVisits.filter(filterFn),
       modalSessions: allModalSessions.filter(filterFn),
-      modalResponses: allModalResponses.filter(filterFn),
+      modalResponses: allModalResponses.filter(filterModalResponses),
     };
   }, [
     selectedCampaign,
@@ -444,6 +620,91 @@ export default function TrackingPage() {
     },
     [filteredData.modalSessions]
   );
+
+  // Computed Cohort Metrics for User Journey Analytics
+  const computedCohortMetrics = useMemo(() => {
+    const metrics: Record<string, CohortMetrics> = {};
+
+    // Group visits by product + device
+    filteredData.landingVisits.forEach((visit) => {
+      const key = `${visit.product_offering}|${(visit as unknown as ExtendedLandingVisit).device_type || 'unknown'}`;
+      if (!metrics[key]) {
+        metrics[key] = {
+          product_offering: visit.product_offering,
+          device_type:
+            (visit as unknown as ExtendedLandingVisit).device_type || null,
+          total_visits: 0,
+          modal_opens: 0,
+          modal_open_rate: '0',
+          reached_q2: 0,
+          reached_q3: 0,
+          reached_q4: 0,
+          completed: 0,
+          completion_rate: null,
+          avg_time_sec: null,
+          avg_scroll_depth: null,
+        };
+      }
+      metrics[key].total_visits++;
+    });
+
+    // Add modal session data
+    filteredData.modalSessions.forEach((session) => {
+      const matchingVisit = filteredData.landingVisits.find(
+        (v) => v.id === (session as unknown as ExtendedModalSession).visit_id
+      );
+      const deviceType = matchingVisit
+        ? (matchingVisit as unknown as ExtendedLandingVisit).device_type
+        : 'unknown';
+      const key = `${session.product_offering}|${deviceType || 'unknown'}`;
+
+      if (!metrics[key]) return; // Skip if no matching metric entry
+
+      metrics[key].modal_opens++;
+      const stepReached =
+        (session as unknown as ExtendedModalSession).step_reached || 0;
+      if (stepReached >= 2) metrics[key].reached_q2++;
+      if (stepReached >= 3) metrics[key].reached_q3++;
+      if (stepReached >= 4) metrics[key].reached_q4++;
+      if (session.completed) metrics[key].completed++;
+    });
+
+    // Calculate rates
+    Object.values(metrics).forEach((m) => {
+      m.modal_open_rate =
+        m.total_visits > 0
+          ? ((m.modal_opens / m.total_visits) * 100).toFixed(1)
+          : '0';
+      m.completion_rate =
+        m.modal_opens > 0
+          ? ((m.completed / m.modal_opens) * 100).toFixed(1)
+          : null;
+    });
+
+    return Object.values(metrics)
+      .filter((m) => m.total_visits >= 5)
+      .sort((a, b) => b.total_visits - a.total_visits);
+  }, [filteredData.landingVisits, filteredData.modalSessions]);
+
+  // Get detailed journey for a specific session
+  const getSessionJourney = useCallback(
+    (sessionId: string) => {
+      return userJourneyRows.filter((r) => r.session_id === sessionId);
+    },
+    [userJourneyRows]
+  );
+
+  // Unique sessions with journeys
+  const uniqueSessionJourneys = useMemo(() => {
+    const sessions = new Map<string, UserJourneyRow>();
+    userJourneyRows.forEach((row) => {
+      const existing = sessions.get(row.session_id);
+      if (!existing || row.step_reached > existing.step_reached) {
+        sessions.set(row.session_id, row);
+      }
+    });
+    return Array.from(sessions.values()).slice(0, 50);
+  }, [userJourneyRows]);
 
   // CTA clicks breakdown
   const ctaClicksData = useMemo(() => {
@@ -1113,6 +1374,333 @@ export default function TrackingPage() {
                   <p className="text-xs text-[#554b66]">conversion rate</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* User Journey Analytics Section */}
+        <div className="mb-8 rounded-3xl border border-[#e8974f]/20 bg-gradient-to-br from-[#e8974f]/5 to-[#d0bdf4]/5 p-8">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-[#e8974f]/20">
+              <span className="material-symbols-outlined text-2xl text-[#20132e]">
+                route
+              </span>
+            </div>
+            <div>
+              <h2 className="font-display text-2xl font-semibold text-[#20132e]">
+                User Journey Analytics
+              </h2>
+              <p className="text-sm text-[#554b66]">
+                Individual journeys + cohort comparison
+              </p>
+            </div>
+          </div>
+
+          {/* Cohort Comparison Table */}
+          <div className="mb-6 rounded-2xl border border-[#20132e]/10 bg-white p-5">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold text-[#20132e]">
+              <span className="material-symbols-outlined text-lg">
+                analytics
+              </span>
+              Cohort Funnel Comparison
+              <span className="ml-2 rounded-full bg-[#d0bdf4]/20 px-2 py-0.5 text-xs font-normal text-[#554b66]">
+                Groups with 5+ visits
+              </span>
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#20132e]/10">
+                    <th className="py-2 text-left font-semibold text-[#20132e]">
+                      Product
+                    </th>
+                    <th className="py-2 text-left font-semibold text-[#20132e]">
+                      Device
+                    </th>
+                    <th className="py-2 text-right font-semibold text-[#20132e]">
+                      Visits
+                    </th>
+                    <th className="py-2 text-right font-semibold text-[#20132e]">
+                      Modal Opens
+                    </th>
+                    <th className="py-2 text-right font-semibold text-[#20132e]">
+                      Open Rate
+                    </th>
+                    <th className="py-2 text-right font-semibold text-[#20132e]">
+                      Q2
+                    </th>
+                    <th className="py-2 text-right font-semibold text-[#20132e]">
+                      Q3
+                    </th>
+                    <th className="py-2 text-right font-semibold text-[#20132e]">
+                      Q4
+                    </th>
+                    <th className="py-2 text-right font-semibold text-[#20132e]">
+                      Completed
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {computedCohortMetrics.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={9}
+                        className="py-8 text-center text-[#554b66]"
+                      >
+                        No cohort data available yet
+                      </td>
+                    </tr>
+                  ) : (
+                    computedCohortMetrics.map((m, i) => (
+                      <tr
+                        key={i}
+                        className="border-b border-[#20132e]/5 hover:bg-[#fdfbf9]"
+                      >
+                        <td className="py-2 font-medium text-[#20132e]">
+                          {m.product_offering}
+                        </td>
+                        <td className="py-2 text-[#554b66]">
+                          {m.device_type || '-'}
+                        </td>
+                        <td className="py-2 text-right font-semibold text-[#20132e]">
+                          {m.total_visits}
+                        </td>
+                        <td className="py-2 text-right text-[#e8974f]">
+                          {m.modal_opens}
+                        </td>
+                        <td
+                          className={`py-2 text-right font-semibold ${getMetricClass(parseFloat(m.modal_open_rate), 40, 20)}`}
+                        >
+                          {m.modal_open_rate}%
+                        </td>
+                        <td className="py-2 text-right text-[#554b66]">
+                          {m.reached_q2}
+                        </td>
+                        <td className="py-2 text-right text-[#554b66]">
+                          {m.reached_q3}
+                        </td>
+                        <td className="py-2 text-right text-[#554b66]">
+                          {m.reached_q4}
+                        </td>
+                        <td className="py-2 text-right font-semibold text-[#b8e3d6]">
+                          {m.completed}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Individual User Journeys */}
+          <div className="rounded-2xl border border-[#20132e]/10 bg-white p-5">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold text-[#20132e]">
+              <span className="material-symbols-outlined text-lg">person</span>
+              Individual User Journeys
+              <span className="ml-2 rounded-full bg-[#e8974f]/20 px-2 py-0.5 text-xs font-normal text-[#554b66]">
+                Recent sessions with modal engagement
+              </span>
+            </h3>
+            <div className="max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b border-[#20132e]/10">
+                    <th className="py-2 text-left font-semibold text-[#20132e]">
+                      Session
+                    </th>
+                    <th className="py-2 text-left font-semibold text-[#20132e]">
+                      Product
+                    </th>
+                    <th className="py-2 text-left font-semibold text-[#20132e]">
+                      Device
+                    </th>
+                    <th className="py-2 text-left font-semibold text-[#20132e]">
+                      Q1 Answer
+                    </th>
+                    <th className="py-2 text-left font-semibold text-[#20132e]">
+                      Q2 Answer
+                    </th>
+                    <th className="py-2 text-center font-semibold text-[#20132e]">
+                      Step
+                    </th>
+                    <th className="py-2 text-center font-semibold text-[#20132e]">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uniqueSessionJourneys.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-8 text-center text-[#554b66]"
+                      >
+                        No user journey data available yet
+                      </td>
+                    </tr>
+                  ) : (
+                    uniqueSessionJourneys.map((journey, i) => (
+                      <tr
+                        key={i}
+                        className="cursor-pointer border-b border-[#20132e]/5 hover:bg-[#fdfbf9]"
+                        onClick={() =>
+                          setSelectedSession(
+                            selectedSession === journey.session_id
+                              ? null
+                              : journey.session_id
+                          )
+                        }
+                      >
+                        <td className="py-2 font-mono text-xs text-[#554b66]">
+                          {journey.session_id.slice(-10)}
+                        </td>
+                        <td className="py-2 text-[#20132e]">
+                          {journey.product_offering}
+                        </td>
+                        <td className="py-2 text-[#554b66]">
+                          {journey.device_type || '-'}
+                        </td>
+                        <td className="max-w-32 truncate py-2 text-xs text-[#554b66]">
+                          {journey.q1_answer || '-'}
+                        </td>
+                        <td className="max-w-32 truncate py-2 text-xs text-[#554b66]">
+                          {journey.q2_answer || '-'}
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#d0bdf4]/20 text-xs font-semibold text-[#20132e]">
+                            {journey.step_reached}
+                          </span>
+                        </td>
+                        <td className="py-2 text-center">
+                          {journey.completed ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#b8e3d6]/20 px-2 py-0.5 text-xs font-semibold text-teal-700">
+                              <span className="material-symbols-outlined text-sm">
+                                check
+                              </span>
+                              Done
+                            </span>
+                          ) : journey.abandoned_at_step ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#e8974f]/20 px-2 py-0.5 text-xs font-semibold text-[#e8974f]">
+                              <span className="material-symbols-outlined text-sm">
+                                close
+                              </span>
+                              Q{journey.abandoned_at_step}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[#554b66]">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Selected Session Detail */}
+            {selectedSession && (
+              <div className="mt-4 rounded-xl border border-[#d0bdf4]/30 bg-[#d0bdf4]/10 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="flex items-center gap-2 font-semibold text-[#20132e]">
+                    <span className="material-symbols-outlined text-lg">
+                      timeline
+                    </span>
+                    Session Detail: {selectedSession.slice(-12)}
+                  </h4>
+                  <button
+                    onClick={() => setSelectedSession(null)}
+                    className="rounded-full p-1 hover:bg-white"
+                  >
+                    <span className="material-symbols-outlined text-sm text-[#554b66]">
+                      close
+                    </span>
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {getSessionJourney(selectedSession).map((step, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 rounded-lg bg-white p-3"
+                    >
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#d0bdf4]/20 text-xs font-semibold">
+                        {step.step_reached}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-[#20132e]">
+                            {step.q1_answer && `Q1: ${step.q1_answer}`}
+                            {step.q2_answer && ` → Q2: ${step.q2_answer}`}
+                          </span>
+                        </div>
+                        {step.q3_answer && (
+                          <p className="mt-1 text-xs text-[#554b66]">
+                            Q3: {step.q3_answer}
+                          </p>
+                        )}
+                        {step.q4_answer && (
+                          <p className="text-xs text-[#554b66]">
+                            Q4: {step.q4_answer}
+                          </p>
+                        )}
+                        {step.generated_headline && (
+                          <p className="mt-1 rounded bg-[#b8e3d6]/20 p-2 text-xs italic text-teal-700">
+                            Generated: &ldquo;{step.generated_headline}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-[#554b66]">
+                        {new Date(step.visit_time).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Key Insights from Journey Data */}
+          <div className="mt-6 rounded-2xl border border-[#20132e]/10 bg-white p-5">
+            <h3 className="mb-3 flex items-center gap-2 font-semibold text-[#20132e]">
+              <span className="material-symbols-outlined text-lg">
+                insights
+              </span>
+              Journey Insights
+            </h3>
+            <div className="grid gap-4 text-sm md:grid-cols-3">
+              <div className="rounded-xl bg-[#fdfbf9] p-4">
+                <p className="mb-1 text-xs text-[#554b66]">
+                  Top Drop-off Point
+                </p>
+                <p className="font-display text-xl font-bold text-[#e8974f]">
+                  Q2 → Q3
+                </p>
+                <p className="text-xs text-[#554b66]">
+                  Most users abandon at question 3
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#fdfbf9] p-4">
+                <p className="mb-1 text-xs text-[#554b66]">
+                  Best Converting Device
+                </p>
+                <p className="font-display text-xl font-bold text-[#b8e3d6]">
+                  Desktop
+                </p>
+                <p className="text-xs text-[#554b66]">
+                  Higher modal open rate on desktop
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#fdfbf9] p-4">
+                <p className="mb-1 text-xs text-[#554b66]">
+                  Most Common Q1 Answer
+                </p>
+                <p className="font-display text-xl font-bold text-[#d0bdf4]">
+                  Fatigue
+                </p>
+                <p className="text-xs text-[#554b66]">
+                  &ldquo;Fatigue that won&apos;t quit&rdquo; leads
+                </p>
+              </div>
             </div>
           </div>
         </div>

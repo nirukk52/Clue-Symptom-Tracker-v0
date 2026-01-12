@@ -146,7 +146,7 @@ export function CampaignModal({
           {step === 'questions' && (
             <QuestionStep
               step={questionNumber}
-              product={product}
+              _product={product}
               responses={responses}
               onSelect={onSelectAnswer}
             />

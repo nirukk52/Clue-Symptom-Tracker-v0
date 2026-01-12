@@ -45,7 +45,7 @@ export function LandingPage({
   });
 
   // Initialize landing visit tracking (landing_visits table)
-  const { persona: assignedPersona } = useLandingVisit({
+  const { persona: assignedPersona, trackCtaClick } = useLandingVisit({
     product: content.product,
   });
 
@@ -61,11 +61,19 @@ export function LandingPage({
     structuredResponses,
     email,
     modalSessionId,
-    openModal,
+    openModal: baseOpenModal,
     closeModal,
     setResponse,
     goToChat,
   } = useModal({ product: content.product });
+
+  // Wrap openModal to track CTA clicks
+  const openModal = (ctaId?: string) => {
+    if (ctaId) {
+      trackCtaClick(ctaId);
+    }
+    baseOpenModal();
+  };
 
   return (
     <>

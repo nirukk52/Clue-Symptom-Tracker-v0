@@ -10,7 +10,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface FlareModeProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function FlareMode({ onCtaClick }: FlareModeProps) {
@@ -90,7 +90,7 @@ export function FlareMode({ onCtaClick }: FlareModeProps) {
               can wait until you have the bandwidth.
             </p>
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('flare_mode_cta')}
               className="text-primary inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
             >
               Turn on Flare Mode

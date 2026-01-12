@@ -21,7 +21,7 @@ interface HeroProps {
   content: HeroContent;
   conditions: string[];
   persona?: PersonaKey;
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
   variant?: 'default' | 'alt1' | 'alt2' | 'altFocus';
 }
 
@@ -58,7 +58,7 @@ export function Hero({
         {/* Hero content - centered on mobile, left-aligned on desktop */}
         <div className="hero-content">
           {/* Feature badge */}
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm">
             <MaterialIcon name="mic" size="sm" />
             Just talk to log
           </div>
@@ -75,7 +75,7 @@ export function Hero({
           {/* CTA Button */}
           <Button
             variant="hero"
-            onClick={onCtaClick}
+            onClick={() => onCtaClick(ctaId)}
             data-modal-trigger
             data-cta-id={ctaId}
             data-cta-text={ctaText}

@@ -80,7 +80,8 @@ export function useModalTracking({ product }: UseModalTrackingOptions) {
   }, [product]);
 
   /**
-   * Updates modal session progress (step reached, completion, abandonment)
+   * Updates modal session progress (step reached)
+   * Only sets step_reached - abandonment is tracked separately in abandonModalSession
    */
   const updateModalSession = useCallback(
     async (currentStep: number, completed = false) => {
@@ -101,9 +102,9 @@ export function useModalTracking({ product }: UseModalTrackingOptions) {
 
           // Track Reddit conversion on completion
           trackRedditEvent('Lead');
-        } else {
-          updateData.abandoned_at_step = currentStep;
         }
+        // Note: We no longer set abandoned_at_step here
+        // Abandonment is only tracked when user explicitly closes the modal
 
         await supabase
           .from('modal_sessions')

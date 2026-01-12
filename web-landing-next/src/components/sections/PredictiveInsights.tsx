@@ -11,7 +11,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface PredictiveInsightsProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function PredictiveInsights({ onCtaClick }: PredictiveInsightsProps) {
@@ -134,7 +134,7 @@ export function PredictiveInsights({ onCtaClick }: PredictiveInsightsProps) {
               </li>
             </ul>
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('predictive_insights_cta')}
               className="text-primary mt-6 inline-flex items-center gap-2 text-sm font-semibold transition-all hover:gap-3"
             >
               See prediction in action

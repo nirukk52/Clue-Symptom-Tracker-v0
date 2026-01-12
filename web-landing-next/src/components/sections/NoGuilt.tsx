@@ -15,7 +15,7 @@ import type { NoGuiltContent } from '@/types';
 
 interface NoGuiltProps {
   content: NoGuiltContent;
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function NoGuilt({ content, onCtaClick }: NoGuiltProps) {
@@ -138,7 +138,7 @@ export function NoGuilt({ content, onCtaClick }: NoGuiltProps) {
             </ul>
 
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('no_guilt_cta')}
               className="text-primary inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
             >
               Experience guilt-free tracking
