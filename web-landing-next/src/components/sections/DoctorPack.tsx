@@ -28,18 +28,19 @@ export function DoctorPack({ onCtaClick }: DoctorPackProps) {
               Doctor-ready summaries
             </div>
             <h2 className="font-display text-primary mb-4 text-3xl font-semibold md:text-4xl lg:text-5xl">
-              Scan in 30 seconds.
+              Evidence they can&apos;t dismiss.
             </h2>
             <p className="text-text-muted mb-8 text-lg">
-              Export something your doctor will actually read. Designed by
-              physicians, for physicians.
+              Doctors ignore raw diaries. Ours generate clinician-shaped
+              summaries—graphs, patterns, and structured narratives they can
+              scan in 30 seconds.
             </p>
             <button
               onClick={onCtaClick}
               className="bg-accent-peach hover:bg-accent-peach/90 inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-white transition-all hover:shadow-lg active:scale-95"
             >
               <MaterialIcon name="download" size="sm" />
-              Export Doctor Pack
+              Generate My Summary
             </button>
           </div>
 
@@ -69,7 +70,7 @@ export function DoctorPack({ onCtaClick }: DoctorPackProps) {
                   <div className="bg-accent-mint/30 h-3/5 flex-1 rounded-t" />
                   <div className="bg-accent-rose/30 h-[85%] flex-1 rounded-t" />
                   <div className="bg-accent-rose/30 h-3/4 flex-1 rounded-t" />
-                  <div className="h-[50%] flex-1 rounded-t bg-yellow-200/50" />
+                  <div className="h-1/2 flex-1 rounded-t bg-yellow-200/50" />
                   <div className="bg-accent-mint/30 h-[35%] flex-1 rounded-t" />
                 </div>
 
