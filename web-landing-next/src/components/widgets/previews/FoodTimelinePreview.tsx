@@ -6,6 +6,8 @@
  * Why this exists: IBS/gut issue sufferers need to track the connection
  * between what they eat and how they feel. This preview shows a timeline
  * of food intake and symptom occurrences.
+ *
+ * Visual Identity: Purple/violet theme on dark glass with timeline glow effect
  */
 
 import { useEffect, useState } from 'react';
@@ -34,18 +36,24 @@ export function FoodTimelinePreview(_props: PreviewComponentProps) {
   }>('ibs_gut');
 
   const events = copy.timeline_events ?? [
-    { time: '8am', type: 'food', label: 'Breakfast', icon: '+' },
+    { time: '8am', type: 'food', label: 'Breakfast', icon: '🥣' },
     { time: '9am', type: 'neutral', label: 'Normal', icon: null },
-    { time: '11am', type: 'symptom', label: 'Bloating', icon: '!' },
-    { time: '12pm', type: 'food', label: 'Lunch', icon: '+' },
-    { time: '2pm', type: 'symptom', label: 'Cramping', icon: '!' },
-    { time: '4pm', type: 'improving', label: 'Better', icon: '*' },
+    { time: '11am', type: 'symptom', label: 'Bloating', icon: '⚡' },
+    { time: '12pm', type: 'food', label: 'Lunch', icon: '🥗' },
+    { time: '2pm', type: 'symptom', label: 'Cramping', icon: '⚡' },
+    { time: '4pm', type: 'improving', label: 'Better', icon: '✓' },
   ];
 
   return (
     <div className="timeline-container">
+      {/* Ambient glow */}
+      <div className="ambient-glow" />
+
       {/* Timeline track */}
       <div className="timeline-track">
+        {/* Connecting line */}
+        <div className={`timeline-line ${animated ? 'animated' : ''}`} />
+
         {events.map((event, i) => (
           <div
             key={i}
@@ -61,21 +69,18 @@ export function FoodTimelinePreview(_props: PreviewComponentProps) {
             </div>
           </div>
         ))}
-
-        {/* Connecting line */}
-        <div className={`timeline-line ${animated ? 'animated' : ''}`} />
       </div>
 
       {/* Insight callout */}
       <div className="insight-callout">
         <div className="callout-icon">
           <svg
-            width="18"
-            height="18"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.5"
           >
             <path d="M21 21l-6-6m6 6v-4.8m0 4.8h-4.8" />
             <path d="M3 16.2V21h4.8" />
@@ -97,39 +102,66 @@ export function FoodTimelinePreview(_props: PreviewComponentProps) {
 
       <style jsx>{`
         .timeline-container {
-          background: white;
+          position: relative;
+          background: linear-gradient(
+            145deg,
+            rgba(25, 15, 35, 0.95) 0%,
+            rgba(40, 25, 55, 0.9) 50%,
+            rgba(25, 15, 35, 0.95) 100%
+          );
           border-radius: 1rem;
-          padding: 1rem;
-          border: 1px solid rgba(32, 19, 46, 0.08);
+          padding: 0.875rem;
+          border: 1px solid rgba(167, 139, 250, 0.2);
+          box-shadow:
+            0 0 40px rgba(167, 139, 250, 0.08),
+            inset 0 1px 0 rgba(167, 139, 250, 0.1);
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 0.75rem;
+          overflow: hidden;
+        }
+
+        .ambient-glow {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(
+            ellipse at 0% 50%,
+            rgba(167, 139, 250, 0.1) 0%,
+            transparent 50%
+          );
+          pointer-events: none;
         }
 
         .timeline-track {
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: 0.375rem;
           position: relative;
-          padding-left: 1.25rem;
+          padding-left: 1.5rem;
+          z-index: 1;
         }
 
         .timeline-line {
           position: absolute;
-          left: 6px;
-          top: 8px;
-          bottom: 8px;
+          left: 9px;
+          top: 10px;
+          bottom: 10px;
           width: 2px;
           background: linear-gradient(
             to bottom,
-            var(--accent-mint, #6ee7b7),
-            var(--accent-yellow, #fcd34d),
-            var(--accent-rose, #fda4af),
-            var(--accent-mint, #6ee7b7)
+            #34D399,
+            #A78BFA,
+            #F472B6,
+            #34D399
           );
           transform: scaleY(0);
           transform-origin: top;
           transition: transform 0.8s ease;
+          border-radius: 1px;
+          box-shadow: 0 0 12px rgba(167, 139, 250, 0.5);
         }
 
         .timeline-line.animated {
@@ -139,7 +171,7 @@ export function FoodTimelinePreview(_props: PreviewComponentProps) {
         .timeline-event {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.625rem;
           position: relative;
           z-index: 1;
           opacity: 0;
@@ -155,36 +187,40 @@ export function FoodTimelinePreview(_props: PreviewComponentProps) {
         }
 
         .event-dot {
-          width: 14px;
-          height: 14px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           flex-shrink: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-left: -1.25rem;
+          margin-left: -1.5rem;
+          font-size: 0.625rem;
         }
 
         .event-dot.food {
-          background: var(--accent-mint, #6ee7b7);
+          background: linear-gradient(135deg, #34D399 0%, #059669 100%);
+          box-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
         }
 
         .event-dot.symptom {
-          background: var(--accent-rose, #fda4af);
+          background: linear-gradient(135deg, #F472B6 0%, #DB2777 100%);
+          box-shadow: 0 0 12px rgba(244, 114, 182, 0.5);
         }
 
         .event-dot.neutral {
-          background: rgba(32, 19, 46, 0.1);
+          background: linear-gradient(135deg, rgba(167, 139, 250, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%);
+          border: 1px solid rgba(167, 139, 250, 0.4);
         }
 
         .event-dot.improving {
-          background: var(--accent-mint, #6ee7b7);
+          background: linear-gradient(135deg, #34D399 0%, #059669 100%);
+          box-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
         }
 
         .event-icon {
-          font-size: 0.5rem;
-          color: white;
-          font-weight: bold;
+          font-size: 0.625rem;
+          line-height: 1;
         }
 
         .event-details {
@@ -194,30 +230,44 @@ export function FoodTimelinePreview(_props: PreviewComponentProps) {
         }
 
         .event-time {
-          font-size: 0.6875rem;
-          color: var(--text-muted, #666666);
-          min-width: 32px;
+          font-size: 0.625rem;
+          color: rgba(167, 139, 250, 0.8);
+          min-width: 28px;
+          font-weight: 600;
         }
 
         .event-label {
           font-size: 0.75rem;
-          color: var(--primary, #20132e);
-          font-weight: 500;
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: 600;
         }
 
         .insight-callout {
           display: flex;
           align-items: flex-start;
-          gap: 0.75rem;
-          padding: 0.75rem;
-          background: rgba(232, 151, 79, 0.1);
-          border-radius: 0.75rem;
-          border: 1px solid rgba(232, 151, 79, 0.2);
+          gap: 0.625rem;
+          padding: 0.625rem 0.75rem;
+          background: linear-gradient(
+            135deg,
+            rgba(167, 139, 250, 0.12) 0%,
+            rgba(139, 92, 246, 0.06) 100%
+          );
+          border-radius: 0.625rem;
+          border: 1px solid rgba(167, 139, 250, 0.2);
+          position: relative;
+          z-index: 1;
         }
 
         .callout-icon {
           flex-shrink: 0;
-          color: #c2410c;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(167, 139, 250, 0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #A78BFA;
         }
 
         .callout-content {
@@ -227,16 +277,16 @@ export function FoodTimelinePreview(_props: PreviewComponentProps) {
         }
 
         .callout-title {
-          font-size: 0.8125rem;
-          font-weight: 600;
-          color: var(--primary, #20132e);
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.95);
         }
 
         .callout-content p {
           margin: 0;
-          font-size: 0.75rem;
-          color: var(--text-muted, #666666);
-          line-height: 1.4;
+          font-size: 0.6875rem;
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.35;
         }
       `}</style>
     </div>

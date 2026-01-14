@@ -6,6 +6,8 @@
  * Why this exists: Users dealing with unpredictable flares need to see
  * the 7-day forecast visualization prominently. This preview shows
  * risk levels across the week with pattern detection callouts.
+ *
+ * Visual Identity: Warm amber/orange gradient bars on dark glass with fire glow
  */
 
 import { useEffect, useState } from 'react';
@@ -43,21 +45,21 @@ export function FlareRiskPreview({ data }: PreviewComponentProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  const riskColors = {
+  const riskStyles = {
     low: {
-      bg: 'rgba(110, 231, 183, 0.2)',
-      border: 'rgba(110, 231, 183, 0.4)',
-      text: '#047857',
+      gradient: 'linear-gradient(180deg, #34D399 0%, #059669 100%)',
+      glow: 'rgba(52, 211, 153, 0.4)',
+      indicator: null,
     },
     elevated: {
-      bg: 'rgba(252, 211, 77, 0.2)',
-      border: 'rgba(252, 211, 77, 0.4)',
-      text: '#B45309',
+      gradient: 'linear-gradient(180deg, #FBBF24 0%, #D97706 100%)',
+      glow: 'rgba(251, 191, 36, 0.5)',
+      indicator: '●',
     },
     high: {
-      bg: 'rgba(253, 164, 175, 0.2)',
-      border: 'rgba(253, 164, 175, 0.4)',
-      text: '#BE123C',
+      gradient: 'linear-gradient(180deg, #F87171 0%, #DC2626 100%)',
+      glow: 'rgba(248, 113, 113, 0.6)',
+      indicator: '!',
     },
   };
 
@@ -68,21 +70,18 @@ export function FlareRiskPreview({ data }: PreviewComponentProps) {
 
   return (
     <div className="forecast-container">
+      {/* Ambient glow */}
+      <div className="ambient-glow" />
+
       {/* Risk legend */}
       <div className="risk-legend">
         <span className="legend-label">
-          {copy.legend_label ?? 'Risk Level:'}
+          {copy.legend_label ?? '7-Day Risk Forecast'}
         </span>
         <div className="legend-items">
           {(['low', 'elevated', 'high'] as const).map((level) => (
-            <div key={level} className="legend-item">
-              <span
-                className="legend-dot"
-                style={{
-                  background: riskColors[level].bg,
-                  borderColor: riskColors[level].border,
-                }}
-              />
+            <div key={level} className={`legend-item ${level}`}>
+              <span className="legend-dot" />
               <span className="legend-text">
                 {level.charAt(0).toUpperCase() + level.slice(1)}
               </span>
@@ -94,29 +93,26 @@ export function FlareRiskPreview({ data }: PreviewComponentProps) {
       {/* 7-day forecast bars */}
       <div className="forecast-bars">
         {flareData.days.map((day, i) => {
-          const colors = riskColors[day.risk];
+          const styles = riskStyles[day.risk];
           return (
             <div
               key={i}
               className={`forecast-day ${animated ? 'animated' : ''}`}
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <div
-                className="forecast-bar"
-                style={{
-                  height: `${day.value}%`,
-                  background: colors.bg,
-                  borderColor: colors.border,
-                }}
-              >
-                {day.risk !== 'low' && (
-                  <span
-                    className="bar-indicator"
-                    style={{ color: colors.text }}
-                  >
-                    {day.risk === 'high' ? '!' : '●'}
-                  </span>
-                )}
+              <div className="bar-wrapper">
+                <div
+                  className={`forecast-bar ${day.risk}`}
+                  style={{
+                    height: `${day.value}%`,
+                    background: styles.gradient,
+                    boxShadow: `0 0 20px ${styles.glow}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+                  }}
+                >
+                  {styles.indicator && (
+                    <span className="bar-indicator">{styles.indicator}</span>
+                  )}
+                </div>
               </div>
               <span className="day-label">{day.date}</span>
             </div>
@@ -127,25 +123,51 @@ export function FlareRiskPreview({ data }: PreviewComponentProps) {
       {/* Pattern detection callout */}
       <div className="pattern-callout">
         <div className="callout-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
         </div>
         <p>
           {copy.pattern_callout ??
-            "Elevated risk detected mid-week. With your data, we'll find out why."}
+            "Elevated risk detected mid-week. We'll find out why."}
         </p>
       </div>
 
       <style jsx>{`
         .forecast-container {
-          background: white;
-          border-radius: 0.875rem;
+          position: relative;
+          background: linear-gradient(
+            145deg,
+            rgba(30, 20, 15, 0.95) 0%,
+            rgba(45, 30, 20, 0.9) 50%,
+            rgba(30, 20, 15, 0.95) 100%
+          );
+          border-radius: 1rem;
           padding: 0.875rem;
-          border: 1px solid rgba(32, 19, 46, 0.08);
+          border: 1px solid rgba(251, 191, 36, 0.2);
+          box-shadow:
+            0 0 40px rgba(251, 191, 36, 0.08),
+            inset 0 1px 0 rgba(251, 191, 36, 0.1);
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
+          gap: 0.625rem;
+          overflow: hidden;
+        }
+
+        .ambient-glow {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(
+            ellipse at 50% 100%,
+            rgba(251, 191, 36, 0.1) 0%,
+            transparent 60%
+          );
+          pointer-events: none;
         }
 
         .risk-legend {
@@ -154,19 +176,21 @@ export function FlareRiskPreview({ data }: PreviewComponentProps) {
           justify-content: space-between;
           flex-wrap: wrap;
           gap: 0.5rem;
+          position: relative;
+          z-index: 1;
         }
 
         .legend-label {
           font-size: 0.6875rem;
-          font-weight: 600;
-          color: var(--text-muted, #666666);
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.9);
           text-transform: uppercase;
-          letter-spacing: 0.04em;
+          letter-spacing: 0.05em;
         }
 
         .legend-items {
           display: flex;
-          gap: 0.75rem;
+          gap: 0.625rem;
         }
 
         .legend-item {
@@ -176,24 +200,40 @@ export function FlareRiskPreview({ data }: PreviewComponentProps) {
         }
 
         .legend-dot {
-          width: 10px;
-          height: 10px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
-          border: 1px solid;
+        }
+
+        .legend-item.low .legend-dot {
+          background: linear-gradient(135deg, #34D399, #059669);
+          box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+        }
+
+        .legend-item.elevated .legend-dot {
+          background: linear-gradient(135deg, #FBBF24, #D97706);
+          box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+        }
+
+        .legend-item.high .legend-dot {
+          background: linear-gradient(135deg, #F87171, #DC2626);
+          box-shadow: 0 0 6px rgba(248, 113, 113, 0.5);
         }
 
         .legend-text {
-          font-size: 0.6875rem;
-          color: var(--text-muted, #666666);
+          font-size: 0.625rem;
+          color: rgba(255, 255, 255, 0.7);
+          font-weight: 500;
         }
 
         .forecast-bars {
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
-          height: 100px;
           gap: 0.375rem;
-          padding: 0 0.25rem;
+          position: relative;
+          z-index: 1;
+          padding: 0 0.125rem;
         }
 
         .forecast-day {
@@ -214,49 +254,75 @@ export function FlareRiskPreview({ data }: PreviewComponentProps) {
           transform: translateY(0);
         }
 
-        .forecast-bar {
+        .bar-wrapper {
+          height: 80px;
           width: 100%;
-          border-radius: 0.5rem 0.5rem 0.25rem 0.25rem;
-          border: 1px solid;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+        }
+
+        .forecast-bar {
+          width: 85%;
+          border-radius: 0.375rem 0.375rem 0.125rem 0.125rem;
           position: relative;
-          min-height: 20px;
+          min-height: 16px;
           display: flex;
           align-items: flex-start;
           justify-content: center;
-          padding-top: 4px;
+          padding-top: 3px;
           transition: height 0.6s ease;
         }
 
         .bar-indicator {
-          font-size: 0.75rem;
+          font-size: 0.625rem;
+          font-weight: 800;
+          color: white;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .day-label {
-          font-size: 0.625rem;
-          color: var(--text-muted, #666666);
-          font-weight: 500;
+          font-size: 0.5625rem;
+          color: rgba(255, 255, 255, 0.6);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
         }
 
         .pattern-callout {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           gap: 0.5rem;
-          padding: 0.75rem;
-          background: rgba(252, 211, 77, 0.1);
-          border-radius: 0.75rem;
-          border: 1px solid rgba(252, 211, 77, 0.2);
+          padding: 0.625rem 0.75rem;
+          background: linear-gradient(
+            135deg,
+            rgba(251, 191, 36, 0.12) 0%,
+            rgba(217, 119, 6, 0.06) 100%
+          );
+          border-radius: 0.625rem;
+          border: 1px solid rgba(251, 191, 36, 0.2);
+          position: relative;
+          z-index: 1;
         }
 
         .callout-icon {
           flex-shrink: 0;
-          color: #b45309;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(251, 191, 36, 0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #FBBF24;
         }
 
         .pattern-callout p {
           margin: 0;
-          font-size: 0.8125rem;
-          color: var(--primary, #20132e);
-          line-height: 1.4;
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.85);
+          line-height: 1.35;
+          font-weight: 500;
         }
       `}</style>
     </div>

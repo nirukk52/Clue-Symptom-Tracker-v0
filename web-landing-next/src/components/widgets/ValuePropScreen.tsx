@@ -17,7 +17,7 @@ import { ValuePropCarousel } from './ValuePropCarousel';
  *
  * Layout structure:
  * - Quote at top (fixed)
- * - Carousel in middle (flexible, 3 slides: victory+baseline, promise, domain-specific preview)
+ * - Carousel in middle (flexible, 2 slides: victory+baseline+promise merged, domain-specific preview)
  * - CTA at bottom (fixed)
  */
 
@@ -28,269 +28,255 @@ export interface ValuePropScreenProps {
 }
 
 /**
- * Compact BaselineCard for carousel slide 1
+ * VictorySlide - Unified progress + baseline + promise + personalized value in one glass card
+ *
+ * Why this exists: Creates a stunning, compact glass card that shows
+ * progress, baseline captured, promise items, and the personalized q4Value promise.
+ * The q4Value is integrated here for better visual cohesion and conversion.
  */
-function BaselineSlide({
+function VictorySlide({
   victory,
 }: {
   victory: ValuePropScreenData['victory'];
 }) {
   return (
-    <div className="carousel-slide-content">
-      {/* Progress header */}
-      <div className="slide-header">
-        <div className="victory-check">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          >
+    <div className="unified-glass-card">
+      {/* Top: Progress row */}
+      <div className="progress-row">
+        <div className="check-orb">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <div className="victory-text">
-          <h3 className="slide-title">{victory.victoryMessage}</h3>
-          <p className="slide-subtitle">
-            {victory.stepsCompleted} of {victory.totalSteps} steps complete
-          </p>
+        <div className="progress-info">
+          <span className="progress-title">{victory.victoryMessage}</span>
+          <span className="progress-meta">{victory.stepsCompleted}/{victory.totalSteps} complete</span>
         </div>
       </div>
 
-      {/* Baseline captured card */}
-      <div className="baseline-card">
-        <span className="baseline-condition">{victory.baselineData.condition}</span>
-        <p className="baseline-label">{victory.baselineData.label}</p>
-        <div className="baseline-value-display">
-          <span className="baseline-value">{victory.baselineData.value}</span>
-        </div>
-        <div className="baseline-captured">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      {/* Divider with glow */}
+      <div className="glass-divider" />
+
+      {/* Center: Condition + Day captured */}
+      <div className="baseline-row">
+        <span className="condition-pill">{victory.baselineData.condition}</span>
+        <div className="day-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
           <span>{getMicrocopy('baseline.captured.day1.v1')}</span>
         </div>
       </div>
 
+      {/* Promise items as horizontal pills */}
+      <div className="promise-row">
+        {victory.promise.watchItems.slice(0, 3).map((item, idx) => (
+          <div key={idx} className="promise-pill">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="10" />
+            </svg>
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Personalized Promise - integrated into victory slide */}
+      {victory.promise.q4Value && (
+        <>
+          <div className="glass-divider" />
+          <div className="personalized-promise-integrated">
+            <div className="promise-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <p className="promise-text-integrated">{victory.promise.q4Value}</p>
+          </div>
+        </>
+      )}
+
       <style jsx>{`
-        .carousel-slide-content {
+        .unified-glass-card {
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
+          padding: 1rem 1.125rem;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.08) 50%,
+            rgba(255, 255, 255, 0.12) 100%
+          );
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-radius: 1.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.05);
           height: 100%;
         }
 
-        .slide-header {
+        .progress-row {
           display: flex;
           align-items: center;
-          gap: 0.625rem;
-          padding: 0.75rem;
-          background: rgba(255, 255, 255, 0.95);
-          border-radius: 1rem;
-          border: 1px solid rgba(32, 19, 46, 0.08);
+          gap: 0.75rem;
         }
 
-        .victory-check {
+        .check-orb {
           width: 32px;
           height: 32px;
           border-radius: 50%;
-          background: var(--accent-mint, #6ee7b7);
+          background: linear-gradient(135deg, #34d399 0%, #6ee7b7 100%);
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
           flex-shrink: 0;
+          box-shadow:
+            0 4px 16px rgba(52, 211, 153, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
-        .victory-text {
+        .progress-info {
           display: flex;
           flex-direction: column;
           gap: 0.125rem;
         }
 
-        .slide-title {
+        .progress-title {
           font-family: var(--font-display, Georgia, serif);
           font-size: 0.9375rem;
           font-weight: 600;
-          color: var(--primary, #20132e);
-          margin: 0;
-          line-height: 1.3;
+          color: white;
+          line-height: 1.2;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
         }
 
-        .slide-subtitle {
+        .progress-meta {
           font-size: 0.6875rem;
-          color: var(--text-muted, #666);
-          margin: 0;
+          color: rgba(255, 255, 255, 0.65);
+          font-weight: 500;
         }
 
-        .baseline-card {
-          flex: 1;
+        .glass-divider {
+          height: 1px;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.3) 20%,
+            rgba(255, 255, 255, 0.3) 80%,
+            transparent 100%
+          );
+          margin: 0 -0.5rem;
+        }
+
+        .baseline-row {
           display: flex;
-          flex-direction: column;
           align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          padding: 1.25rem;
-          background: white;
-          border-radius: 1rem;
-          border: 1px solid rgba(32, 19, 46, 0.08);
+          justify-content: space-between;
+          gap: 0.75rem;
         }
 
-        .baseline-condition {
+        .condition-pill {
           font-size: 0.625rem;
-          font-weight: 600;
-          letter-spacing: 0.04em;
+          font-weight: 700;
+          letter-spacing: 0.05em;
           text-transform: uppercase;
-          color: var(--text-muted, #666);
-          background: rgba(32, 19, 46, 0.06);
-          padding: 0.25rem 0.625rem;
+          color: white;
+          background: rgba(255, 255, 255, 0.12);
+          padding: 0.375rem 0.875rem;
           border-radius: 9999px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 60%;
         }
 
-        .baseline-label {
-          font-size: 0.875rem;
-          color: var(--text-muted, #666);
-          margin: 0;
-          text-align: center;
-        }
-
-        .baseline-value-display {
-          display: flex;
-          align-items: baseline;
-          gap: 0.125rem;
-        }
-
-        .baseline-value {
-          font-family: var(--font-display, Georgia, serif);
-          font-size: 2.5rem;
-          font-weight: 600;
-          color: var(--accent-mint, #6ee7b7);
-          line-height: 1;
-        }
-
-        .baseline-captured {
+        .day-badge {
           display: flex;
           align-items: center;
           gap: 0.375rem;
           font-size: 0.75rem;
-          color: var(--accent-mint, #10b981);
-          margin-top: 0.25rem;
+          font-weight: 600;
+          color: #6ee7b7;
+          text-shadow: 0 0 12px rgba(110, 231, 183, 0.5);
         }
 
-        .baseline-captured svg {
-          color: var(--accent-mint, #6ee7b7);
+        .day-badge svg {
+          filter: drop-shadow(0 0 4px rgba(110, 231, 183, 0.6));
         }
-      `}</style>
-    </div>
-  );
-}
 
-/**
- * Compact PromiseCard for carousel slide 2
- */
-function PromiseSlide({ promise }: { promise: ValuePropScreenData['victory']['promise'] }) {
-  return (
-    <div className="carousel-slide-content">
-      <div className="promise-card">
-        <div className="promise-header">
-          <div className="promise-icon">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </div>
-          <h3 className="promise-title">{promise.q4Value}</h3>
-        </div>
-
-        <ul className="promise-list">
-          {promise.watchItems.map((item, index) => (
-            <li key={index} className="promise-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-              </svg>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <style jsx>{`
-        .carousel-slide-content {
+        .promise-row {
           display: flex;
           flex-direction: column;
-          height: 100%;
+          gap: 0.375rem;
         }
 
-        .promise-card {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          padding: 1.25rem;
-          background: rgba(255, 255, 255, 0.95);
-          border-radius: 1rem;
-          border: 2px solid rgba(208, 189, 244, 0.3);
-        }
-
-        .promise-header {
+        .promise-pill {
           display: flex;
           align-items: flex-start;
-          gap: 0.75rem;
+          gap: 0.5rem;
+          font-size: 0.8125rem;
+          color: rgba(255, 255, 255, 0.9);
+          line-height: 1.35;
+        }
+
+        .promise-pill svg {
+          flex-shrink: 0;
+          margin-top: 0.25rem;
+          color: rgba(110, 231, 183, 0.8);
+          filter: drop-shadow(0 0 3px rgba(110, 231, 183, 0.5));
+        }
+
+        .promise-pill span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
+
+        /* Integrated Personalized Promise */
+        .personalized-promise-integrated {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+          padding: 0.625rem 0.75rem;
+          background: linear-gradient(
+            135deg,
+            rgba(110, 231, 183, 0.15) 0%,
+            rgba(52, 211, 153, 0.1) 50%,
+            rgba(110, 231, 183, 0.12) 100%
+          );
+          border-radius: 0.875rem;
+          border: 1px solid rgba(110, 231, 183, 0.3);
         }
 
         .promise-icon {
-          width: 2.5rem;
-          height: 2.5rem;
+          flex-shrink: 0;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, rgba(110, 231, 183, 0.35) 0%, rgba(52, 211, 153, 0.25) 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(208, 189, 244, 0.2);
-          border-radius: 0.625rem;
-          color: #8b5cf6;
-          flex-shrink: 0;
+          color: #6ee7b7;
+          margin-top: 1px;
         }
 
-        .promise-title {
+        .promise-text-integrated {
           font-family: var(--font-display, Georgia, serif);
-          font-size: 1.0625rem;
-          font-weight: 600;
-          color: var(--primary, #20132e);
-          margin: 0;
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.95);
           line-height: 1.4;
-        }
-
-        .promise-list {
-          list-style: none;
           margin: 0;
-          padding: 0;
-          padding-left: 0.25rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.625rem;
-        }
-
-        .promise-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.625rem;
-          font-size: 0.875rem;
-          color: var(--primary, #20132e);
-          line-height: 1.4;
-        }
-
-        .promise-item svg {
-          flex-shrink: 0;
-          margin-top: 2px;
-          color: var(--accent-mint, #6ee7b7);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
       `}</style>
     </div>
@@ -302,7 +288,7 @@ function PromiseSlide({ promise }: { promise: ValuePropScreenData['victory']['pr
  *
  * Why this exists: Each domain (fatigue, flares, migraines, etc.) has a unique
  * visualization that best represents the value proposition. The registry maps
- * layoutId to the appropriate preview component.
+ * layoutId to the appropriate preview component. Styled with glass morphism.
  */
 function PreviewSlide({
   preview,
@@ -317,40 +303,45 @@ function PreviewSlide({
   const PreviewComponent = getPreviewComponent(layoutId);
 
   return (
-    <div className="carousel-slide-content">
-      <div className="preview-card">
-        <div className="preview-header">
-          <span className="preview-badge">{badge}</span>
-          <span className="preview-status">
-            <span className="status-dot" />
-            Preview
-          </span>
-        </div>
+    <div className="preview-glass-card">
+      {/* Header row */}
+      <div className="preview-header">
+        <span className="preview-badge">{badge}</span>
+        <span className="preview-status">
+          <span className="status-dot" />
+          Preview
+        </span>
+      </div>
 
-        <h3 className="preview-title">{preview.headline}</h3>
+      {/* Title */}
+      <h3 className="preview-title">{preview.headline}</h3>
 
-        {/* Domain-specific preview visualization */}
-        <div className="preview-content">
-          <PreviewComponent data={preview.graphData} />
-        </div>
+      {/* Domain-specific preview visualization */}
+      <div className="preview-content">
+        <PreviewComponent data={preview.graphData} />
       </div>
 
       <style jsx>{`
-        .carousel-slide-content {
+        .preview-glass-card {
           display: flex;
           flex-direction: column;
+          gap: 0.625rem;
+          padding: 0.5rem 1.125rem;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.08) 50%,
+            rgba(255, 255, 255, 0.12) 100%
+          );
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-radius: 1.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.05);
           height: 100%;
-        }
-
-        .preview-card {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          padding: 0.75rem;
-          background: rgba(255, 255, 255, 0.95);
-          border-radius: 1rem;
-          border: 1px solid rgba(32, 19, 46, 0.08);
           overflow: hidden;
         }
 
@@ -363,37 +354,41 @@ function PreviewSlide({
         .preview-badge {
           font-size: 0.5625rem;
           font-weight: 700;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
-          color: #7c3aed;
-          background: rgba(208, 189, 244, 0.3);
-          padding: 0.25rem 0.5rem;
+          color: white;
+          background: linear-gradient(135deg, rgba(208, 189, 244, 0.4) 0%, rgba(167, 139, 250, 0.3) 100%);
+          padding: 0.375rem 0.75rem;
           border-radius: 9999px;
+          border: 1px solid rgba(208, 189, 244, 0.3);
         }
 
         .preview-status {
           display: flex;
           align-items: center;
-          gap: 0.25rem;
-          font-size: 0.625rem;
-          color: var(--text-muted, #666);
+          gap: 0.375rem;
+          font-size: 0.6875rem;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.7);
         }
 
         .status-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: var(--accent-mint, #6ee7b7);
+          background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
+          box-shadow: 0 0 8px rgba(110, 231, 183, 0.6);
           animation: pulse 2s ease-in-out infinite;
         }
 
         @keyframes pulse {
-          0%,
-          100% {
+          0%, 100% {
             opacity: 1;
+            box-shadow: 0 0 8px rgba(110, 231, 183, 0.6);
           }
           50% {
-            opacity: 0.4;
+            opacity: 0.5;
+            box-shadow: 0 0 4px rgba(110, 231, 183, 0.3);
           }
         }
 
@@ -401,15 +396,16 @@ function PreviewSlide({
           font-family: var(--font-display, Georgia, serif);
           font-size: 0.9375rem;
           font-weight: 600;
-          color: var(--primary, #20132e);
+          color: white;
           margin: 0;
-          line-height: 1.3;
+          line-height: 1.35;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         }
 
         .preview-content {
           flex: 1;
           min-height: 0;
-          overflow: hidden;
+          overflow: visible;
         }
       `}</style>
     </div>
@@ -430,10 +426,9 @@ export function ValuePropScreen({
 
   const quote = data.socialProofQuote;
 
-  // Carousel slides with domain-specific preview
+  // Carousel slides: 2 slides (merged victory+baseline+promise, then preview)
   const slides = [
-    <BaselineSlide key="baseline" victory={data.victory} />,
-    <PromiseSlide key="promise" promise={data.victory.promise} />,
+    <VictorySlide key="victory" victory={data.victory} />,
     <PreviewSlide
       key="preview"
       preview={data.preview}
@@ -454,7 +449,7 @@ export function ValuePropScreen({
           </div>
         ) : null}
 
-        {/* Carousel in Middle */}
+        {/* Carousel in Middle - expanded height for better preview visibility */}
         <div className="vps-carousel-wrapper">
           <ValuePropCarousel>{slides}</ValuePropCarousel>
         </div>
@@ -559,7 +554,7 @@ export function ValuePropScreen({
           background-position: center 70%;
           background-repeat: no-repeat;
           pointer-events: none;
-          opacity: 0.7;
+          opacity: 0.75;
         }
 
         .vps-hero {
@@ -576,35 +571,42 @@ export function ValuePropScreen({
         /* Fixed Quote Section at Top */
         .vps-quote-section {
           flex-shrink: 0;
-          padding: 0.5rem 0;
+          padding: 0.25rem 0;
         }
 
         .vps-quote-text {
           font-family: var(--font-display, Georgia, serif);
-          font-size: 1rem;
+          font-size: 0.9375rem;
           font-weight: 500;
           color: white;
           line-height: 1.5;
           margin: 0;
           text-align: center;
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Carousel Wrapper in Middle */
+        /* Carousel Wrapper in Middle - expanded height for better preview visibility */
         .vps-carousel-wrapper {
-          flex: 1;
-          min-height: 0;
+          flex: 1 1 auto;
+          min-height: 280px;
+          max-height: 380px;
           display: flex;
           flex-direction: column;
+          position: relative;
+          z-index: 2;
+          /* Ensure dots appear 16px above persona image */
+          margin-bottom: 16px;
         }
 
-        /* Fixed CTA Section at Bottom */
+        /* Fixed CTA Section at Bottom - pushed to absolute bottom */
         .vps-cta-section {
           flex-shrink: 0;
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 0.5rem;
-          padding-top: 0.25rem;
+          margin-top: auto;
+          padding-top: 0.5rem;
         }
 
         .vps-cta-button {

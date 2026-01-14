@@ -6,6 +6,8 @@
  * Why this exists: Users managing fatigue (ME/CFS, Long COVID, Fibro) need
  * to see energy patterns - when they crash, when they have capacity.
  * This preview shows daily energy rhythm as a smooth wave graph.
+ *
+ * Visual Identity: Mint/teal energy waves on dark glass with aurora glow effect
  */
 
 import { useEffect, useState } from 'react';
@@ -53,12 +55,12 @@ export function EnergyWavePreview({ data }: PreviewComponentProps) {
   });
 
   const maxEnergy = 100;
-  const height = 80;
+  const height = 70;
 
   // Create smooth curve path
   const points = energyPoints.map((p, i) => ({
-    x: i * (280 / (energyPoints.length - 1)) + 20,
-    y: height - (p.energy / maxEnergy) * (height - 10),
+    x: i * (260 / (energyPoints.length - 1)) + 30,
+    y: height - (p.energy / maxEnergy) * (height - 15),
   }));
 
   const pathD = points.reduce((acc, point, i) => {
@@ -71,40 +73,43 @@ export function EnergyWavePreview({ data }: PreviewComponentProps) {
 
   return (
     <div className="energy-wave-container">
-      <svg viewBox="0 0 320 100" className="energy-wave-svg">
+      {/* Aurora background effect */}
+      <div className="aurora-bg" />
+
+      <svg viewBox="0 0 320 85" className="energy-wave-svg">
         {/* Grid lines */}
-        <line x1="20" y1="20" x2="300" y2="20" className="grid-line" />
-        <line x1="20" y1="50" x2="300" y2="50" className="grid-line" />
-        <line x1="20" y1="80" x2="300" y2="80" className="grid-line" />
+        <line x1="30" y1="15" x2="290" y2="15" className="grid-line" />
+        <line x1="30" y1="42" x2="290" y2="42" className="grid-line" />
+        <line x1="30" y1="70" x2="290" y2="70" className="grid-line" />
 
         {/* Y-axis labels */}
-        <text x="10" y="24" className="axis-label">
+        <text x="8" y="19" className="axis-label">
           {copy.axis_high ?? 'High'}
         </text>
-        <text x="10" y="84" className="axis-label">
+        <text x="8" y="74" className="axis-label">
           {copy.axis_low ?? 'Low'}
         </text>
 
         {/* Energy wave gradient fill */}
         <defs>
-          <linearGradient id="energyGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0%"
-              stopColor="var(--accent-mint, #6EE7B7)"
-              stopOpacity="0.3"
-            />
-            <stop
-              offset="100%"
-              stopColor="var(--accent-mint, #6EE7B7)"
-              stopOpacity="0.05"
-            />
+          <linearGradient id="energyGradientDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.5" />
+            <stop offset="50%" stopColor="#34D399" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#10B981" stopOpacity="0.05" />
           </linearGradient>
+          <filter id="glowEnergy">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
 
         {/* Fill area under curve */}
         <path
-          d={`${pathD} L ${points[points.length - 1]?.x ?? 300} 80 L 20 80 Z`}
-          fill="url(#energyGradient)"
+          d={`${pathD} L ${points[points.length - 1]?.x ?? 290} 70 L 30 70 Z`}
+          fill="url(#energyGradientDark)"
           className={`wave-fill ${animated ? 'animated' : ''}`}
         />
 
@@ -112,25 +117,36 @@ export function EnergyWavePreview({ data }: PreviewComponentProps) {
         <path
           d={pathD}
           fill="none"
-          stroke="var(--accent-mint, #6EE7B7)"
-          strokeWidth="2.5"
+          stroke="#6EE7B7"
+          strokeWidth="3"
           strokeLinecap="round"
           className={`wave-line ${animated ? 'animated' : ''}`}
+          filter="url(#glowEnergy)"
         />
 
         {/* Data points */}
         {points.map((point, i) => (
-          <circle
-            key={i}
-            cx={point.x}
-            cy={point.y}
-            r="4"
-            fill="white"
-            stroke="var(--accent-mint, #6EE7B7)"
-            strokeWidth="2"
-            className={`point ${animated ? 'animated' : ''}`}
-            style={{ animationDelay: `${i * 100}ms` }}
-          />
+          <g key={i}>
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="6"
+              fill="#6EE7B7"
+              fillOpacity="0.3"
+              className={`point-glow ${animated ? 'animated' : ''}`}
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="4"
+              fill="#0D1117"
+              stroke="#6EE7B7"
+              strokeWidth="2"
+              className={`point ${animated ? 'animated' : ''}`}
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+          </g>
         ))}
       </svg>
 
@@ -145,18 +161,18 @@ export function EnergyWavePreview({ data }: PreviewComponentProps) {
 
       {/* Insight callout */}
       <div className="preview-insight">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 16v-4" />
-          <path d="M12 8h.01" />
-        </svg>
+        <div className="insight-icon">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+        </div>
         <p>
           {getMicrocopy(
             copy.preview_insight_id ?? 'layout.fatigue.preview_insight.v1'
@@ -166,33 +182,73 @@ export function EnergyWavePreview({ data }: PreviewComponentProps) {
 
       <style jsx>{`
         .energy-wave-container {
-          background: white;
+          position: relative;
+          background: linear-gradient(
+            145deg,
+            rgba(13, 17, 23, 0.95) 0%,
+            rgba(22, 27, 34, 0.9) 50%,
+            rgba(13, 17, 23, 0.95) 100%
+          );
           border-radius: 1rem;
-          padding: 1rem;
-          border: 1px solid rgba(32, 19, 46, 0.08);
+          padding: 0.875rem;
+          border: 1px solid rgba(110, 231, 183, 0.2);
+          box-shadow:
+            0 0 40px rgba(110, 231, 183, 0.1),
+            inset 0 1px 0 rgba(110, 231, 183, 0.1);
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: 0.375rem;
+          overflow: hidden;
+        }
+
+        .aurora-bg {
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          right: -50%;
+          bottom: -50%;
+          background: radial-gradient(
+            ellipse at 30% 20%,
+            rgba(110, 231, 183, 0.15) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 70% 80%,
+            rgba(52, 211, 153, 0.1) 0%,
+            transparent 50%
+          );
+          pointer-events: none;
+          animation: aurora 8s ease-in-out infinite;
+        }
+
+        @keyframes aurora {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          50% { transform: translate(5%, 5%) rotate(3deg); }
         }
 
         .energy-wave-svg {
+          position: relative;
           width: 100%;
           height: auto;
+          z-index: 1;
         }
 
         .grid-line {
-          stroke: rgba(32, 19, 46, 0.08);
-          stroke-dasharray: 2 2;
+          stroke: rgba(110, 231, 183, 0.1);
+          stroke-dasharray: 4 4;
         }
 
         .axis-label {
-          font-size: 8px;
-          fill: var(--text-muted, #666666);
+          font-size: 7px;
+          fill: rgba(110, 231, 183, 0.6);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .wave-fill {
           opacity: 0;
-          transition: opacity 0.6s ease;
+          transition: opacity 0.8s ease;
         }
 
         .wave-fill.animated {
@@ -202,23 +258,23 @@ export function EnergyWavePreview({ data }: PreviewComponentProps) {
         .wave-line {
           stroke-dasharray: 1000;
           stroke-dashoffset: 1000;
-          transition: stroke-dashoffset 1s ease;
+          transition: stroke-dashoffset 1.2s ease;
         }
 
         .wave-line.animated {
           stroke-dashoffset: 0;
         }
 
-        .point {
+        .point, .point-glow {
           opacity: 0;
           transform: scale(0);
           transform-origin: center;
           transition:
-            opacity 0.3s ease,
-            transform 0.3s ease;
+            opacity 0.4s ease,
+            transform 0.4s ease;
         }
 
-        .point.animated {
+        .point.animated, .point-glow.animated {
           opacity: 1;
           transform: scale(1);
         }
@@ -226,35 +282,53 @@ export function EnergyWavePreview({ data }: PreviewComponentProps) {
         .day-labels {
           display: flex;
           justify-content: space-between;
-          padding: 0.25rem 1rem 0;
+          padding: 0 1.5rem;
+          position: relative;
+          z-index: 1;
         }
 
         .day-label {
-          font-size: 0.6875rem;
-          color: var(--text-muted, #666666);
+          font-size: 0.625rem;
+          color: rgba(110, 231, 183, 0.7);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
         }
 
         .preview-insight {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           gap: 0.5rem;
-          padding: 0.75rem;
-          background: rgba(110, 231, 183, 0.1);
-          border-radius: 0.75rem;
-          font-size: 0.8125rem;
-          color: var(--primary, #20132e);
-          margin-top: 0.25rem;
+          padding: 0.625rem 0.75rem;
+          background: linear-gradient(
+            135deg,
+            rgba(110, 231, 183, 0.12) 0%,
+            rgba(52, 211, 153, 0.06) 100%
+          );
+          border-radius: 0.625rem;
+          border: 1px solid rgba(110, 231, 183, 0.2);
+          position: relative;
+          z-index: 1;
         }
 
-        .preview-insight svg {
+        .insight-icon {
           flex-shrink: 0;
-          color: var(--accent-mint, #6ee7b7);
-          margin-top: 1px;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(110, 231, 183, 0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #6EE7B7;
         }
 
         .preview-insight p {
           margin: 0;
-          line-height: 1.4;
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.85);
+          line-height: 1.35;
+          font-weight: 500;
         }
       `}</style>
     </div>
