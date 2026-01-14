@@ -15,7 +15,7 @@
  * 5. Emit: top 3 actions with decision trace + evidence
  */
 
-import { findRelevantWidgets } from '../../lib/ai/embedding';
+import { findRelevantWidgets } from '../../../lib/ai/embedding';
 import type {
   ActionCandidate,
   MessageContext,
