@@ -12,4 +12,5 @@ export { ConditionPicker } from './ConditionPicker';
 export { GradientSlider } from './GradientSlider';
 
 // Q4 Value Preview Widget
+export { ValuePropScreen } from './ValuePropScreen';
 export { WatchListPreview } from './WatchListPreview';

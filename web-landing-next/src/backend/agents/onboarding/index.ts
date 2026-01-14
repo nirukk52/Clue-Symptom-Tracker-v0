@@ -11,16 +11,22 @@
 
 // Server Actions (entry points)
 export {
+  generateValuePropScreen,
   generateWatchListPreview,
   getConversionContext,
   storeConversionContext,
 } from './actions';
 
 // Context Assembly
-export { assembleContext } from './context/assembler';
+export { assembleContext, assembleEnhancedContext } from './context/assembler';
 
 // Copy Generation
-export { determinePromiseCategory, generateCopy } from './generators/copy';
+export {
+  determinePromiseCategory,
+  generateCopy,
+  generateCopyAndLayout,
+  getDefaultPreviewBadge,
+} from './generators/copy';
 
 // Templates
 export {
@@ -39,20 +45,30 @@ export {
 // Re-export types for consumers
 export type {
   AdContext,
+  AIGeneratedUI,
+  AIGenerationResult,
+  BaselineData,
   ConversionContextResponse,
   CopyGenerationResult,
+  EnhancedUserContext,
   FlareRiskData,
   GeneratedCopy,
   GenerationMetadata,
   LandingPageContext,
+  LayoutId,
   ModalResponses,
   PatternData,
   PersonaContext,
   PromiseCategory,
+  PromiseData,
   QuestionAnswer,
+  SelectedQuote,
   StoredConversionContext,
   TimingData,
   UserConversionContext,
   UTMContext,
+  ValuePropScreenData,
+  VictoryProps,
   WatchListPreviewData,
+  WidgetContext,
 } from './types';

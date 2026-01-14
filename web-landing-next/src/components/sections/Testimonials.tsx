@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import type { Testimonial } from '@/types';
@@ -40,35 +40,13 @@ const colorSequence = [
 ];
 
 export function Testimonials({ testimonials, onCtaClick }: TestimonialsProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // Display 6 testimonials max
   // Show all testimonials - carousel handles pagination
   const displayTestimonials = testimonials;
-  const totalCards = displayTestimonials.length;
-
-  // Handle scroll to update active index
-  const handleScroll = useCallback(() => {
-    if (!carouselRef.current) return;
-    const scrollPos = carouselRef.current.scrollLeft;
-    const cardWidth = carouselRef.current.offsetWidth * 0.85; // 85% card width
-    const newIndex = Math.round(scrollPos / cardWidth);
-    setActiveIndex(Math.min(newIndex, totalCards - 1));
-  }, [totalCards]);
-
-  // Scroll to specific card
-  const scrollToCard = (index: number) => {
-    if (!carouselRef.current) return;
-    const cardWidth = carouselRef.current.offsetWidth * 0.85;
-    carouselRef.current.scrollTo({
-      left: index * cardWidth,
-      behavior: 'smooth',
-    });
-  };
 
   // Mouse/touch drag handlers for desktop
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -88,17 +66,6 @@ export function Testimonials({ testimonials, onCtaClick }: TestimonialsProps) {
   const handleMouseUp = () => {
     setIsDragging(false);
   };
-
-  // Auto-scroll effect (pauses on hover/interaction)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isDragging && carouselRef.current) {
-        const nextIndex = (activeIndex + 1) % totalCards;
-        scrollToCard(nextIndex);
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [activeIndex, isDragging, totalCards]);
 
   return (
     <section
@@ -125,7 +92,6 @@ export function Testimonials({ testimonials, onCtaClick }: TestimonialsProps) {
         {/* Scrollable Carousel */}
         <div
           ref={carouselRef}
-          onScroll={handleScroll}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}

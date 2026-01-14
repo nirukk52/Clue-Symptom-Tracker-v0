@@ -1,23 +1,38 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { generateWatchListPreview } from '@/backend/agents/onboarding';
-import type { WatchListPreviewData } from '@/backend/agents/onboarding/types';
-import { WatchListPreview } from '@/backend/components';
-import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import {
+  selectTestimonialIdForUser,
+  testimonialIdToSelectedQuote,
+} from '@/backend/agents/onboarding/generators/quote-selector';
+import type { ValuePropScreenData } from '@/backend/agents/onboarding/types';
+import { ValuePropScreen } from '@/components/widgets/ValuePropScreen';
+import {
+  getMicrocopy,
+  getOnboardingCatalog,
+  getScreen4Headline,
+  getScreen4PreviewBadge,
+  getScreen4WatchItems,
+} from '@/lib/onboarding/content';
+import { selectScreen4WidgetFromQ2 } from '@/lib/onboarding/screen4-selectors';
 import { markAIGenerationConverted } from '@/lib/summary';
 import { supabase } from '@/lib/supabase';
 import { getStoredUTM, trackRedditEvent } from '@/lib/tracking';
 import type { ModalResponsesStructured, ProductKey } from '@/types';
 
 /**
- * SummaryStep - AI-generated WatchListPreview + auth options
+ * SummaryStep - AI-driven ValuePropScreen + auth options
  *
- * Why this exists: Shows a hyper-personalized conversion preview based on
- * user's Q1-Q4 answers using the Onboarding Agent. The WatchListPreview
- * shows what predictions COULD look like, with a first-person CTA.
- * This is THE conversion moment - must feel like the app already understands them.
+ * Why this exists: This is onboarding Screen 4 (conversion moment). It must
+ * render instantly after Q3 (no loading gate). In Phase 1 we use deterministic
+ * defaults (no LLM) and only select a testimonial + widget based on Q1/Q2.
+ *
+ * This is THE conversion moment - includes:
+ * 1. Victory celebration (you completed onboarding!)
+ * 2. Baseline captured (your Day 1 data)
+ * 3. Promise card (what we'll do for you)
+ * 4. Domain-specific preview (tailored to their condition)
  */
 
 interface SummaryStepProps {
@@ -35,72 +50,120 @@ export function SummaryStep({
   onGoogleSuccess: _onGoogleSuccess,
   onEmailSuccess,
 }: SummaryStepProps) {
-  const [watchListData, setWatchListData] =
-    useState<WatchListPreviewData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [email, _setEmail] = useState('');
+  const [password, _setPassword] = useState('');
+  const [_isSubmitting, setIsSubmitting] = useState(false);
+  const [_error, setError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Generate WatchListPreview on mount via Onboarding Agent
-  useEffect(() => {
-    async function loadWatchListPreview() {
-      if (!modalSessionId) {
-        setIsLoading(false);
-        return;
-      }
+  const screen4Selection = useMemo(() => {
+    const q1Domain = responses.q1.answerValue;
+    const q2Value = responses.q2.answerValue;
+    const { widgetId, q4Value } = selectScreen4WidgetFromQ2(q2Value);
+    const testimonialId = selectTestimonialIdForUser(q1Domain, q2Value, true);
 
-      setIsLoading(true);
-      try {
-        const data = await generateWatchListPreview(modalSessionId);
-        setWatchListData(data);
-      } catch (err) {
-        console.error('Error generating watch list preview:', err);
-        // Use fallback data
-        setWatchListData({
-          headline: `We'll help you predict and manage ${responses.q1.answerLabel.toLowerCase()}.`,
-          watchItems: [
-            'Symptom pattern detection',
-            'Early warning signals',
-            'Doctor-ready summaries',
+    return {
+      widgetId,
+      q4Value,
+      testimonialId,
+      ctaKey: 'google_signin' as const,
+    };
+  }, [responses.q1.answerValue, responses.q2.answerValue]);
+
+  /**
+   * Deterministic Screen 4 data (Phase 1)
+   *
+   * Why this exists: Removes LLM latency from the critical post-Q3 transition.
+   * We still produce a complete `ValuePropScreenData` shape so the UI stays stable.
+   */
+  const valuePropData: ValuePropScreenData = useMemo(() => {
+    const q1Domain = responses.q1.answerValue;
+    const q2Value = responses.q2.answerValue;
+
+    const { widgetId, q4Value, testimonialId } = screen4Selection;
+    const socialProofQuote = testimonialIdToSelectedQuote(testimonialId);
+
+    const catalog = getOnboardingCatalog();
+    const headline = getScreen4Headline(responses.q1.answerLabel);
+    const watchItems = getScreen4WatchItems(q2Value);
+
+    return {
+      // Keep layoutId aligned with domain for later widget registry routing
+      layoutId: q1Domain as unknown as ValuePropScreenData['layoutId'],
+      socialProofQuote,
+      victory: {
+        stepsCompleted: 3,
+        totalSteps: 3,
+        baselineData: {
+          label: getMicrocopy(catalog.screen4.baseline_label_id),
+          value: responses.q3.answerLabel,
+          condition: responses.q1.answerLabel,
+          widgetType: widgetId,
+        },
+        promise: {
+          headline,
+          q4Value,
+          watchItems,
+        },
+        victoryMessage: getMicrocopy(catalog.screen4.victory_message_id),
+      },
+      preview: {
+        headline,
+        watchItems,
+        // Static preview until Phase 2 widget registry renders per-widget visuals
+        graphData: {
+          days: [
+            { date: 'Mon', risk: 'low', value: 20 },
+            { date: 'Tue', risk: 'low', value: 25 },
+            { date: 'Wed', risk: 'elevated', value: 55 },
+            { date: 'Thu', risk: 'low', value: 30 },
+            { date: 'Fri', risk: 'low', value: 20 },
+            { date: 'Sat', risk: 'low', value: 15 },
+            { date: 'Sun', risk: 'low', value: 20 },
           ],
-          graphs: {
-            flareRisk: {
-              days: [
-                { date: 'Mon', risk: 'low', value: 20 },
-                { date: 'Tue', risk: 'low', value: 25 },
-                { date: 'Wed', risk: 'elevated', value: 55 },
-                { date: 'Thu', risk: 'low', value: 30 },
-                { date: 'Fri', risk: 'low', value: 20 },
-                { date: 'Sat', risk: 'low', value: 15 },
-                { date: 'Sun', risk: 'low', value: 20 },
-              ],
-            },
-            symptomPatterns: {
-              condition: responses.q1.answerValue,
-              patternType: 'energy',
-              values: [5, 4, 3, 4, 5, 6, 5],
-              insight: 'Your patterns will appear here',
-            },
-            medicationTiming: {
-              items: [],
-            },
-          },
-          cta: {
-            text: 'Save my progress',
-            action: 'google_signin',
-          },
-          statusText: 'First insight in ~3 days',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
+        },
+        badge: getScreen4PreviewBadge(q1Domain),
+      },
+      cta: {
+        text: getMicrocopy('cta.save_my_progress.v1'),
+        action: 'google_signin',
+      },
+      statusText: getMicrocopy(catalog.screen4.status_text_id),
+    };
+  }, [responses, screen4Selection]);
 
-    loadWatchListPreview();
-  }, [modalSessionId, responses.q1.answerLabel, responses.q1.answerValue]);
+  /**
+   * Log Screen 4 impression (even without conversion)
+   *
+   * Why this exists: You want to know, for every user who reached Screen 4,
+   * which testimonial/widget/CTA we showed them.
+   */
+  useEffect(() => {
+    if (!modalSessionId) return;
+
+    // Fire-and-forget (do not block UI)
+    void supabase.from('onboarding_screen4_impressions').upsert(
+      {
+        modal_session_id: modalSessionId,
+        product_offering: product,
+        q1_value: responses.q1.answerValue,
+        q2_value: responses.q2.answerValue,
+        widget_id: screen4Selection.widgetId,
+        testimonial_id: screen4Selection.testimonialId,
+        cta_key: screen4Selection.ctaKey,
+        render_version: 'v1',
+      },
+      { onConflict: 'modal_session_id,render_version' }
+    );
+  }, [
+    modalSessionId,
+    product,
+    responses.q1.answerValue,
+    responses.q2.answerValue,
+    screen4Selection.ctaKey,
+    screen4Selection.testimonialId,
+    screen4Selection.widgetId,
+  ]);
 
   // Handle Google Sign In (triggered by WatchListPreview CTA)
   const handleGoogleSignIn = useCallback(async () => {
@@ -153,8 +216,8 @@ export function SummaryStep({
     }
   }, [modalSessionId, product, responses]);
 
-  // Handle email/password signup
-  const handleEmailSubmit = useCallback(
+  // Handle email/password signup (kept for future use)
+  const _handleEmailSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError('');
@@ -232,90 +295,12 @@ export function SummaryStep({
     [email, password, product, modalSessionId, onEmailSuccess]
   );
 
-  // If WatchListPreview is loaded, render it with CTA triggering Google sign-in
-  // Otherwise, show loading state
-  if (isLoading || !watchListData) {
-    return (
-      <div className="space-y-6">
-        <WatchListPreview
-          data={watchListData as WatchListPreviewData}
-          onCTAClick={handleGoogleSignIn}
-          isLoading={true}
-        />
-      </div>
-    );
-  }
-
+  // Full-bleed ValuePropScreen - no wrapper spacing
   return (
-    <div className="space-y-6">
-      {/* WatchListPreview - Main conversion UI */}
-      <WatchListPreview
-        data={watchListData}
-        onCTAClick={handleGoogleSignIn}
-        isLoading={isGoogleLoading}
-      />
-
-      {/* Error display */}
-      {error && (
-        <p className="text-accent-peach flex items-center justify-center gap-1 text-center text-sm">
-          <MaterialIcon name="error" size="sm" />
-          {error}
-        </p>
-      )}
-
-      {/* Alternative: Email/Password signup (collapsible) */}
-      <details className="group">
-        <summary className="text-text-muted hover:text-primary flex cursor-pointer items-center justify-center gap-2 text-sm">
-          <span>Or sign up with email</span>
-          <MaterialIcon
-            name="expand_more"
-            size="sm"
-            className="transition-transform group-open:rotate-180"
-          />
-        </summary>
-        <form onSubmit={handleEmailSubmit} className="mt-4 space-y-3">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            className="modal-input"
-            disabled={isSubmitting || isGoogleLoading}
-            autoComplete="email"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create a password"
-            className="modal-input"
-            disabled={isSubmitting || isGoogleLoading}
-            autoComplete="new-password"
-            minLength={6}
-          />
-          <button
-            type="submit"
-            disabled={isSubmitting || isGoogleLoading}
-            className="bg-primary hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 font-bold text-white transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? (
-              <>
-                <MaterialIcon
-                  name="progress_activity"
-                  size="sm"
-                  className="animate-spin"
-                />
-                Creating account...
-              </>
-            ) : (
-              <>
-                Create account
-                <MaterialIcon name="arrow_forward" size="sm" />
-              </>
-            )}
-          </button>
-        </form>
-      </details>
-    </div>
+    <ValuePropScreen
+      data={valuePropData}
+      onCTAClick={handleGoogleSignIn}
+      isLoading={isGoogleLoading}
+    />
   );
 }

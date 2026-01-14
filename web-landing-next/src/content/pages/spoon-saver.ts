@@ -1,3 +1,4 @@
+import { TESTIMONIALS } from '@/content/testimonials';
 import type { LandingPageContent } from '@/types';
 
 /**
@@ -85,104 +86,45 @@ export const spoonSaverContent: LandingPageContent = {
 
   /**
    * Testimonials highlighting pain points AND Clue's solutions
-   * Mix of: flipped positive quotes + Clue insights + doctor validation
-   * Shows the transformation: Problem → Clue Solution
+   * Mix of: Real pain quotes + flipped positive quotes + Clue insights
+   *
+   * Categories:
+   * - burden: Tracking exhaustion, "full-time job" feeling
+   * - brain_fog: Memory issues, cognitive load
+   * - judgment: Emotional toll, anxiety from app feedback
+   * - setup: Complex configuration, overwhelm
+   * - insight: Lack of useful analysis
+   * - doctor: Provider communication struggles
+   * - validation: Feeling dismissed, not believed
+   * - sync: Data scattered across apps
+   * - flexibility: Apps too limited or rigid
+   *
+   * Source: spoonies-our-customer-pain-points-and-experiences.md
    */
-  testimonials: [
-    // FLIPPED: Burden → Easy with Clue
-    {
-      quote: 'Symptom tracking is no longer a full-time job.',
-      source: 'Clue user',
-      condition: 'Long COVID',
-      painPoint: 'burden',
-      isFlipped: true,
-    },
-    // FLIPPED: Setup complexity → Clue handles it
-    {
-      quote:
-        'I used to spend a year setting up trackers. Clue understood my conditions from day one.',
-      source: 'Clue user',
-      condition: 'Fibromyalgia + POTS',
-      painPoint: 'setup',
-      isFlipped: true,
-    },
-    // FLIPPED: Nobody knows what to do → Clue knows
-    {
-      quote:
-        "Doctors said 'no one knows what to do with you.' Clue helped me find patterns they missed.",
-      source: 'Clue user',
-      condition: 'EDS + MCAS',
-      painPoint: 'validation',
-      isFlipped: true,
-    },
-    // CLUE INSIGHT: Correlation detection
-    {
-      quote: 'High humidity correlates with your joint pain at 0.6 strength.',
-      source: 'Clue Insight',
-      condition: 'Rheumatoid Arthritis',
-      painPoint: 'insight',
-      isClueInsight: true,
-    },
-    // CLUE INSIGHT: Medication effectiveness
-    {
-      quote:
-        'Noticed your fatigue is often lower on days you take medication X.',
-      source: 'Clue Insight',
-      condition: 'ME/CFS',
-      painPoint: 'insight',
-      isClueInsight: true,
-    },
-    // DOCTOR VALIDATION: Reports that work
-    {
-      quote:
-        'My doctor loves when I walk in with the reports—he can see how things are going at a glance.',
-      source: 'r/ChronicIllness',
-      condition: 'Migraines',
-      painPoint: 'doctor',
-    },
-    // FLIPPED: Data scattered → Syncs automatically
-    {
-      quote:
-        'Finally, an app that syncs with Apple Health. All my data in one place.',
-      source: 'Clue user',
-      condition: 'POTS',
-      painPoint: 'sync',
-      isFlipped: true,
-    },
-    // FLIPPED: Brain fog memory issues → Clue remembers
-    {
-      quote: 'Brain fog used to mean lost data. Now Clue remembers for me.',
-      source: 'Clue user',
-      condition: 'Long COVID',
-      painPoint: 'brain_fog',
-      isFlipped: true,
-    },
-    // FLIPPED: Judgment/anxiety → No guilt tracking
-    {
-      quote: 'No sad faces. No broken streaks. Just data that actually helps.',
-      source: 'Clue user',
-      condition: 'Chronic Pain',
-      painPoint: 'judgment',
-      isFlipped: true,
-    },
-    // CLUE INSIGHT: Trigger detection
-    {
-      quote: 'Your flares often follow nights with less than 5 hours of sleep.',
-      source: 'Clue Insight',
-      condition: 'Endometriosis',
-      painPoint: 'insight',
-      isClueInsight: true,
-    },
-    // FLIPPED: Fitness-focused apps → Designed for illness
-    {
-      quote:
-        "Finally, an app designed for illness, not fitness. No step counts, no 'wellness' shaming—just real symptom tracking.",
-      source: 'Clue user',
-      condition: 'Multiple chronic illnesses',
-      painPoint: 'validation',
-      isFlipped: true,
-    },
-  ],
+  /**
+   * Persona assignment logic (from PERSONA-DESIGN.md):
+   *
+   * MAYA (38, South Asian/Mediterranean, fibromyalgia + long COVID):
+   * - Project manager, stepped back to part-time work
+   * - Data-focused, organized, methodical
+   * - Long COVID, Fibromyalgia, work-life references
+   * - Doctor communication (prepared approach)
+   *
+   * JORDAN (28, non-binary, younger):
+   * - ADHD + chronic illness mentions
+   * - Brain fog, cognitive load, memory issues
+   * - Mental health, depression references
+   * - POTS (younger demographic)
+   * - Casual/relatable tone
+   *
+   * MARCUS (40, Black man, grounded strength):
+   * - Self-advocacy, validation struggles
+   * - Doctor dismissal / gaslighting
+   * - Fighting for recognition
+   * - EDS, undiagnosed, "no one believes me"
+   * - Firm, determined tone
+   */
+  testimonials: TESTIMONIALS,
 
   /**
    * "No Guilt Zone" - Key differentiator

@@ -31,6 +31,8 @@ export interface AdContext {
   description: string; // "A symptom tracker that learns your patterns..."
   cta: string; // "See your forecast"
   adGroup: string; // "flare_forecast"
+  altHeadlines: string[]; // Alternative headlines tested
+  targetSubreddits: string[]; // Where ad was shown (e.g., ["r/ChronicIllness", "r/Fibromyalgia"])
 }
 
 /**
@@ -44,6 +46,7 @@ export interface LandingPageContext {
   primaryCTA: string; // "Start predicting flares"
   empathyCopy: string; // "A shift in your patterns suggests..."
   focusFeature: string; // "Lag Effect Detection (24-48h warning)"
+  headlineVariants: Record<string, { h1: string; h2: string }>; // A/B test variants
 }
 
 /**
@@ -287,6 +290,163 @@ export interface ConversionContextResponse {
 }
 
 // =============================================================================
+// WIDGET CONTEXT (Q3 widget definition from onboarding-flow.json)
+// =============================================================================
+
+/**
+ * Q3 widget context from onboarding-flow.json
+ * Why: The widget determines what data we capture and what promise we make
+ */
+export interface WidgetContext {
+  widgetId: string; // "w1_time_of_day_energy"
+  widgetName: string; // "Time-of-Day Energy Map"
+  widgetType: string; // "time_segment_selector", "dual_selector", etc.
+  q4Value: string; // "We will learn your energy rhythm and predict your best windows"
+  captures: string[]; // ["daily_energy_pattern", "peak_energy_time"]
+  userInput: {
+    condition: string; // The condition selected in Q3
+    widgetValue: number | string | string[]; // The value captured by the widget
+  };
+}
+
+/**
+ * Enhanced user context with widget data
+ * Why: Provides full context including Q3 widget definition for personalization
+ */
+export interface EnhancedUserContext extends UserConversionContext {
+  widget: WidgetContext;
+}
+
+// =============================================================================
+// AI-GENERATED UI (Layout Selection + Copy)
+// =============================================================================
+
+/**
+ * Layout ID for domain-specific UI
+ * Why: Each Q1 domain has a specialized layout that best represents the value prop
+ */
+export type LayoutId =
+  | 'fatigue' // Energy timeline, crash prevention focus
+  | 'flares' // 7-day forecast, early warning focus
+  | 'migraines' // Trigger correlation (weather, food, cycle)
+  | 'ibs_gut' // Food-symptom timeline
+  | 'multiple' // Multi-symptom dashboard
+  | 'other'; // Pattern discovery
+
+/**
+ * AI-generated UI selection and copy
+ * Why: The AI both selects the layout AND generates personalized copy
+ */
+export interface AIGeneratedUI {
+  layoutId: LayoutId;
+  headline: string; // Personalized to Q2 pain point
+  watchItems: [string, string, string]; // Three monitoring promises
+  ctaText: string; // First-person CTA ("Save my progress")
+  victoryMessage: string; // Short celebration acknowledging Q3 input
+  previewBadge: string; // Preview card badge/title (e.g., "YOUR ENERGY PATTERN", "FOOD-SYMPTOM TIMELINE")
+}
+
+// =============================================================================
+// VICTORY COMPONENT (Combined celebration moment)
+// =============================================================================
+
+/**
+ * Baseline data captured from Q3 widget
+ * Why: Shows the user their "Day 1" data point as proof of progress
+ */
+export interface BaselineData {
+  label: string; // "Energy right now", "Flare status", etc.
+  value: string | number; // "50%", "Morning", etc.
+  condition: string; // "ME/CFS", "Fibromyalgia", etc.
+  widgetType: string; // For rendering the right visualization
+}
+
+/**
+ * Promise card data
+ * Why: Reinforces the value prop with personalized promises
+ */
+export interface PromiseData {
+  headline: string; // AI-generated headline
+  q4Value: string; // Widget's q4_value promise
+  watchItems: string[]; // AI-generated watch items
+}
+
+/**
+ * Victory component props
+ * Why: Combined celebration showing progress + baseline + promise
+ */
+export interface VictoryProps {
+  // Progress celebration
+  stepsCompleted: number;
+  totalSteps: number;
+
+  // Baseline captured (Q3 data)
+  baselineData: BaselineData;
+
+  // Promise card (q4_value + AI copy)
+  promise: PromiseData;
+
+  // AI-generated victory message
+  victoryMessage: string;
+}
+
+// =============================================================================
+// SELECTED QUOTE (AI-selected testimonial for social proof)
+// =============================================================================
+
+/**
+ * AI-selected quote for social proof at top of ValuePropScreen
+ * Why: Immediately establishes emotional connection with user by showing
+ * a testimonial from someone with similar condition/pain point
+ */
+export interface SelectedQuote {
+  /** The testimonial quote text */
+  quote: string;
+  /** Source attribution (e.g., "r/ChronicIllness", "Clue user") */
+  source: string;
+  /** Condition tag (e.g., "Long COVID", "POTS") */
+  condition?: string;
+  /** Whether this is a Clue insight (positive/solution-focused) */
+  isClueInsight?: boolean;
+}
+
+// =============================================================================
+// VALUE PROP SCREEN DATA (Complete screen data)
+// =============================================================================
+
+/**
+ * Complete data for ValuePropScreen component
+ * Why: Everything needed to render the dynamic sign-up screen
+ */
+export interface ValuePropScreenData {
+  // Layout selection
+  layoutId: LayoutId;
+
+  // AI-selected social proof quote (shown at top)
+  socialProofQuote: SelectedQuote;
+
+  // Victory section
+  victory: VictoryProps;
+
+  // Preview section (domain-specific graph + watch items)
+  preview: {
+    headline: string;
+    watchItems: [string, string, string];
+    graphData: FlareRiskData | PatternData; // Layout-specific
+    badge: string; // Preview card badge/title (e.g., "YOUR ENERGY PATTERN")
+  };
+
+  // CTA
+  cta: {
+    text: string;
+    action: 'google_signin';
+  };
+
+  // Status
+  statusText: string;
+}
+
+// =============================================================================
 // GENERATION METADATA
 // =============================================================================
 
@@ -294,7 +454,7 @@ export interface ConversionContextResponse {
  * Metadata about the copy generation
  */
 export interface GenerationMetadata {
-  modelUsed: string; // 'gemini-1.5-flash', 'gpt-4o-mini', etc.
+  modelUsed: string; // 'gemini-3-flash-preview', 'gpt-4o-mini', etc.
   promptTemplateId: string;
   tokensUsed: number;
   latencyMs: number;
@@ -305,5 +465,13 @@ export interface GenerationMetadata {
  */
 export interface CopyGenerationResult {
   copy: GeneratedCopy;
+  metadata: GenerationMetadata;
+}
+
+/**
+ * Full result from AI UI generation (copy + layout selection)
+ */
+export interface AIGenerationResult {
+  ui: AIGeneratedUI;
   metadata: GenerationMetadata;
 }

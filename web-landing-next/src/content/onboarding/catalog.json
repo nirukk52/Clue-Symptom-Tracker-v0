@@ -1,0 +1,719 @@
+{
+  "meta": {
+    "catalog_id": "modal_onboarding_catalog.v1",
+    "revision": "2026-01-13.a"
+  },
+  "microcopy": {
+    "cta.save_my_progress.v1": "Save my progress",
+    "cta.connecting.v1": "Connecting...",
+    "privacy_note.v1": "Your data stays private",
+    "q3.header.capture_baseline.v1": "Let us capture your baseline",
+    "q3.cta.continue.v1": "Continue",
+    "baseline.label.starting_point.v1": "Starting point",
+    "baseline.captured.day1.v1": "Day 1 captured",
+    "screen4.status.first_insight_3_days.v1": "First insight in ~3 days",
+    "screen4.victory_message.v1": "Your progress is saved",
+    "layout.common.tracking.v1": "Tracking",
+    "screen4.steps_complete_template.v1": "{{done}} of {{total}} steps complete",
+    "layout.fatigue.preview_insight.v1": "Your energy rhythm will become clearer with a few days of data"
+  },
+  "questions": {
+    "q1.primary.v1": {
+      "prompt": "What has been the hardest to manage lately?",
+      "options": [
+        {
+          "option_id": "q1.fatigue.v1",
+          "value": "fatigue",
+          "label": "Fatigue that won't quit",
+          "description": "Crashes, PEM, running on empty"
+        },
+        {
+          "option_id": "q1.flares.v1",
+          "value": "flares",
+          "label": "Unpredictable flares",
+          "description": "Sudden bad days you can't plan for"
+        },
+        {
+          "option_id": "q1.migraines.v1",
+          "value": "migraines",
+          "label": "Migraines that derail everything",
+          "description": "Attacks that take you out"
+        },
+        {
+          "option_id": "q1.ibs_gut.v1",
+          "value": "ibs_gut",
+          "label": "IBS / Gut issues",
+          "description": "Bloating, pain, unpredictable reactions"
+        },
+        {
+          "option_id": "q1.multiple.v1",
+          "value": "multiple",
+          "label": "Multiple conditions",
+          "description": "Everything overlaps, tracking is messy"
+        },
+        {
+          "option_id": "q1.other.v1",
+          "value": "other",
+          "label": "Something else",
+          "description": "Your main issue isn't listed"
+        }
+      ]
+    },
+    "q2.fatigue.v1": {
+      "prompt": "What do you hope to figure out about your fatigue?",
+      "options": [
+        {
+          "option_id": "q2.energy_envelope.v1",
+          "value": "energy_envelope",
+          "label": "When during the day am I most fatigued versus when I actually have energy"
+        },
+        {
+          "option_id": "q2.good_days_trap.v1",
+          "value": "good_days_trap",
+          "label": "Whether activities like exercise or outings are causing me to crash afterwards"
+        },
+        {
+          "option_id": "q2.brain_fog.v1",
+          "value": "brain_fog",
+          "label": "Whether better sleep actually improves my energy and mental clarity"
+        },
+        {
+          "option_id": "q2.mood_connection.v1",
+          "value": "mood_connection",
+          "label": "How my fatigue and mood are connected and affecting each other"
+        },
+        {
+          "option_id": "q2.no_focus.v1",
+          "value": "no_focus",
+          "label": "I want to track and see what patterns come up, no specific focus yet"
+        }
+      ]
+    },
+    "q2.flares.v1": {
+      "prompt": "What do you want to understand about your flares?",
+      "options": [
+        {
+          "option_id": "q2.unknown_triggers.v1",
+          "value": "unknown_triggers",
+          "label": "What might be triggering my flare-ups, because I genuinely have no idea"
+        },
+        {
+          "option_id": "q2.early_warning.v1",
+          "value": "early_warning",
+          "label": "Whether there are warning signs I could catch before a flare fully hits"
+        },
+        {
+          "option_id": "q2.treatment_effect.v1",
+          "value": "treatment_effect",
+          "label": "Whether my treatments or routines are actually reducing my flares"
+        },
+        {
+          "option_id": "q2.flare_patterns.v1",
+          "value": "flare_patterns",
+          "label": "Whether my flares follow any pattern like time of month or activity level"
+        },
+        {
+          "option_id": "q2.log_and_see.v1",
+          "value": "log_and_see",
+          "label": "I want to log my flares and look for patterns over time, no specific theory"
+        }
+      ]
+    },
+    "q2.migraines.v1": {
+      "prompt": "What would help you most with your migraines?",
+      "options": [
+        {
+          "option_id": "q2.food_triggers.v1",
+          "value": "food_triggers",
+          "label": "Which foods or drinks might be triggering my migraines without me realizing"
+        },
+        {
+          "option_id": "q2.weather_triggers.v1",
+          "value": "weather_triggers",
+          "label": "Whether weather changes or barometric pressure correlate with my headaches"
+        },
+        {
+          "option_id": "q2.hormonal_link.v1",
+          "value": "hormonal_link",
+          "label": "Whether my migraines are linked to my hormonal cycle or specific times of month"
+        },
+        {
+          "option_id": "q2.stress_sleep.v1",
+          "value": "stress_sleep",
+          "label": "Whether stress or poor sleep are the real triggers setting off my migraines"
+        },
+        {
+          "option_id": "q2.find_any_pattern.v1",
+          "value": "find_any_pattern",
+          "label": "I want to track everything and see what patterns emerge, no specific theory"
+        }
+      ]
+    },
+    "q2.ibs_gut.v1": {
+      "prompt": "What would you like to understand about your digestive issues?",
+      "options": [
+        {
+          "option_id": "q2.food_culprits.v1",
+          "value": "food_culprits",
+          "label": "Which specific foods might be causing my digestive flare-ups or reactions"
+        },
+        {
+          "option_id": "q2.stress_gut.v1",
+          "value": "stress_gut",
+          "label": "Whether stress or anxiety is making my gut symptoms significantly worse"
+        },
+        {
+          "option_id": "q2.timing_patterns.v1",
+          "value": "timing_patterns",
+          "label": "What time of day my digestive issues are most intense and why"
+        },
+        {
+          "option_id": "q2.diet_working.v1",
+          "value": "diet_working",
+          "label": "Whether my current diet or medication is actually improving my symptoms"
+        },
+        {
+          "option_id": "q2.track_trends.v1",
+          "value": "track_trends",
+          "label": "I want to track everything and look for trends, no specific idea yet"
+        }
+      ]
+    },
+    "q2.multiple.v1": {
+      "prompt": "What feels like the biggest challenge right now?",
+      "options": [
+        {
+          "option_id": "q2.symptom_overlap.v1",
+          "value": "symptom_overlap",
+          "label": "Which condition is causing which symptom, because everything blurs together"
+        },
+        {
+          "option_id": "q2.competing_needs.v1",
+          "value": "competing_needs",
+          "label": "How to juggle different medications or treatments that sometimes conflict"
+        },
+        {
+          "option_id": "q2.unified_view.v1",
+          "value": "unified_view",
+          "label": "Seeing all my symptoms in one combined view instead of scattered notes"
+        },
+        {
+          "option_id": "q2.prioritize_issue.v1",
+          "value": "prioritize_issue",
+          "label": "Figuring out which issue to tackle first when everything feels urgent"
+        },
+        {
+          "option_id": "q2.reduce_overwhelm.v1",
+          "value": "reduce_overwhelm",
+          "label": "Tracking everything I need to without getting completely overwhelmed"
+        }
+      ]
+    },
+    "q2.other.v1": {
+      "prompt": "What would be most helpful to track?",
+      "options": [
+        {
+          "option_id": "q2.find_patterns.v1",
+          "value": "find_patterns",
+          "label": "Finding patterns or triggers for symptoms that seem random right now"
+        },
+        {
+          "option_id": "q2.track_treatment.v1",
+          "value": "track_treatment",
+          "label": "Tracking whether a new treatment or habit is actually making a difference"
+        },
+        {
+          "option_id": "q2.doctor_log.v1",
+          "value": "doctor_log",
+          "label": "Having a log I can actually show my doctor instead of trying to remember"
+        },
+        {
+          "option_id": "q2.see_trends.v1",
+          "value": "see_trends",
+          "label": "Seeing overall trends in my health over weeks and months, not just day to day"
+        },
+        {
+          "option_id": "q2.just_curious.v1",
+          "value": "just_curious",
+          "label": "I want to try tracking and see what I learn, no specific goal yet"
+        }
+      ]
+    }
+  },
+  "conditions": {
+    "question_by_domain": {
+      "fatigue": "Which fatigue condition are you managing?",
+      "flares": "Which condition causes your flares?",
+      "migraines": "What type of headaches do you experience?",
+      "ibs_gut": "What digestive condition are you tracking?",
+      "multiple": "What best describes your situation?",
+      "other": "What condition are you tracking?"
+    },
+    "default_by_domain": {
+      "fatigue": "chronic_fatigue",
+      "flares": "fibromyalgia",
+      "migraines": "chronic_migraine",
+      "ibs_gut": "ibs_m",
+      "multiple": "fibro_cfs",
+      "other": "undiagnosed"
+    },
+    "by_domain": {
+      "fatigue": [
+        { "value": "me_cfs", "label": "ME/CFS" },
+        { "value": "long_covid", "label": "Long COVID" },
+        { "value": "fibromyalgia", "label": "Fibromyalgia" },
+        { "value": "pots", "label": "POTS" },
+        { "value": "eds", "label": "Ehlers-Danlos Syndrome" },
+        {
+          "value": "chronic_fatigue",
+          "label": "Chronic fatigue (undiagnosed)"
+        },
+        { "value": "other", "label": "Other fatigue condition" }
+      ],
+      "flares": [
+        { "value": "fibromyalgia", "label": "Fibromyalgia" },
+        { "value": "ra", "label": "Rheumatoid Arthritis" },
+        { "value": "lupus", "label": "Lupus (SLE)" },
+        { "value": "ms", "label": "Multiple Sclerosis" },
+        { "value": "ankylosing", "label": "Ankylosing Spondylitis" },
+        { "value": "psoriatic", "label": "Psoriatic Arthritis" },
+        { "value": "other", "label": "Other flare-prone condition" }
+      ],
+      "migraines": [
+        { "value": "chronic_migraine", "label": "Chronic Migraine" },
+        { "value": "episodic_migraine", "label": "Episodic Migraine" },
+        { "value": "cluster_headache", "label": "Cluster Headaches" },
+        { "value": "tension_headache", "label": "Tension Headaches" },
+        { "value": "menstrual_migraine", "label": "Menstrual Migraines" },
+        { "value": "other", "label": "Other headache condition" }
+      ],
+      "ibs_gut": [
+        { "value": "ibs_d", "label": "IBS-D (diarrhea-predominant)" },
+        { "value": "ibs_c", "label": "IBS-C (constipation-predominant)" },
+        { "value": "ibs_m", "label": "IBS-M (mixed)" },
+        { "value": "crohns", "label": "Crohn's Disease" },
+        { "value": "colitis", "label": "Ulcerative Colitis" },
+        { "value": "gerd", "label": "GERD / Acid Reflux" },
+        { "value": "other", "label": "Other digestive condition" }
+      ],
+      "multiple": [
+        { "value": "fibro_cfs", "label": "Fibromyalgia + ME/CFS" },
+        {
+          "value": "autoimmune_multi",
+          "label": "Multiple autoimmune conditions"
+        },
+        { "value": "pain_fatigue", "label": "Chronic pain + fatigue" },
+        { "value": "gut_plus", "label": "GI issues + other conditions" },
+        { "value": "mental_physical", "label": "Mental health + physical" },
+        { "value": "other", "label": "Other combination" }
+      ],
+      "other": [
+        { "value": "endometriosis", "label": "Endometriosis" },
+        { "value": "pcos", "label": "PCOS" },
+        { "value": "pmdd", "label": "PMDD" },
+        { "value": "depression", "label": "Depression" },
+        { "value": "anxiety", "label": "Anxiety" },
+        { "value": "insomnia", "label": "Chronic Insomnia" },
+        { "value": "undiagnosed", "label": "Undiagnosed / Exploring" },
+        { "value": "other", "label": "Something else" }
+      ]
+    }
+  },
+  "widgets": {
+    "q3.energy_envelope.v1": {
+      "type": "slider",
+      "prompt": "Where is your energy right now?",
+      "minLabel": "Empty",
+      "maxLabel": "Full",
+      "gradient": ["#f87171", "#fcd34d", "#b8e3d6"]
+    },
+    "q3.good_days_trap.v1": {
+      "type": "chips",
+      "prompt": "What activities might be draining you?",
+      "allowMultiple": true,
+      "options": [
+        { "value": "exercise", "label": "Exercise" },
+        { "value": "social", "label": "Social events" },
+        { "value": "work", "label": "Work" },
+        { "value": "errands", "label": "Errands" },
+        { "value": "chores", "label": "Chores" }
+      ]
+    },
+    "q3.brain_fog.v1": {
+      "type": "slider",
+      "prompt": "How clear is your head right now?",
+      "minLabel": "Very foggy",
+      "maxLabel": "Clear",
+      "gradient": ["#a4c8d8", "#d0bdf4", "#b8e3d6"]
+    },
+    "q3.mood_connection.v1": {
+      "type": "slider",
+      "prompt": "How is your mood right now?",
+      "minLabel": "Low",
+      "maxLabel": "Good",
+      "gradient": ["#a4c8d8", "#d0bdf4", "#b8e3d6"]
+    },
+    "q3.no_focus.v1": {
+      "type": "slider",
+      "prompt": "Overall, how are you feeling?",
+      "minLabel": "Struggling",
+      "maxLabel": "Managing well",
+      "gradient": ["#f87171", "#fcd34d", "#b8e3d6"]
+    },
+    "q3.unknown_triggers.v1": {
+      "type": "chips",
+      "prompt": "What happened in the last 24-48 hours?",
+      "allowMultiple": true,
+      "options": [
+        { "value": "poor_sleep", "label": "Poor sleep" },
+        { "value": "stress", "label": "High stress" },
+        { "value": "activity", "label": "More activity" },
+        { "value": "food", "label": "Something I ate" },
+        { "value": "weather", "label": "Weather change" },
+        { "value": "nothing", "label": "Nothing stands out" }
+      ]
+    },
+    "q3.early_warning.v1": {
+      "type": "chips",
+      "prompt": "Have you noticed any warning signs?",
+      "allowMultiple": true,
+      "options": [
+        { "value": "fatigue", "label": "Unusual fatigue" },
+        { "value": "mood", "label": "Mood shift" },
+        { "value": "aches", "label": "Diffuse aches" },
+        { "value": "sleep", "label": "Sleep changes" },
+        { "value": "none", "label": "None of these" }
+      ]
+    },
+    "q3.treatment_effect.v1": {
+      "type": "slider",
+      "prompt": "How intense are your flares right now?",
+      "minLabel": "Mild",
+      "maxLabel": "Severe",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.flare_patterns.v1": {
+      "type": "chips",
+      "prompt": "When did your last flare start?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "now", "label": "In one right now" },
+        { "value": "today", "label": "Started today" },
+        { "value": "yesterday", "label": "Yesterday" },
+        { "value": "few_days", "label": "A few days ago" },
+        { "value": "none_recent", "label": "Not recently" }
+      ]
+    },
+    "q3.log_and_see.v1": {
+      "type": "slider",
+      "prompt": "Current flare intensity",
+      "minLabel": "None",
+      "maxLabel": "Severe",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.food_triggers.v1": {
+      "type": "chips",
+      "prompt": "What have you had in the last 24 hours?",
+      "allowMultiple": true,
+      "options": [
+        { "value": "caffeine", "label": "Coffee or caffeine" },
+        { "value": "alcohol", "label": "Alcohol" },
+        { "value": "chocolate", "label": "Chocolate" },
+        { "value": "cheese", "label": "Aged cheese" },
+        { "value": "none", "label": "None of these" }
+      ]
+    },
+    "q3.weather_triggers.v1": {
+      "type": "slider",
+      "prompt": "How is your head right now?",
+      "minLabel": "Fine",
+      "maxLabel": "Bad headache",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.hormonal_link.v1": {
+      "type": "chips",
+      "prompt": "Where are you in your cycle?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "period", "label": "On my period" },
+        { "value": "before", "label": "A few days before" },
+        { "value": "ovulation", "label": "Around ovulation" },
+        { "value": "luteal", "label": "After ovulation" },
+        { "value": "na", "label": "Does not apply" }
+      ]
+    },
+    "q3.stress_sleep.v1": {
+      "type": "slider",
+      "prompt": "How stressed are you right now?",
+      "minLabel": "Low stress",
+      "maxLabel": "High stress",
+      "gradient": ["#b8e3d6", "#d0bdf4", "#f87171"]
+    },
+    "q3.find_any_pattern.v1": {
+      "type": "slider",
+      "prompt": "Headache intensity right now",
+      "minLabel": "None",
+      "maxLabel": "Severe",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.food_culprits.v1": {
+      "type": "slider",
+      "prompt": "How is your gut right now?",
+      "minLabel": "Fine",
+      "maxLabel": "Flaring",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.stress_gut.v1": {
+      "type": "slider",
+      "prompt": "How stressed or anxious are you?",
+      "minLabel": "Calm",
+      "maxLabel": "Very stressed",
+      "gradient": ["#b8e3d6", "#d0bdf4", "#f87171"]
+    },
+    "q3.timing_patterns.v1": {
+      "type": "chips",
+      "prompt": "When are your symptoms usually worst?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "morning", "label": "Morning" },
+        { "value": "after_meals", "label": "After meals" },
+        { "value": "afternoon", "label": "Afternoon" },
+        { "value": "evening", "label": "Evening" },
+        { "value": "varies", "label": "It varies" }
+      ]
+    },
+    "q3.diet_working.v1": {
+      "type": "slider",
+      "prompt": "How are your symptoms today?",
+      "minLabel": "Good",
+      "maxLabel": "Bad",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.track_trends.v1": {
+      "type": "chips",
+      "prompt": "What symptom is most present?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "bloating", "label": "Bloating" },
+        { "value": "pain", "label": "Abdominal pain" },
+        { "value": "nausea", "label": "Nausea" },
+        { "value": "diarrhea", "label": "Diarrhea" },
+        { "value": "constipation", "label": "Constipation" },
+        { "value": "fine", "label": "Doing okay" }
+      ]
+    },
+    "q3.symptom_overlap.v1": {
+      "type": "chips",
+      "prompt": "What is bothering you most right now?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "pain", "label": "Pain" },
+        { "value": "fatigue", "label": "Fatigue" },
+        { "value": "brain_fog", "label": "Brain fog" },
+        { "value": "digestive", "label": "Digestive issues" },
+        { "value": "mood", "label": "Mood changes" }
+      ]
+    },
+    "q3.competing_needs.v1": {
+      "type": "chips",
+      "prompt": "Did you take all your medications today?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "all", "label": "Yes, all of them" },
+        { "value": "most", "label": "Most of them" },
+        { "value": "some", "label": "Only some" },
+        { "value": "none", "label": "None today" }
+      ]
+    },
+    "q3.unified_view.v1": {
+      "type": "slider",
+      "prompt": "Overall symptom level right now",
+      "minLabel": "Mild",
+      "maxLabel": "Severe",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.prioritize_issue.v1": {
+      "type": "chips",
+      "prompt": "What impacts your life most right now?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "pain", "label": "Pain" },
+        { "value": "fatigue", "label": "Fatigue" },
+        { "value": "brain_fog", "label": "Brain fog" },
+        { "value": "mobility", "label": "Mobility" },
+        { "value": "mood", "label": "Mood" },
+        { "value": "sleep", "label": "Sleep" }
+      ]
+    },
+    "q3.reduce_overwhelm.v1": {
+      "type": "slider",
+      "prompt": "Overall, how are you doing right now?",
+      "minLabel": "Struggling",
+      "maxLabel": "Managing well",
+      "gradient": ["#f87171", "#fcd34d", "#b8e3d6"]
+    },
+    "q3.find_patterns.v1": {
+      "type": "slider",
+      "prompt": "What symptom is most present today?",
+      "minLabel": "Mild",
+      "maxLabel": "Severe",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.track_treatment.v1": {
+      "type": "slider",
+      "prompt": "How is the symptom you are targeting?",
+      "minLabel": "Better",
+      "maxLabel": "Worse",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.doctor_log.v1": {
+      "type": "slider",
+      "prompt": "Main symptom intensity",
+      "minLabel": "1",
+      "maxLabel": "10",
+      "gradient": ["#b8e3d6", "#fcd34d", "#f87171"]
+    },
+    "q3.see_trends.v1": {
+      "type": "chips",
+      "prompt": "How do you feel compared to usual?",
+      "allowMultiple": false,
+      "options": [
+        { "value": "much_worse", "label": "Much worse" },
+        { "value": "worse", "label": "Worse" },
+        { "value": "same", "label": "About the same" },
+        { "value": "better", "label": "Better" },
+        { "value": "much_better", "label": "Much better" }
+      ]
+    },
+    "q3.just_curious.v1": {
+      "type": "slider",
+      "prompt": "How do you feel overall right now?",
+      "minLabel": "Not great",
+      "maxLabel": "Good",
+      "gradient": ["#f87171", "#fcd34d", "#b8e3d6"]
+    },
+    "q3.default.v1": {
+      "type": "slider",
+      "prompt": "How are you feeling right now?",
+      "minLabel": "Struggling",
+      "maxLabel": "Managing well",
+      "gradient": ["#f87171", "#fcd34d", "#b8e3d6"]
+    }
+  },
+  "screen4": {
+    "headline_template": "We'll help you predict and manage {{q1_label_lower}}.",
+    "victory_message_id": "screen4.victory_message.v1",
+    "baseline_label_id": "baseline.label.starting_point.v1",
+    "status_text_id": "screen4.status.first_insight_3_days.v1",
+    "default_watch_items": [
+      "Early warning signals",
+      "Pattern detection",
+      "Doctor-ready summaries"
+    ],
+    "watch_items_by_q2": {},
+    "preview_badge_by_layout": {
+      "fatigue": "7-DAY PREVIEW",
+      "flares": "7-DAY PREVIEW",
+      "migraines": "7-DAY PREVIEW",
+      "ibs_gut": "7-DAY PREVIEW",
+      "multiple": "7-DAY PREVIEW",
+      "other": "7-DAY PREVIEW"
+    },
+    "layouts": {
+      "flares": {
+        "legend_label": "Risk Level:",
+        "pattern_callout": "Elevated risk detected mid-week. With your data, we'll find out why."
+      },
+      "migraines": {
+        "triggers": [
+          { "name": "Weather", "icon": "🌧️" },
+          { "name": "Sleep", "icon": "🌙" },
+          { "name": "Food", "icon": "🍷" },
+          { "name": "Cycle", "icon": "🔄" }
+        ],
+        "status_label": "Tracking",
+        "callout_title": "Pattern Discovery",
+        "callout_body": "We'll find correlations you might miss - like barometric pressure drops 24h before your migraines"
+      },
+      "multiple": {
+        "metrics": [
+          {
+            "label": "Energy",
+            "unit": "%",
+            "color": "#6EE7B7",
+            "bgColor": "rgba(110, 231, 183, 0.1)"
+          },
+          {
+            "label": "Pain",
+            "unit": "/10",
+            "color": "#FDA4AF",
+            "bgColor": "rgba(253, 164, 175, 0.1)"
+          },
+          {
+            "label": "Sleep",
+            "unit": "h",
+            "color": "#A4C8D8",
+            "bgColor": "rgba(164, 200, 216, 0.1)"
+          },
+          {
+            "label": "Mood",
+            "unit": "",
+            "color": "#D0BDF4",
+            "bgColor": "rgba(208, 189, 244, 0.1)"
+          }
+        ],
+        "status_label": "Tracking",
+        "callout_title": "One place for everything",
+        "callout_body": "Track all your symptoms and see how they connect"
+      },
+      "other": {
+        "areas": [
+          {
+            "icon": "📊",
+            "label": "Your patterns",
+            "status": "Learning starts with you"
+          },
+          {
+            "icon": "🔍",
+            "label": "Hidden connections",
+            "status": "We'll find what you miss"
+          },
+          {
+            "icon": "💡",
+            "label": "Personal insights",
+            "status": "Tailored to your experience"
+          }
+        ],
+        "callout_title": "Built to adapt",
+        "callout_body": "We learn YOUR patterns - whatever you're tracking. The more you log, the smarter it gets."
+      },
+      "ibs_gut": {
+        "timeline_events": [
+          { "time": "8am", "type": "food", "label": "Breakfast", "icon": "🥣" },
+          { "time": "9am", "type": "neutral", "label": "Normal", "icon": null },
+          {
+            "time": "11am",
+            "type": "symptom",
+            "label": "Bloating",
+            "icon": "⚡"
+          },
+          { "time": "12pm", "type": "food", "label": "Lunch", "icon": "🥗" },
+          {
+            "time": "2pm",
+            "type": "symptom",
+            "label": "Cramping",
+            "icon": "⚡"
+          },
+          { "time": "4pm", "type": "improving", "label": "Better", "icon": "✓" }
+        ],
+        "callout_title": "Food-symptom connections",
+        "callout_body": "We'll help you spot which foods trigger reactions"
+      },
+      "fatigue": {
+        "axis_high": "High",
+        "axis_low": "Low",
+        "preview_insight_id": "layout.fatigue.preview_insight.v1"
+      }
+    }
+  }
+}

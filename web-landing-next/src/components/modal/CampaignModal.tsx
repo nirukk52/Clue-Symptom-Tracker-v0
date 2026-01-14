@@ -10,8 +10,8 @@ import type {
 } from '@/types';
 
 import { ChatStep } from './ChatStep';
-import { QuestionStep } from './QuestionStep';
-import { SummaryStep } from './SummaryStep';
+import { OnboardingStep1to3 } from './OnboardingStep1to3';
+import { OnboardingStep4 } from './OnboardingStep4';
 
 /**
  * CampaignModal - Main modal component for lead capture
@@ -118,20 +118,26 @@ export function CampaignModal({
 
       {/* Modal container */}
       <div className="modal-container active" role="dialog" aria-modal="true">
-        <div className="modal-content">
-          {/* Close button */}
-          <button
-            className="modal-close"
-            onClick={onClose}
-            aria-label="Close modal"
-          >
-            <MaterialIcon name="close" size="sm" />
-          </button>
+        <div
+          className={`modal-content ${
+            step === 'summary' ? 'modal-content--summary' : ''
+          }`}
+        >
+          {/* Close button - hidden on summary step for cleaner ValuePropScreen */}
+          {step !== 'summary' && (
+            <button
+              className="modal-close"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <MaterialIcon name="close" size="sm" />
+            </button>
+          )}
 
-          {/* Progress dots (only for questions step) */}
+          {/* Progress dots (only for questions step) - 3 steps now (Q4 removed) */}
           {step === 'questions' && (
             <div className="modal-progress">
-              {[1, 2, 3, 4].map((num) => (
+              {[1, 2, 3].map((num) => (
                 <div
                   key={num}
                   className={`modal-dot ${
@@ -144,7 +150,7 @@ export function CampaignModal({
 
           {/* Step content - Q1, Q2, Q3, Q4 */}
           {step === 'questions' && (
-            <QuestionStep
+            <OnboardingStep1to3
               step={questionNumber}
               _product={product}
               responses={responses}
@@ -153,7 +159,7 @@ export function CampaignModal({
           )}
 
           {step === 'summary' && (
-            <SummaryStep
+            <OnboardingStep4
               product={product}
               responses={structuredResponses}
               modalSessionId={modalSessionId}

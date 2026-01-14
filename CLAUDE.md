@@ -7,6 +7,11 @@
 
 Clue is a **prediction-first symptom tracker** for people with chronic conditions (endometriosis, PCOS, long COVID, fibromyalgia, etc.).
 
+## onboarding (Screen 1–4) is now JSON-driven + UI folder cleanup
+
+How to A/B test now
+Swap catalog.json and/or modal_onboarding.v1.json (keep IDs stable), and the UI will follow without code changes.
+
 ### Validated Product Direction (Jan 2026)
 
 **"Predict your next flare before it hits."**
