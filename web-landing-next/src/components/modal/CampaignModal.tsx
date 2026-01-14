@@ -20,10 +20,10 @@ import { SummaryStep } from './SummaryStep';
  * a React component with proper state management and type safety.
  *
  * Flow:
- * 1. Q1: Universal entry point (what's your struggle?)
- * 2. Q2: Contextual pain point (based on Q1)
- * 3. Q3: Product-specific question
- * 4. Q4: Product-specific question
+ * 1. Q1: Domain selection (fatigue, flares, migraines, etc.)
+ * 2. Q2: Pain point selection (what you hope to figure out)
+ * 3. Q3: Condition confirmation + baseline widget (max 3 taps)
+ * 4. Q4: Product-specific value proposition
  * 5. Summary: AI-generated personalized summary + auth (Google / email)
  * 6. Chat: Post-signup conversational flow
  */
@@ -142,11 +142,11 @@ export function CampaignModal({
             </div>
           )}
 
-          {/* Step content */}
+          {/* Step content - Q1, Q2, Q3, Q4 */}
           {step === 'questions' && (
             <QuestionStep
               step={questionNumber}
-              product={product}
+              _product={product}
               responses={responses}
               onSelect={onSelectAnswer}
             />

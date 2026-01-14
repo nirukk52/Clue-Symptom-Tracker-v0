@@ -10,7 +10,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface MultipleConditionsProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 const CONDITIONS = [
@@ -58,7 +58,7 @@ export function MultipleConditions({ onCtaClick }: MultipleConditionsProps) {
 
         {/* CTA */}
         <button
-          onClick={onCtaClick}
+          onClick={() => onCtaClick('multiple_conditions_cta')}
           className="text-primary inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
         >
           Set up your first focus question

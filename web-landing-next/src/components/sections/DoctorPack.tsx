@@ -10,7 +10,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface DoctorPackProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function DoctorPack({ onCtaClick }: DoctorPackProps) {
@@ -35,7 +35,7 @@ export function DoctorPack({ onCtaClick }: DoctorPackProps) {
               physicians, for physicians.
             </p>
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('doctor_pack_cta')}
               className="bg-accent-peach hover:bg-accent-peach/90 inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-white transition-all hover:shadow-lg active:scale-95"
             >
               <MaterialIcon name="download" size="sm" />

@@ -16,7 +16,7 @@ import type { BrainFogContent } from '@/types';
 
 interface BrainFogFriendlyProps {
   content: BrainFogContent;
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function BrainFogFriendly({
@@ -110,7 +110,7 @@ export function BrainFogFriendly({
         {/* CTA */}
         <div className="mt-10 text-center">
           <button
-            onClick={onCtaClick}
+            onClick={() => onCtaClick('brain_fog_cta')}
             className="text-primary inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
           >
             Let Clue remember for you

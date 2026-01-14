@@ -10,7 +10,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface InsightsProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function Insights({ onCtaClick }: InsightsProps) {
@@ -35,7 +35,7 @@ export function Insights({ onCtaClick }: InsightsProps) {
               it. No vague claims.
             </p>
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('insights_cta')}
               className="text-primary inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
             >
               See an example insight

@@ -15,7 +15,7 @@ import { useNavScroll } from '@/hooks/useNavScroll';
  */
 
 interface NavbarProps {
-  onCtaClick?: () => void;
+  onCtaClick?: (ctaId?: string) => void;
 }
 
 export function Navbar({ onCtaClick }: NavbarProps) {
@@ -58,7 +58,7 @@ export function Navbar({ onCtaClick }: NavbarProps) {
         {/* CTA Button */}
         <Button
           variant={isScrolled ? 'nav-solid' : 'nav'}
-          onClick={onCtaClick}
+          onClick={() => onCtaClick?.('nav_cta')}
           data-modal-trigger
           data-cta-id="nav_cta"
           data-cta-text="Get early access"

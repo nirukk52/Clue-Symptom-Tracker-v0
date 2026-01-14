@@ -11,7 +11,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface PatternDetectionProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 /** Suspect data for the visualization */
@@ -176,7 +176,7 @@ export function PatternDetection({ onCtaClick }: PatternDetectionProps) {
               </li>
             </ul>
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('pattern_detection_cta')}
               className="text-primary mt-6 inline-flex items-center gap-2 text-sm font-semibold transition-all hover:gap-3"
             >
               Find my triggers

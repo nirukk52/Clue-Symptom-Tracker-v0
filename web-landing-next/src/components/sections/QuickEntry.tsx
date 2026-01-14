@@ -10,7 +10,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface QuickEntryProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function QuickEntry({ onCtaClick }: QuickEntryProps) {
@@ -154,7 +154,7 @@ export function QuickEntry({ onCtaClick }: QuickEntryProps) {
               </li>
             </ul>
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('quick_entry_cta')}
               className="text-primary mt-6 inline-flex items-center gap-2 text-sm font-semibold transition-all hover:gap-3"
             >
               Try Quick Entry

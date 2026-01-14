@@ -10,7 +10,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface EnergyPacingProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function EnergyPacing({ onCtaClick }: EnergyPacingProps) {
@@ -174,7 +174,7 @@ export function EnergyPacing({ onCtaClick }: EnergyPacingProps) {
               </li>
             </ul>
             <button
-              onClick={onCtaClick}
+              onClick={() => onCtaClick('energy_pacing_cta')}
               className="text-primary mt-6 inline-flex items-center gap-2 text-sm font-semibold transition-all hover:gap-3"
             >
               See my energy budget

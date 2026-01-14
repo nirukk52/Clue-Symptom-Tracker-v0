@@ -10,7 +10,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  */
 
 interface FinalCTAProps {
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 export function FinalCTA({ onCtaClick }: FinalCTAProps) {
@@ -44,7 +44,7 @@ export function FinalCTA({ onCtaClick }: FinalCTAProps) {
         {/* CTA Button */}
         <div className="mb-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <button
-            onClick={onCtaClick}
+            onClick={() => onCtaClick('final_cta')}
             className="text-primary flex h-14 w-full items-center justify-center gap-2 rounded-full bg-white px-8 text-lg font-bold shadow-lg transition-all hover:bg-white/95 hover:shadow-xl active:scale-95 sm:w-auto"
           >
             Start a 20-second check-in

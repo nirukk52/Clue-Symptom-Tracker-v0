@@ -15,7 +15,7 @@ import type { Testimonial } from '@/types';
 
 interface TestimonialsProps {
   testimonials: Testimonial[];
-  onCtaClick: () => void;
+  onCtaClick: (ctaId?: string) => void;
 }
 
 /**
@@ -153,7 +153,7 @@ export function Testimonials({ testimonials, onCtaClick }: TestimonialsProps) {
       {/* CTA */}
       <div className="mt-10 text-center">
         <button
-          onClick={onCtaClick}
+          onClick={() => onCtaClick('testimonials_cta')}
           className="text-primary inline-flex items-center gap-2 font-semibold transition-all hover:gap-3"
         >
           Learn more

@@ -1,9 +1,9 @@
 /**
  * Zustand store for onboarding state with MMKV persistence
- * 
+ *
  * Why it exists: Manages onboarding flow state across 6 screens with immediate
  * per-screen persistence for analytics. Supports abandonment detection and reset.
- * 
+ *
  * Reference: specs/1-onboarding-flow/spec.md §FR-002, FR-010
  */
 
@@ -11,14 +11,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { storage } from '@/lib/storage';
-import type {
-  BaselineEntry,
-  ImpactQuestion,
-  IntentId,
-  OnboardingActions,
-  OnboardingState,
-  PriorityId,
-} from '@/types/onboarding';
+import type { OnboardingActions, OnboardingState } from '@/types/onboarding';
 
 /** MMKV storage adapter for Zustand persist middleware */
 const mmkvStorage = {
@@ -48,7 +41,7 @@ const initialState: OnboardingState = {
 
 /**
  * Onboarding store with MMKV persistence
- * 
+ *
  * Each screen's data is saved immediately on "Continue" press.
  * If user abandons mid-flow, calling reset() clears all partial state.
  */
@@ -110,8 +103,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 );
 
 /** Helper to check if onboarding is complete */
-export const isOnboardingComplete = () => useOnboardingStore.getState().isComplete;
+export const isOnboardingComplete = () =>
+  useOnboardingStore.getState().isComplete;
 
 /** Helper to get current onboarding step */
 export const getCurrentStep = () => useOnboardingStore.getState().step;
-

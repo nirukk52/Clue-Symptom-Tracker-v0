@@ -11,6 +11,8 @@
  * - campaign_config: Ad copy, landing copy, persona stories
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import type {
   AdContext,
   LandingPageContext,
@@ -19,14 +21,10 @@ import type {
   QuestionAnswer,
   UserConversionContext,
   UTMContext,
-} from './types';
-
-// Supabase client type (passed in from caller)
-
-type SupabaseClient = any;
+} from '../types';
 
 /**
- * Assembles complete user context for summary generation
+ * Assembles complete user context for onboarding agent
  *
  * @param supabase - Supabase client instance
  * @param modalSessionId - The modal session ID to fetch context for
@@ -161,7 +159,6 @@ async function fetchModalResponses(
 
   if (error || !responses || responses.length === 0) {
     console.error('Error fetching modal responses:', error);
-    // Return placeholder responses
     return createPlaceholderResponses();
   }
 
