@@ -394,8 +394,8 @@ nav * {
 }
 
 .nav-transparent .nav-logo-icon {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
+  background: transparent;
+  color: white;
 }
 
 .nav-transparent .nav-cta {
@@ -417,7 +417,8 @@ nav * {
 }
 
 .nav-solid .nav-logo-icon {
-  background: var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
 }
 
 .nav-solid .nav-cta {
