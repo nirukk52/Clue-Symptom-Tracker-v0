@@ -6,7 +6,7 @@
 
 ### I. Local-First, Evidence-Grounded
 
-Every interaction writes to **local SQLite first** before cloud sync. This ensures:
+Every interaction writes to **supabase first** before cloud sync. This ensures:
 - **Zero loading UI** for core interactions (check-ins, chat, history)
 - **Offline-capable** tracking when users have low energy or poor connectivity
 - **Deterministic retrieval** with evidence snapshots (exact row IDs + metric IDs) for doctor trust
