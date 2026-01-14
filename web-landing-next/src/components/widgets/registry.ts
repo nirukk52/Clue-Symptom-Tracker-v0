@@ -8,12 +8,12 @@ import type { ValuePropScreenData } from '@/backend/agents/onboarding/types';
  * from a stable identifier (layoutId today; widgetId later). This centralizes
  * mapping so future LLM selection is a one-line change.
  */
-import { FatigueLayout } from '@/components/agent-ui/ValuePropScreen/layouts/FatigueLayout';
-import { FlaresLayout } from '@/components/agent-ui/ValuePropScreen/layouts/FlaresLayout';
-import { IBSGutLayout } from '@/components/agent-ui/ValuePropScreen/layouts/IBSGutLayout';
-import { MigrainesLayout } from '@/components/agent-ui/ValuePropScreen/layouts/MigrainesLayout';
-import { MultipleLayout } from '@/components/agent-ui/ValuePropScreen/layouts/MultipleLayout';
-import { OtherLayout } from '@/components/agent-ui/ValuePropScreen/layouts/OtherLayout';
+import { FatigueLayout } from '@/components/ValuePropScreen/layouts/FatigueLayout';
+import { FlaresLayout } from '@/components/ValuePropScreen/layouts/FlaresLayout';
+import { IBSGutLayout } from '@/components/ValuePropScreen/layouts/IBSGutLayout';
+import { MigrainesLayout } from '@/components/ValuePropScreen/layouts/MigrainesLayout';
+import { MultipleLayout } from '@/components/ValuePropScreen/layouts/MultipleLayout';
+import { OtherLayout } from '@/components/ValuePropScreen/layouts/OtherLayout';
 
 export type Screen4LayoutId = ValuePropScreenData['layoutId'];
 
