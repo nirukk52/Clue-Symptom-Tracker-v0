@@ -177,23 +177,26 @@ function VictorySlide({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 0.75rem;
+          gap: 0.5rem;
+          flex-wrap: wrap;
         }
 
         .condition-pill {
-          font-size: 0.625rem;
+          font-size: 0.5rem;
           font-weight: 700;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.03em;
           text-transform: uppercase;
           color: white;
           background: rgba(255, 255, 255, 0.12);
-          padding: 0.375rem 0.875rem;
+          padding: 0.3125rem 0.5rem;
           border-radius: 9999px;
           border: 1px solid rgba(255, 255, 255, 0.15);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 60%;
+          max-width: 100%;
+          flex-shrink: 1;
+          min-width: 0;
         }
 
         .day-badge {
