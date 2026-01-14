@@ -58,7 +58,7 @@ export function Hero({
         {/* Hero content - centered on mobile, left-aligned on desktop */}
         <div className="hero-content">
           {/* Feature badge */}
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm">
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm">
             <MaterialIcon name="mic" size="xs" className="!text-[10px]" />
             Just talk to log
           </div>
