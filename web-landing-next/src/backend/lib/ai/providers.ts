@@ -49,7 +49,7 @@ export const models = {
   /**
    * Copy generation - empathetic, creative copy
    */
-  copywriter: googleProvider('gemini-1.5-flash'),
+  copywriter: googleProvider('gemini-3-flash-preview'),
 
   /**
    * Widget selection - deterministic choices

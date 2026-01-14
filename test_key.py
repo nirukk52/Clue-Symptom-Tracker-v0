@@ -20,7 +20,7 @@ try:
     print("Testing Gemini 1.5 Flash...")
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-3-flash-preview",
         contents="Hello, are you working?"
     )
     print("SUCCESS! Response received:")
@@ -28,4 +28,3 @@ try:
 except Exception as e:
     print("\nFAILED. Error details:")
     print(str(e))
-

@@ -6,6 +6,11 @@ license: Complete terms in LICENSE.txt
 
 This skill guides creation of distinctive, production-grade frontend interfaces for Clue. The design language is **Podia-inspired**: warm, approachable, and energy-conscious for users with chronic illness and brain fog.
 
+## Architecture note (agent-driven UI)
+
+- **Why this matters**: In `web-landing-next`, some “conversion UI” components (e.g. `ValuePropScreen`) are tightly coupled to onboarding agent output types and are rendered from the “summary” step after Q3.
+- **Rule of thumb**: If a React component is user-facing UI, prefer placing it under a UI-oriented folder (`src/components/...`) or a clearly named neutral folder like `src/agent-ui/...` rather than `src/backend/...` to avoid misleading boundaries.
+
 ## Design System Reference
 
 ### Color Palette

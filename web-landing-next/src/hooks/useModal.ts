@@ -118,11 +118,12 @@ export function useModal({ product }: UseModalOptions): UseModalReturn {
       };
 
       // Auto-advance after delay
+      // Skip Q4 - go directly to ValuePropScreen (summary) after Q3
       setTimeout(() => {
-        if (questionNumber < 4) {
+        if (questionNumber < 3) {
           setQuestionNumber((num) => num + 1);
         } else {
-          // Move to summary step after Q4 (with AI + auth)
+          // Move to summary step after Q3 (with AI-driven ValuePropScreen)
           setStep('summary');
         }
       }, AUTO_ADVANCE_DELAY);

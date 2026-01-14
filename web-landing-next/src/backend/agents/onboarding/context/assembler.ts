@@ -9,19 +9,47 @@
  * - modal_sessions: Session metadata
  * - modal_responses: Q1-Q4 answers
  * - campaign_config: Ad copy, landing copy, persona stories
+ * - onboarding-flow.json: Widget definitions (q4_value, captures)
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import onboardingFlow from '@/content/onboarding-flow.json';
+
 import type {
   AdContext,
+  EnhancedUserContext,
   LandingPageContext,
   ModalResponses,
   PersonaContext,
   QuestionAnswer,
   UserConversionContext,
   UTMContext,
+  WidgetContext,
 } from '../types';
+
+/**
+ * Widget definition from onboarding-flow.json
+ */
+interface WidgetDefinition {
+  id: string;
+  name: string;
+  condition_picker: {
+    question: string;
+    suggested: string;
+    alternatives?: string[];
+    allow_multiple?: boolean;
+  };
+  main_widget: {
+    type: string;
+    question?: string;
+    instruction?: string;
+    // Various widget-specific fields
+    [key: string]: unknown;
+  };
+  captures: string[];
+  q4_value: string;
+}
 
 /**
  * Assembles complete user context for onboarding agent
@@ -186,6 +214,7 @@ async function fetchModalResponses(
 
 /**
  * Fetches ad copy from campaign_config based on utm_content
+ * Now includes altHeadlines and targetSubreddits for full context
  */
 async function fetchAdContext(
   supabase: SupabaseClient,
@@ -219,6 +248,8 @@ async function fetchAdContext(
         description: (data.description as string) || '',
         cta: (data.cta as string) || '',
         adGroup: (data.ad_group as string) || productOffering,
+        altHeadlines: (data.alt_headlines as string[]) || [],
+        targetSubreddits: (data.target_subreddits as string[]) || [],
       };
     }
     return null;
@@ -230,11 +261,14 @@ async function fetchAdContext(
     description: (data.description as string) || '',
     cta: (data.cta as string) || '',
     adGroup: (data.ad_group as string) || productOffering,
+    altHeadlines: (data.alt_headlines as string[]) || [],
+    targetSubreddits: (data.target_subreddits as string[]) || [],
   };
 }
 
 /**
  * Fetches landing page copy from campaign_config
+ * Now includes headlineVariants for A/B test context
  */
 async function fetchLandingContext(
   supabase: SupabaseClient,
@@ -257,10 +291,24 @@ async function fetchLandingContext(
       primaryCTA: 'Start predicting',
       empathyCopy: 'A shift in your patterns suggests a rest day might help.',
       focusFeature: 'Lag Effect Detection (24-48h warning)',
+      headlineVariants: {},
     };
   }
 
   const data = landingConfig.config_data as Record<string, unknown>;
+  const variants = (data.headline_variants || {}) as Record<
+    string,
+    { h1?: string; h2?: string }
+  >;
+  const headlineVariants: Record<string, { h1: string; h2: string }> = {};
+
+  for (const [key, value] of Object.entries(variants)) {
+    headlineVariants[key] = {
+      h1: value.h1 || '',
+      h2: value.h2 || '',
+    };
+  }
+
   return {
     productOffering: productOffering,
     heroTitle: (data.h1 as string) || '',
@@ -268,6 +316,7 @@ async function fetchLandingContext(
     primaryCTA: (data.cta as string) || '',
     empathyCopy: (data.empathy_copy as string) || '',
     focusFeature: (data.focus_feature as string) || '',
+    headlineVariants,
   };
 }
 
@@ -344,6 +393,104 @@ function createPlaceholderQuestion(num: number): QuestionAnswer {
     },
   };
   return placeholders[num] ?? placeholders[1]!;
+}
+
+// =============================================================================
+// WIDGET CONTEXT (from onboarding-flow.json)
+// =============================================================================
+
+/**
+ * Fetches widget definition from onboarding-flow.json based on Q2 answer
+ * The widget contains q4_value (the promise) and captures (what we're monitoring)
+ */
+function fetchWidgetContext(
+  q2Answer: string,
+  q3Answer: QuestionAnswer
+): WidgetContext {
+  // Get widget definition from onboarding-flow.json
+  // Cast to unknown first to handle the _comment field
+  const q3Widgets = onboardingFlow.q3_widgets as unknown as Record<
+    string,
+    WidgetDefinition | string
+  >;
+  const widgetEntry = q3Widgets[q2Answer];
+
+  // Handle case where entry is _comment or doesn't exist
+  const widgetDef =
+    typeof widgetEntry === 'object' ? (widgetEntry as WidgetDefinition) : null;
+
+  if (!widgetDef) {
+    // Return default widget context
+    return {
+      widgetId: 'w5_open_baseline',
+      widgetName: 'Open Baseline',
+      widgetType: 'dual_selector',
+      q4Value: 'We will start noticing what you might have missed',
+      captures: ['energy_baseline', 'primary_symptom_today'],
+      userInput: parseQ3UserInput(q3Answer.answerValue),
+    };
+  }
+
+  return {
+    widgetId: widgetDef.id,
+    widgetName: widgetDef.name,
+    widgetType: widgetDef.main_widget.type,
+    q4Value: widgetDef.q4_value,
+    captures: widgetDef.captures,
+    userInput: parseQ3UserInput(q3Answer.answerValue),
+  };
+}
+
+/**
+ * Parses Q3 answer value which may be JSON-encoded widget data
+ */
+function parseQ3UserInput(answerValue: string): WidgetContext['userInput'] {
+  try {
+    // Q3 answers are stored as JSON: {"condition":"me_cfs","widgetType":"slider","widgetValue":50}
+    const parsed = JSON.parse(answerValue) as {
+      condition?: string;
+      widgetType?: string;
+      widgetValue?: number | string | string[];
+    };
+
+    return {
+      condition: parsed.condition || 'other',
+      widgetValue: parsed.widgetValue ?? 50,
+    };
+  } catch {
+    // If not JSON, it's a simple string value
+    return {
+      condition: 'other',
+      widgetValue: answerValue,
+    };
+  }
+}
+
+/**
+ * Assembles enhanced user context including widget data
+ * This is the primary function for the ValuePropScreen generation
+ *
+ * @param supabase - Supabase client instance
+ * @param modalSessionId - The modal session ID to fetch context for
+ * @returns Enhanced user context with widget data
+ */
+export async function assembleEnhancedContext(
+  supabase: SupabaseClient,
+  modalSessionId: string
+): Promise<EnhancedUserContext> {
+  // Get base context
+  const baseContext = await assembleContext(supabase, modalSessionId);
+
+  // Get widget context based on Q2 and Q3 answers
+  const widgetContext = fetchWidgetContext(
+    baseContext.answers.q2.answerValue,
+    baseContext.answers.q3
+  );
+
+  return {
+    ...baseContext,
+    widget: widgetContext,
+  };
 }
 
 export default assembleContext;

@@ -189,6 +189,7 @@ export function getDefaultHeadline(
 
 /**
  * Generates a default first-person CTA
+ * Default is "Save my spoons" - the signature CTA for the app
  */
 export function getDefaultCTA(productOffering: string): string {
   const ctaByProduct: Record<string, string> = {
@@ -198,5 +199,6 @@ export function getDefaultCTA(productOffering: string): string {
     'spoon-saver': 'Save my spoons',
   };
 
-  return ctaByProduct[productOffering] || 'Save my progress';
+  // Default to "Save my spoons" - our signature CTA
+  return ctaByProduct[productOffering] || 'Save my spoons';
 }

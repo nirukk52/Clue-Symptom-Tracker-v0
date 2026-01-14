@@ -509,13 +509,28 @@ nav * {
 .modal-content {
   background: var(--color-bg-cream);
   border-radius: 2rem;
-  padding: 2.5rem;
+  padding: 1.75rem;
   width: 90vw;
   max-width: 420px;
   box-shadow: 0 25px 60px -15px rgba(32, 20, 46, 0.25);
-  border: 1px solid rgba(32, 19, 46, 0.05);
   position: relative;
   overflow: hidden;
+}
+
+/* Summary step (ValuePropScreen) needs true full-bleed so the persona image hits the modal edges */
+.modal-content.modal-content--summary {
+  padding: 0;
+  max-width: 372px;
+  /* Why: Screen 4 (ValuePropScreen) must fit inside the modal on shorter
+     viewports. We constrain the modal height so the internal sticky header/footer
+     behave predictably and nothing overflows outside the rounded corners. */
+  height: min(92svh, 760px);
+  max-height: 92svh;
+  /* Why: Summary step is full-bleed (ValuePropScreen). Any underlying modal
+     background can show up as a 1px "hairline" seam on rounded corners (esp.
+     with transforms + retina). Keep the container transparent so only the
+     ValuePropScreen gradient is visible. */
+  background: transparent;
 }
 
 .modal-close {
@@ -653,7 +668,7 @@ nav * {
   display: flex;
   justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .modal-dot {
@@ -989,7 +1004,10 @@ nav * {
   width: 100%;
   height: 12px;
   border-radius: 6px;
-  background: var(--slider-gradient, linear-gradient(to right, #b8e3d6, #fcd34d, #f87171));
+  background: var(
+    --slider-gradient,
+    linear-gradient(to right, #b8e3d6, #fcd34d, #f87171)
+  );
   outline: none;
   cursor: pointer;
 }
@@ -1005,7 +1023,9 @@ nav * {
   box-shadow: 0 2px 8px -2px rgba(32, 20, 46, 0.3);
   cursor: pointer;
   transform: scale(var(--thumb-scale, 1));
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .gradient-slider-input::-webkit-slider-thumb:hover {
@@ -1104,7 +1124,7 @@ nav * {
 .q3-step-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .q3-step-header {
@@ -1128,7 +1148,7 @@ nav * {
 .q3-divider {
   height: 1px;
   background: rgba(32, 19, 46, 0.08);
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
 }
 
 .q3-main-widget {
@@ -1176,7 +1196,9 @@ nav * {
   gap: 1.5rem;
   opacity: 0;
   transform: translateY(10px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
 }
 
 .watch-list-container.visible {

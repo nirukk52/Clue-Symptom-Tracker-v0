@@ -61,9 +61,9 @@ export function Navbar({ onCtaClick }: NavbarProps) {
           onClick={() => onCtaClick?.('nav_cta')}
           data-modal-trigger
           data-cta-id="nav_cta"
-          data-cta-text="Get early access"
+          data-cta-text="Get started"
         >
-          Get early access
+          Get started
         </Button>
       </div>
     </nav>

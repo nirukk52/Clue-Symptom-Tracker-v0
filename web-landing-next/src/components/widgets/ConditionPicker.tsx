@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  CONDITION_QUESTIONS,
-  CONDITIONS_BY_DOMAIN,
-  DEFAULT_CONDITION,
-} from '@/content/conditions';
+import { getConditionConfig } from '@/lib/onboarding/content';
 
 /**
  * ConditionPicker - Confirms specific condition for Q3
@@ -34,9 +30,11 @@ export function ConditionPicker({
   selected,
   onChange,
 }: ConditionPickerProps) {
-  const conditions = CONDITIONS_BY_DOMAIN[domain] || CONDITIONS_BY_DOMAIN.other;
-  const question = CONDITION_QUESTIONS[domain] || CONDITION_QUESTIONS.other;
-  const defaultValue = DEFAULT_CONDITION[domain] || 'other';
+  const {
+    options: conditions,
+    question,
+    defaultValue,
+  } = getConditionConfig(domain);
 
   // If no selection yet, use default
   const currentValue = selected || defaultValue;

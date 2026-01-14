@@ -1,8 +1,0 @@
-{
-  "$schema": "https://langchain-ai.github.io/langgraph/schemas/langgraph.json",
-  "dependencies": ["."],
-  "graphs": {
-    "marketing_agent": "./agent/graph.py:app"
-  },
-  "env": ".env"
-}

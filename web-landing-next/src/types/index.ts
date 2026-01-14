@@ -44,29 +44,66 @@ export interface Feature {
  * - Flipped quotes: Same pain points but showing how Clue solves them
  * - Clue insights: Show actual Clue-generated insights
  */
+/**
+ * Pain point categories for testimonials
+ * Why: Enables AI to select relevant quotes for each user's context
+ *
+ * Categories:
+ * - burden: Tracking exhaustion, "full-time job" feeling
+ * - brain_fog: Memory issues, cognitive load
+ * - judgment: Emotional toll, anxiety from app feedback
+ * - setup: Complex configuration, analysis paralysis
+ * - flexibility: Apps too limited or rigid
+ * - insight: Lack of useful analysis
+ * - doctor: Provider communication struggles
+ * - validation: Feeling dismissed, not believed
+ * - sync: Data scattered across apps
+ * - ux: Cognitive overload, distraction in UI
+ * - desire: What users want/hope for (positive framing)
+ * - relief/aspiration/timing/complexity: Legacy categories
+ */
+export type PainPointCategory =
+  | 'burden'
+  | 'judgment'
+  | 'brain_fog'
+  | 'relief'
+  | 'aspiration'
+  | 'timing'
+  | 'complexity'
+  | 'validation'
+  | 'setup'
+  | 'insight'
+  | 'sync'
+  | 'doctor'
+  | 'flexibility'
+  | 'ux'
+  | 'desire';
+
 export interface Testimonial {
+  /**
+   * Stable ID (optional for legacy content)
+   *
+   * Why this exists: Onboarding Screen 4 needs to log exactly which quote was shown.
+   * Canonical testimonials live in `src/content/testimonials.ts` and always include an ID.
+   */
+  id?: string;
   quote: string;
   source: string;
   /** Condition tag displayed on the card */
   condition?: string;
-  /** Pain point category for styling */
-  painPoint:
-    | 'burden'
-    | 'judgment'
-    | 'brain_fog'
-    | 'relief'
-    | 'aspiration'
-    | 'timing'
-    | 'complexity'
-    | 'validation'
-    | 'setup'
-    | 'insight'
-    | 'sync'
-    | 'doctor';
+  /** Pain point category for styling and AI selection */
+  painPoint: PainPointCategory;
   /** Whether this is a "flipped" positive version (showing Clue's solution) */
   isFlipped?: boolean;
   /** Whether this is a Clue-generated insight example */
   isClueInsight?: boolean;
+  /**
+   * Persona for avatar display and demographic matching
+   * - maya: 38yo, South Asian/Mediterranean, fibromyalgia + long COVID, project manager, data-focused
+   * - jordan: 28yo, non-binary, younger, ADHD + chronic, brain fog, self-aware
+   * - marcus: 40yo, Black man, self-advocacy, validation struggles, grounded strength
+   */
+  persona?: PersonaKey;
 }
 
 /**

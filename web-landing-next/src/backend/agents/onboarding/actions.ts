@@ -3,22 +3,35 @@
 /**
  * Onboarding Agent Server Actions
  *
- * Why this exists: Entry point for the onboarding agent. Provides two main interfaces:
- * 1. generateWatchListPreview - Called by web-landing-next modal (pre-conversion)
- * 2. getConversionContext - Called by Clue Agent (post-conversion)
+ * Why this exists: Entry point for the onboarding agent. Provides three main interfaces:
+ * 1. generateWatchListPreview - Original (deprecated) - Called by web-landing-next modal
+ * 2. generateValuePropScreen - NEW - AI-driven layout + copy for ValuePropScreen
+ * 3. getConversionContext - Called by Clue Agent (post-conversion)
  */
 
+import { spoonSaverContent } from '@/content/pages/spoon-saver';
 import { supabase } from '@/lib/supabase';
 
-import { assembleContext } from './context/assembler';
-import { determinePromiseCategory, generateCopy } from './generators/copy';
+import { assembleContext, assembleEnhancedContext } from './context/assembler';
+import {
+  determinePromiseCategory,
+  generateCopy,
+  generateCopyAndLayout,
+} from './generators/copy';
+import { selectQuoteForUser } from './generators/quote-selector';
+import { generateFakeFlareRisk } from './templates/graphs';
 import {
   getWatchListTemplate,
   mergeWithGeneratedCopy,
 } from './templates/watch-list';
 import type {
+  AIGenerationResult,
   ConversionContextResponse,
+  EnhancedUserContext,
+  FlareRiskData,
+  SelectedQuote,
   StoredConversionContext,
+  ValuePropScreenData,
   WatchListPreviewData,
 } from './types';
 
@@ -30,6 +43,7 @@ import type {
 /**
  * Generates personalized WatchListPreview data for modal
  * Called when user reaches the conversion step in the onboarding modal
+ * @deprecated Use generateValuePropScreen instead
  */
 export async function generateWatchListPreview(
   modalSessionId: string
@@ -59,6 +73,52 @@ export async function generateWatchListPreview(
   await logAIGeneration(modalSessionId, context, copyResult);
 
   return previewData;
+}
+
+/**
+ * Generates AI-driven ValuePropScreen data with layout selection
+ * NEW: This is the primary function for the sign-up screen
+ *
+ * @param modalSessionId - The modal session ID
+ * @returns Complete ValuePropScreenData including layout selection
+ */
+export async function generateValuePropScreen(
+  modalSessionId: string
+): Promise<ValuePropScreenData> {
+  // 1. Assemble enhanced context (includes widget data)
+  const context = await assembleEnhancedContext(supabase, modalSessionId);
+
+  // 2. AI generates copy AND selects layout
+  const aiResult = await generateCopyAndLayout(context);
+
+  // 3. Get layout-specific graph data
+  const graphData = getLayoutGraphData(aiResult.ui.layoutId, context);
+
+  // 4. Build victory section data
+  const victory = buildVictoryData(context, aiResult);
+
+  // 5. Select social proof quote based on Q1/Q2
+  const socialProofQuote = selectSocialProofQuote(context);
+
+  // 6. Log enhanced generation for analytics
+  await logEnhancedAIGeneration(modalSessionId, context, aiResult);
+
+  return {
+    layoutId: aiResult.ui.layoutId,
+    socialProofQuote,
+    victory,
+    preview: {
+      headline: aiResult.ui.headline,
+      watchItems: aiResult.ui.watchItems,
+      graphData,
+      badge: aiResult.ui.previewBadge,
+    },
+    cta: {
+      text: aiResult.ui.ctaText,
+      action: 'google_signin',
+    },
+    statusText: 'First insight in ~3 days',
+  };
 }
 
 /**
@@ -236,4 +296,131 @@ function generateFirstMessage(
     `Welcome! You signed up because "${painPoint}". ` +
     `Let's set up ${firstWatchItem} for your ${condition.toLowerCase()} right now.`
   );
+}
+
+// =============================================================================
+// VALUE PROP SCREEN HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Selects the most relevant social proof quote based on user's Q1/Q2 responses
+ * Uses testimonials from spoon-saver.ts with matching logic
+ */
+function selectSocialProofQuote(context: EnhancedUserContext): SelectedQuote {
+  const q1Domain = context.answers.q1.answerValue; // e.g., 'fatigue', 'flares'
+  const q2PainPoint = context.answers.q2.answerValue; // e.g., 'exhaustion', 'brain_fog'
+
+  // Use quote selector with testimonials from spoon-saver.ts
+  return selectQuoteForUser(
+    spoonSaverContent.testimonials,
+    q1Domain,
+    q2PainPoint,
+    true // prefer flipped/positive quotes
+  );
+}
+
+/**
+ * Gets layout-specific graph data
+ * For now, returns fake data - will be personalized later
+ */
+function getLayoutGraphData(
+  _layoutId: string,
+  _context: EnhancedUserContext
+): FlareRiskData {
+  // All layouts use FlareRiskData for now (different visualizations in components)
+  return generateFakeFlareRisk();
+}
+
+/**
+ * Builds victory section data from context and AI result
+ */
+function buildVictoryData(
+  context: EnhancedUserContext,
+  aiResult: AIGenerationResult
+): ValuePropScreenData['victory'] {
+  // Parse the widget value for display
+  const widgetValue = context.widget.userInput.widgetValue;
+  const displayValue =
+    typeof widgetValue === 'number'
+      ? widgetValue
+      : Array.isArray(widgetValue)
+        ? widgetValue.join(', ')
+        : String(widgetValue);
+
+  // Get baseline label based on widget type
+  const baselineLabel = getBaselineLabel(context.widget.widgetType);
+
+  return {
+    stepsCompleted: 3,
+    totalSteps: 3,
+    baselineData: {
+      label: baselineLabel,
+      value: displayValue,
+      condition: context.answers.q1.answerLabel,
+      widgetType: context.widget.widgetType,
+    },
+    promise: {
+      headline: aiResult.ui.headline,
+      q4Value: context.widget.q4Value,
+      watchItems: aiResult.ui.watchItems,
+    },
+    victoryMessage: aiResult.ui.victoryMessage,
+  };
+}
+
+/**
+ * Gets human-readable label for baseline data
+ */
+function getBaselineLabel(widgetType: string): string {
+  const labels: Record<string, string> = {
+    slider: 'Energy right now',
+    gradient_slider: 'Energy level',
+    time_segment_selector: 'Best time',
+    dual_selector: 'Starting point',
+    multi_select_chips: 'Triggers noted',
+    single_select: 'Main concern',
+    dual_slider: 'Current levels',
+  };
+  return labels[widgetType] || 'Baseline';
+}
+
+/**
+ * Logs enhanced AI generation for analytics
+ */
+async function logEnhancedAIGeneration(
+  modalSessionId: string,
+  context: EnhancedUserContext,
+  aiResult: AIGenerationResult
+): Promise<void> {
+  try {
+    await supabase.from('ai_generations').insert({
+      modal_session_id: modalSessionId,
+      session_id: context.sessionId,
+      generated_headline: aiResult.ui.headline,
+      generated_watch_items: aiResult.ui.watchItems,
+      generated_cta: aiResult.ui.ctaText,
+      model_used: aiResult.metadata.modelUsed,
+      prompt_template_id: aiResult.metadata.promptTemplateId,
+      tokens_used: aiResult.metadata.tokensUsed,
+      latency_ms: aiResult.metadata.latencyMs,
+      component_type: 'value_prop_screen',
+      was_converted: false,
+      // New fields for enhanced tracking
+      layout_selected: aiResult.ui.layoutId,
+      victory_message: aiResult.ui.victoryMessage,
+      widget_id: context.widget.widgetId,
+      q4_value_shown: context.widget.q4Value,
+      context_json: JSON.stringify({
+        widgetType: context.widget.widgetType,
+        captures: context.widget.captures,
+        userInput: context.widget.userInput,
+        q1Label: context.answers.q1.answerLabel,
+        q2Label: context.answers.q2.answerLabel,
+        landingTitle: context.landingPage.heroTitle,
+        adHeadline: context.ad?.headline,
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to log enhanced AI generation:', error);
+  }
 }

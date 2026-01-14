@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "flow_id": "modal_onboarding.v1",
+    "revision": "2026-01-13.a",
+    "catalog_ref": "modal_onboarding_catalog.v1"
+  },
+  "screens": [
+    {
+      "screen_id": "screen1.q1",
+      "type": "question",
+      "question_id": "q1.primary.v1",
+      "answer_key": "q1"
+    },
+    {
+      "screen_id": "screen2.q2",
+      "type": "question",
+      "answer_key": "q2",
+      "question_selector": {
+        "type": "map_by_previous_answer",
+        "depends_on_answer_key": "q1",
+        "map": {
+          "fatigue": "q2.fatigue.v1",
+          "flares": "q2.flares.v1",
+          "migraines": "q2.migraines.v1",
+          "ibs_gut": "q2.ibs_gut.v1",
+          "multiple": "q2.multiple.v1",
+          "other": "q2.other.v1"
+        }
+      }
+    },
+    {
+      "screen_id": "screen3.q3",
+      "type": "baseline_capture",
+      "answer_key": "q3",
+      "condition": {
+        "depends_on_answer_key": "q1",
+        "question_from_catalog": "conditions.question_by_domain",
+        "options_from_catalog": "conditions.by_domain",
+        "default_from_catalog": "conditions.default_by_domain"
+      },
+      "widget_selector": {
+        "type": "map_by_previous_answer",
+        "depends_on_answer_key": "q2",
+        "map": {
+          "energy_envelope": "q3.energy_envelope.v1",
+          "good_days_trap": "q3.good_days_trap.v1",
+          "brain_fog": "q3.brain_fog.v1",
+          "mood_connection": "q3.mood_connection.v1",
+          "no_focus": "q3.no_focus.v1",
+          "unknown_triggers": "q3.unknown_triggers.v1",
+          "early_warning": "q3.early_warning.v1",
+          "treatment_effect": "q3.treatment_effect.v1",
+          "flare_patterns": "q3.flare_patterns.v1",
+          "log_and_see": "q3.log_and_see.v1",
+          "food_triggers": "q3.food_triggers.v1",
+          "weather_triggers": "q3.weather_triggers.v1",
+          "hormonal_link": "q3.hormonal_link.v1",
+          "stress_sleep": "q3.stress_sleep.v1",
+          "find_any_pattern": "q3.find_any_pattern.v1",
+          "food_culprits": "q3.food_culprits.v1",
+          "stress_gut": "q3.stress_gut.v1",
+          "timing_patterns": "q3.timing_patterns.v1",
+          "diet_working": "q3.diet_working.v1",
+          "track_trends": "q3.track_trends.v1",
+          "symptom_overlap": "q3.symptom_overlap.v1",
+          "competing_needs": "q3.competing_needs.v1",
+          "unified_view": "q3.unified_view.v1",
+          "prioritize_issue": "q3.prioritize_issue.v1",
+          "reduce_overwhelm": "q3.reduce_overwhelm.v1",
+          "find_patterns": "q3.find_patterns.v1",
+          "track_treatment": "q3.track_treatment.v1",
+          "doctor_log": "q3.doctor_log.v1",
+          "see_trends": "q3.see_trends.v1",
+          "just_curious": "q3.just_curious.v1"
+        }
+      }
+    },
+    {
+      "screen_id": "screen4.value_prop",
+      "type": "value_prop",
+      "layout_selector": {
+        "type": "map_by_previous_answer",
+        "depends_on_answer_key": "q1",
+        "map": {
+          "fatigue": "layout.fatigue.v1",
+          "flares": "layout.flares.v1",
+          "migraines": "layout.migraines.v1",
+          "ibs_gut": "layout.ibs_gut.v1",
+          "multiple": "layout.multiple.v1",
+          "other": "layout.other.v1"
+        }
+      },
+      "blocks": [
+        {
+          "block_id": "screen4.quote",
+          "type": "quote",
+          "testimonial_selector_id": "testimonial_selector.v1"
+        },
+        {
+          "block_id": "screen4.carousel",
+          "type": "carousel",
+          "items": [
+            { "block_id": "screen4.baseline", "type": "baseline_card" },
+            { "block_id": "screen4.promise", "type": "promise_card" },
+            { "block_id": "screen4.preview", "type": "layout_preview" }
+          ],
+          "progress_indicator": { "type": "dots" }
+        },
+        {
+          "block_id": "screen4.footer",
+          "type": "sticky_footer",
+          "cta_id": "cta.save_my_progress.v1",
+          "privacy_note_id": "privacy_note.v1"
+        }
+      ]
+    }
+  ],
+  "analytics": {
+    "flow_id": "modal_onboarding",
+    "flow_revision": "2026-01-13.a"
+  }
+}
