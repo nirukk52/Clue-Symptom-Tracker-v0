@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import type { ValuePropScreenData } from '@/backend/agents/onboarding/types';
 import { getMicrocopy } from '@/lib/onboarding/content';
 
-import { getLayoutComponent } from './registry';
+import { getPreviewComponent, type Screen4LayoutId } from './registry';
 import { ValuePropCarousel } from './ValuePropCarousel';
 
 /**
@@ -17,7 +17,7 @@ import { ValuePropCarousel } from './ValuePropCarousel';
  *
  * Layout structure:
  * - Quote at top (fixed)
- * - Carousel in middle (flexible, 3 slides: victory+baseline, promise, preview)
+ * - Carousel in middle (flexible, 3 slides: victory+baseline, promise, domain-specific preview)
  * - CTA at bottom (fixed)
  */
 
@@ -298,15 +298,24 @@ function PromiseSlide({ promise }: { promise: ValuePropScreenData['victory']['pr
 }
 
 /**
- * Layout preview slide using domain-specific layout (simplified)
+ * Domain-specific preview slide using registry to select the right component
+ *
+ * Why this exists: Each domain (fatigue, flares, migraines, etc.) has a unique
+ * visualization that best represents the value proposition. The registry maps
+ * layoutId to the appropriate preview component.
  */
 function PreviewSlide({
   preview,
   badge,
+  layoutId,
 }: {
   preview: ValuePropScreenData['preview'];
   badge: string;
+  layoutId: Screen4LayoutId;
 }) {
+  // Get the domain-specific preview component from the registry
+  const PreviewComponent = getPreviewComponent(layoutId);
+
   return (
     <div className="carousel-slide-content">
       <div className="preview-card">
@@ -320,33 +329,10 @@ function PreviewSlide({
 
         <h3 className="preview-title">{preview.headline}</h3>
 
-        {/* Simplified graph preview */}
-        <div className="preview-graph">
-          {'days' in preview.graphData &&
-            preview.graphData.days.map((day, i) => {
-              const riskColors = {
-                low: 'var(--accent-mint, #6ee7b7)',
-                elevated: 'var(--accent-yellow, #fcd34d)',
-                high: 'var(--accent-rose, #fda4af)',
-              };
-              return (
-                <div key={i} className="graph-bar-container">
-                  <div
-                    className="graph-bar"
-                    style={{
-                      height: `${day.value}%`,
-                      background: riskColors[day.risk],
-                    }}
-                  />
-                  <span className="graph-label">{day.date}</span>
-                </div>
-              );
-            })}
+        {/* Domain-specific preview visualization */}
+        <div className="preview-content">
+          <PreviewComponent data={preview.graphData} />
         </div>
-
-        <p className="preview-note">
-          Your personalized insights will appear here after a week of tracking.
-        </p>
       </div>
 
       <style jsx>{`
@@ -360,11 +346,12 @@ function PreviewSlide({
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
-          padding: 1rem;
+          gap: 0.5rem;
+          padding: 0.75rem;
           background: rgba(255, 255, 255, 0.95);
           border-radius: 1rem;
           border: 1px solid rgba(32, 19, 46, 0.08);
+          overflow: hidden;
         }
 
         .preview-header {
@@ -412,51 +399,17 @@ function PreviewSlide({
 
         .preview-title {
           font-family: var(--font-display, Georgia, serif);
-          font-size: 1rem;
+          font-size: 0.9375rem;
           font-weight: 600;
           color: var(--primary, #20132e);
           margin: 0;
           line-height: 1.3;
         }
 
-        .preview-graph {
+        .preview-content {
           flex: 1;
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 0.375rem;
-          padding: 0.5rem 0;
-          min-height: 80px;
-        }
-
-        .graph-bar-container {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.375rem;
-          height: 100%;
-        }
-
-        .graph-bar {
-          width: 100%;
-          border-radius: 4px 4px 2px 2px;
-          transition: height 0.6s ease;
-          min-height: 8px;
-        }
-
-        .graph-label {
-          font-size: 0.5625rem;
-          color: var(--text-muted, #666);
-          font-weight: 500;
-        }
-
-        .preview-note {
-          font-size: 0.6875rem;
-          color: var(--text-muted, #666);
-          margin: 0;
-          text-align: center;
-          line-height: 1.4;
+          min-height: 0;
+          overflow: hidden;
         }
       `}</style>
     </div>
@@ -477,11 +430,16 @@ export function ValuePropScreen({
 
   const quote = data.socialProofQuote;
 
-  // Carousel slides
+  // Carousel slides with domain-specific preview
   const slides = [
     <BaselineSlide key="baseline" victory={data.victory} />,
     <PromiseSlide key="promise" promise={data.victory.promise} />,
-    <PreviewSlide key="preview" preview={data.preview} badge={data.preview.badge} />,
+    <PreviewSlide
+      key="preview"
+      preview={data.preview}
+      badge={data.preview.badge}
+      layoutId={data.layoutId}
+    />,
   ];
 
   return (
