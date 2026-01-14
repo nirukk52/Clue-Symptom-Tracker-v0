@@ -8,7 +8,7 @@
  * of the prediction feature before user has logged any data.
  */
 
-import type { FlareRiskData } from '../../agents/onboarding/types';
+import type { FlareRiskData } from '@/backend/agents/onboarding/types';
 
 interface FlareRiskGraphProps {
   data: FlareRiskData;

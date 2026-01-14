@@ -312,7 +312,7 @@ function selectSocialProofQuote(context: EnhancedUserContext): SelectedQuote {
 
   // Use quote selector with testimonials from spoon-saver.ts
   return selectQuoteForUser(
-    spoonSaverContent.testimonials,
+    spoonSaverContent.testimonials ?? [],
     q1Domain,
     q2PainPoint,
     true // prefer flipped/positive quotes

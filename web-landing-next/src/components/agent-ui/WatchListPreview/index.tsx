@@ -16,7 +16,7 @@
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
-import type { WatchListPreviewData } from '../../agents/onboarding/types';
+import type { WatchListPreviewData } from '@/backend/agents/onboarding/types';
 import { FlareRiskGraph } from './FlareRiskGraph';
 
 interface WatchListPreviewProps {

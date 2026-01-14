@@ -22,9 +22,9 @@ import { z } from 'zod';
  */
 export const supabaseRead = tool({
   description: 'Read data from database using predefined queries',
-  parameters: z.object({
+  inputSchema: z.object({
     queryId: z.string().describe('Predefined query identifier'),
-    params: z.record(z.unknown()).describe('Query parameters'),
+    params: z.record(z.string(), z.unknown()).describe('Query parameters'),
   }),
   execute: async ({ queryId, params }) => {
     // TODO: Implement query registry lookup and execution
@@ -37,11 +37,11 @@ export const supabaseRead = tool({
  */
 export const supabaseWrite = tool({
   description: 'Write data to database using predefined mutations',
-  parameters: z.object({
+  inputSchema: z.object({
     mutationId: z.string().describe('Predefined mutation identifier'),
-    payload: z.record(z.unknown()).describe('Data to write'),
+    payload: z.record(z.string(), z.unknown()).describe('Data to write'),
   }),
-  execute: async ({ mutationId, _payload }) => {
+  execute: async ({ mutationId, payload: _payload }) => {
     // TODO: Implement mutation registry lookup and execution
     return { mutationId, success: false, insertedId: null };
   },
@@ -56,7 +56,7 @@ export const supabaseWrite = tool({
  */
 export const recomputeMetrics = tool({
   description: 'Compute metrics for trend analysis',
-  parameters: z.object({
+  inputSchema: z.object({
     window: z.enum(['3d', '7d', '14d', '30d']).describe('Time window'),
     featureId: z.string().describe('Feature to analyze (e.g., poor_sleep)'),
     outcomeId: z.string().describe('Outcome to measure (e.g., fatigue)'),
@@ -87,7 +87,7 @@ export const recomputeMetrics = tool({
  */
 export const renderWidget = tool({
   description: 'Render an interactive widget in the chat',
-  parameters: z.object({
+  inputSchema: z.object({
     widgetType: z.enum([
       'outcome_slider',
       'severity_slider',
@@ -102,7 +102,7 @@ export const renderWidget = tool({
     ]),
     label: z.string().describe('Widget label'),
     reason: z.string().describe('Why this widget is shown now'),
-    options: z.record(z.unknown()).optional(),
+    options: z.record(z.string(), z.unknown()).optional(),
   }),
   execute: async ({ widgetType, label, reason, options }) => {
     const widgetId = crypto.randomUUID();
@@ -121,7 +121,7 @@ export const renderWidget = tool({
  */
 export const renderChart = tool({
   description: 'Render a chart visualization',
-  parameters: z.object({
+  inputSchema: z.object({
     chartType: z.enum(['line', 'bar', 'scatter']),
     metricId: z.string().describe('Metric to visualize'),
     window: z.enum(['7d', '14d', '30d']),
@@ -149,7 +149,7 @@ export const renderChart = tool({
  */
 export const exportDoctorPack = tool({
   description: 'Generate a doctor-ready export/report',
-  parameters: z.object({
+  inputSchema: z.object({
     range: z.enum(['14d', '30d', '90d']).describe('Date range for export'),
     format: z.enum(['pdf', 'json']).default('pdf'),
     sections: z

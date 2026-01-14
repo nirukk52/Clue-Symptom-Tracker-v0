@@ -7,7 +7,7 @@
  * user's Q1 condition. Shows fake preview data during onboarding.
  */
 
-import type { PatternData } from '../../agents/onboarding/types';
+import type { PatternData } from '@/backend/agents/onboarding/types';
 
 interface SymptomPatternGraphProps {
   data: PatternData;

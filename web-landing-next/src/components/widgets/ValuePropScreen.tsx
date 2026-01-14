@@ -322,25 +322,26 @@ function PreviewSlide({
 
         {/* Simplified graph preview */}
         <div className="preview-graph">
-          {preview.graphData.days.map((day, i) => {
-            const riskColors = {
-              low: 'var(--accent-mint, #6ee7b7)',
-              elevated: 'var(--accent-yellow, #fcd34d)',
-              high: 'var(--accent-rose, #fda4af)',
-            };
-            return (
-              <div key={i} className="graph-bar-container">
-                <div
-                  className="graph-bar"
-                  style={{
-                    height: `${day.value}%`,
-                    background: riskColors[day.risk],
-                  }}
-                />
-                <span className="graph-label">{day.date}</span>
-              </div>
-            );
-          })}
+          {'days' in preview.graphData &&
+            preview.graphData.days.map((day, i) => {
+              const riskColors = {
+                low: 'var(--accent-mint, #6ee7b7)',
+                elevated: 'var(--accent-yellow, #fcd34d)',
+                high: 'var(--accent-rose, #fda4af)',
+              };
+              return (
+                <div key={i} className="graph-bar-container">
+                  <div
+                    className="graph-bar"
+                    style={{
+                      height: `${day.value}%`,
+                      background: riskColors[day.risk],
+                    }}
+                  />
+                  <span className="graph-label">{day.date}</span>
+                </div>
+              );
+            })}
         </div>
 
         <p className="preview-note">
