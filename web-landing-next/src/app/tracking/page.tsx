@@ -59,6 +59,7 @@ interface ModalSession {
 
 interface ModalResponse {
   id: string;
+  modal_session_id: string;
   question_key: string;
   answer_value: string;
   answer_label: string | null;
@@ -314,7 +315,7 @@ export default function TrackingPage() {
           if (!visit) continue;
 
           const sessionResponses = allResponses.filter(
-            (r) => r.id && session.id
+            (r) => r.modal_session_id === session.id
           );
 
           // Find Q1-Q4 answers
@@ -1404,12 +1405,22 @@ export default function TrackingPage() {
               <span className="material-symbols-outlined text-lg">ballot</span>
               Modal Response Distribution
             </h3>
+            {/* Info banner about flow change */}
+            <div className="mb-4 rounded-lg border border-[#d0bdf4]/30 bg-[#d0bdf4]/10 p-3">
+              <p className="flex items-center gap-2 text-xs text-[#554b66]">
+                <span className="material-symbols-outlined text-sm">info</span>
+                <span>
+                  <strong>Flow Update (Jan 13, 2026):</strong> New system has 3 questions (Q1→Q2→Q3→Conversion).
+                  Q4 data below is from the old 4-question flow only.
+                </span>
+              </p>
+            </div>
             <div className="grid gap-6 md:grid-cols-4">
               {[
-                { key: 'q1_entry', label: 'Q1: What brings you here?' },
-                { key: 'q2_pain_point', label: 'Q2: Hardest part?' },
-                { key: 'q3_product_specific', label: 'Q3: Product Question' },
-                { key: 'q4_product_specific', label: 'Q4: Outcome Desired' },
+                { key: 'q1_entry', label: 'Q1: What brings you here?', legacy: false },
+                { key: 'q2_pain_point', label: 'Q2: Hardest part?', legacy: false },
+                { key: 'q3_product_specific', label: 'Q3: Condition + Baseline', legacy: false },
+                { key: 'q4_product_specific', label: 'Q4: Legacy (old flow only)', legacy: true },
               ].map((q) => {
                 const distribution = getQuestionDistribution(q.key);
                 const colors = [
@@ -1421,14 +1432,19 @@ export default function TrackingPage() {
                 ];
 
                 return (
-                  <div key={q.key}>
-                    <p className="mb-3 text-sm font-semibold text-[#554b66]">
+                  <div key={q.key} className={q.legacy ? 'opacity-60' : ''}>
+                    <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#554b66]">
                       {q.label}
+                      {q.legacy && (
+                        <span className="rounded bg-[#e8974f]/20 px-1.5 py-0.5 text-[10px] font-medium text-[#e8974f]">
+                          DEPRECATED
+                        </span>
+                      )}
                     </p>
                     <div className="space-y-2">
                       {distribution.length === 0 ? (
                         <p className="text-xs text-[#554b66]">
-                          No responses yet
+                          {q.legacy ? 'No legacy data' : 'No responses yet'}
                         </p>
                       ) : (
                         distribution.map((item, i) => (
@@ -1849,7 +1865,10 @@ export default function TrackingPage() {
                           </p>
                         )}
                         {step.q4_answer && (
-                          <p className="text-xs text-[#554b66]">
+                          <p className="flex items-center gap-1 text-xs text-[#554b66] opacity-60">
+                            <span className="rounded bg-[#e8974f]/20 px-1 py-0.5 text-[9px] font-medium text-[#e8974f]">
+                              OLD FLOW
+                            </span>
                             Q4: {step.q4_answer}
                           </p>
                         )}
