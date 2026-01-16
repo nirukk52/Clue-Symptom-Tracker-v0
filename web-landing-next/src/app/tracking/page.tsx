@@ -165,6 +165,9 @@ export default function TrackingPage() {
   const [userJourneyRows, setUserJourneyRows] = useState<UserJourneyRow[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
 
+  // Ad config cache for looking up ad headlines by utm_content
+  const [adConfigCache, setAdConfigCache] = useState<Record<string, { headline: string; description: string; cta: string; target_subreddits?: string[] }>>({});
+
   // Filter state
   const [selectedCampaign, setSelectedCampaign] = useState('all');
 
@@ -225,6 +228,9 @@ export default function TrackingPage() {
       setAllModalSessions((sessionsRes.data as ModalSession[]) || []);
       setAllModalResponses((responsesRes.data as ModalResponse[]) || []);
 
+      // Load ad configurations for lookup
+      await loadAdConfigs();
+
       // Load User Journey Analytics data
       await loadUserJourneyAnalytics();
 
@@ -235,6 +241,35 @@ export default function TrackingPage() {
       console.error('Error loading data:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Load ad configurations from campaign_config table
+  const loadAdConfigs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('campaign_config')
+        .select('config_key, config_data')
+        .eq('config_type', 'ad');
+
+      if (error) {
+        console.error('Error loading ad configs:', error);
+        return;
+      }
+
+      const cache: Record<string, { headline: string; description: string; cta: string; target_subreddits?: string[] }> = {};
+      (data || []).forEach((item: { config_key: string; config_data: { headline?: string; description?: string; primary_cta?: string; cta?: string; target_subreddits?: string[] } }) => {
+        const configData = item.config_data || {};
+        cache[item.config_key] = {
+          headline: configData.headline || '',
+          description: configData.description || '',
+          cta: configData.primary_cta || configData.cta || '',
+          target_subreddits: configData.target_subreddits,
+        };
+      });
+      setAdConfigCache(cache);
+    } catch (err) {
+      console.error('Error loading ad configs:', err);
     }
   };
 
@@ -523,6 +558,56 @@ export default function TrackingPage() {
     return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCHours().toString().padStart(2, '0')}:${d.getUTCMinutes().toString().padStart(2, '0')} UTC`;
   };
 
+  // Format date/time for local display (more readable)
+  const formatLocalDateTime = (isoString: string) => {
+    if (!isoString) return '-';
+    const d = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const remainingMins = diffMins % 60;
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    // Show relative time for recent sessions
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) {
+      // Show hours and minutes for same-day sessions
+      return remainingMins > 0 ? `${diffHours}h ${remainingMins}m ago` : `${diffHours}h ago`;
+    }
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    // For older sessions, show full date/time
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
+    const day = d.getDate();
+    const hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+
+    return `${month} ${day}, ${displayHours}:${minutes} ${ampm}`;
+  };
+
+  // Format full date/time with timezone
+  const formatFullDateTime = (isoString: string) => {
+    if (!isoString) return '-';
+    const d = new Date(isoString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const seconds = d.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    return `${month} ${day}, ${year} ${displayHours}:${minutes}:${seconds} ${ampm} (${timezone})`;
+  };
+
   const extractPageName = (url: string | null) => {
     if (!url) return 'Unknown';
     try {
@@ -706,7 +791,17 @@ export default function TrackingPage() {
     return Array.from(sessions.values()).slice(0, 50);
   }, [userJourneyRows]);
 
-  // CTA clicks breakdown
+  // Device type breakdown for user journeys
+  const deviceTypeBreakdown = useMemo(() => {
+    const breakdown: Record<string, number> = {};
+    uniqueSessionJourneys.forEach((journey) => {
+      const device = journey.device_type || 'unknown';
+      breakdown[device] = (breakdown[device] || 0) + 1;
+    });
+    return breakdown;
+  }, [uniqueSessionJourneys]);
+
+  // CTA clicks breakdown - combines marketing_events and landing_visits data
   const ctaClicksData = useMemo(() => {
     const authGoogleClicks = filteredData.events.filter(
       (e) => e.event_type === 'auth_google_click'
@@ -714,7 +809,18 @@ export default function TrackingPage() {
     const authEmailSignups = filteredData.events.filter(
       (e) => e.event_type === 'auth_signup_email'
     );
-    const allClicks = [...clicks, ...authGoogleClicks, ...authEmailSignups];
+
+    // Also get CTA clicks from landing_visits table (use extended type for cta fields)
+    const landingVisitClicks = (filteredData.landingVisits as unknown as ExtendedLandingVisit[])
+      .filter((v) => v.cta_clicked)
+      .map((v) => ({
+        page_url: `/${v.product_offering || ''}`,
+        element_id: v.cta_element_id || 'modal_trigger',
+        element_text: 'CTA Click (Modal Open)',
+        event_type: 'landing_cta_click',
+      }));
+
+    const allClicks = [...clicks, ...authGoogleClicks, ...authEmailSignups, ...landingVisitClicks];
     const totalClicks = allClicks.length;
 
     if (totalClicks === 0) return [];
@@ -739,6 +845,9 @@ export default function TrackingPage() {
       } else if (click.event_type === 'auth_signup_email') {
         elementId = 'email_signup';
         elementText = 'Create Account (Email)';
+      } else if (click.event_type === 'landing_cta_click') {
+        // Keep the element_id from landing_visits (e.g., hero_quick_checkin)
+        elementText = elementId === 'modal_trigger' ? 'Modal Open (CTA)' : `${elementId} (CTA)`;
       }
 
       const key = `${pageName}|${elementId}|${elementText}`;
@@ -754,7 +863,7 @@ export default function TrackingPage() {
         ...g,
         percentage: ((g.clicks / totalClicks) * 100).toFixed(1),
       }));
-  }, [clicks, filteredData.events]);
+  }, [clicks, filteredData.events, filteredData.landingVisits]);
 
   // Referrer breakdown for modal
   const referrerBreakdown = useMemo(() => {
@@ -1495,22 +1604,46 @@ export default function TrackingPage() {
 
           {/* Individual User Journeys */}
           <div className="rounded-2xl border border-[#20132e]/10 bg-white p-5">
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-[#20132e]">
-              <span className="material-symbols-outlined text-lg">person</span>
-              Individual User Journeys
-              <span className="ml-2 rounded-full bg-[#e8974f]/20 px-2 py-0.5 text-xs font-normal text-[#554b66]">
-                Recent sessions with modal engagement
-              </span>
-            </h3>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 font-semibold text-[#20132e]">
+                <span className="material-symbols-outlined text-lg">person</span>
+                Individual User Journeys
+                <span className="ml-2 rounded-full bg-[#e8974f]/20 px-2 py-0.5 text-xs font-normal text-[#554b66]">
+                  Recent sessions with modal engagement
+                </span>
+              </h3>
+              {/* Device Type Breakdown */}
+              {Object.keys(deviceTypeBreakdown).length > 0 && (
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-[#554b66]">Device breakdown:</span>
+                  {Object.entries(deviceTypeBreakdown).map(([device, count]) => (
+                    <span
+                      key={device}
+                      className={`rounded-full px-2 py-0.5 font-medium ${
+                        device === 'mobile'
+                          ? 'bg-blue-100 text-blue-700'
+                          : device === 'desktop'
+                            ? 'bg-purple-100 text-purple-700'
+                            : device === 'tablet'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {device}: {count}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="max-h-96 overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white">
                   <tr className="border-b border-[#20132e]/10">
                     <th className="py-2 text-left font-semibold text-[#20132e]">
-                      Session
+                      Time
                     </th>
                     <th className="py-2 text-left font-semibold text-[#20132e]">
-                      Product
+                      Campaign / Ad
                     </th>
                     <th className="py-2 text-left font-semibold text-[#20132e]">
                       Device
@@ -1552,11 +1685,28 @@ export default function TrackingPage() {
                           )
                         }
                       >
-                        <td className="py-2 font-mono text-xs text-[#554b66]">
-                          {journey.session_id.slice(-10)}
+                        <td className="py-2 text-xs text-[#554b66]" title={formatFullDateTime(journey.visit_time)}>
+                          <div className="font-medium text-[#20132e]">
+                            {formatLocalDateTime(journey.visit_time)}
+                          </div>
                         </td>
-                        <td className="py-2 text-[#20132e]">
-                          {journey.product_offering}
+                        <td className="py-2">
+                          <div className="flex flex-col gap-0.5">
+                            {journey.utm_campaign ? (
+                              <>
+                                <span className="inline-flex max-w-40 items-center truncate rounded bg-[#d0bdf4]/20 px-1.5 py-0.5 text-xs font-medium text-[#20132e]" title={journey.utm_campaign}>
+                                  {journey.utm_campaign}
+                                </span>
+                                {journey.utm_content && (
+                                  <span className="max-w-40 truncate text-[10px] text-[#554b66]" title={journey.utm_content}>
+                                    ad: {journey.utm_content}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-xs text-[#554b66]">Direct</span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2 text-[#554b66]">
                           {journey.device_type || '-'}
@@ -1599,9 +1749,12 @@ export default function TrackingPage() {
             </div>
 
             {/* Selected Session Detail */}
-            {selectedSession && (
+            {selectedSession && (() => {
+              const sessionData = uniqueSessionJourneys.find(j => j.session_id === selectedSession);
+              const adConfig = sessionData?.utm_content ? adConfigCache[sessionData.utm_content] : null;
+              return (
               <div className="mt-4 rounded-xl border border-[#d0bdf4]/30 bg-[#d0bdf4]/10 p-4">
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between">
                   <h4 className="flex items-center gap-2 font-semibold text-[#20132e]">
                     <span className="material-symbols-outlined text-lg">
                       timeline
@@ -1617,6 +1770,63 @@ export default function TrackingPage() {
                     </span>
                   </button>
                 </div>
+
+                {/* Full Ad Details (if available) */}
+                {adConfig && (
+                  <div className="mb-4 rounded-lg border border-[#e8974f]/30 bg-[#e8974f]/5 p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm text-[#e8974f]">campaign</span>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-[#e8974f]">Ad That Brought This User</span>
+                    </div>
+                    <p className="text-base font-semibold text-[#20132e]">&ldquo;{adConfig.headline}&rdquo;</p>
+                    {adConfig.description && (
+                      <p className="mt-1 text-sm text-[#554b66]">{adConfig.description}</p>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {adConfig.cta && (
+                        <span className="rounded-full bg-[#e8974f]/20 px-2 py-0.5 text-xs font-medium text-[#e8974f]">
+                          CTA: {adConfig.cta}
+                        </span>
+                      )}
+                      {adConfig.target_subreddits && adConfig.target_subreddits.length > 0 && (
+                        <span className="text-xs text-[#554b66]">
+                          Targets: {adConfig.target_subreddits.slice(0, 3).join(', ')}{adConfig.target_subreddits.length > 3 ? '...' : ''}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Campaign & Attribution Info */}
+                {sessionData && (
+                  <div className="mb-4 grid gap-3 rounded-lg bg-white p-3 sm:grid-cols-2 md:grid-cols-4">
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-[#554b66]">Campaign</p>
+                      <p className="mt-0.5 text-sm font-semibold text-[#20132e]">
+                        {sessionData.utm_campaign || 'Direct Traffic'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-[#554b66]">Ad Content ID</p>
+                      <p className="mt-0.5 font-mono text-xs text-[#20132e]">
+                        {sessionData.utm_content || '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-[#554b66]">Source</p>
+                      <p className="mt-0.5 text-sm font-semibold text-[#20132e]">
+                        {sessionData.utm_source || 'Organic'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-[#554b66]">Device / Product</p>
+                      <p className="mt-0.5 text-sm font-semibold text-[#20132e]">
+                        {sessionData.device_type || '-'} / {sessionData.product_offering}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   {getSessionJourney(selectedSession).map((step, i) => (
                     <div
@@ -1649,14 +1859,15 @@ export default function TrackingPage() {
                           </p>
                         )}
                       </div>
-                      <span className="text-xs text-[#554b66]">
-                        {new Date(step.visit_time).toLocaleTimeString()}
+                      <span className="text-xs text-[#554b66]" title={formatFullDateTime(step.visit_time)}>
+                        {formatLocalDateTime(step.visit_time)}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Key Insights from Journey Data */}
