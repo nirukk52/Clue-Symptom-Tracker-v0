@@ -163,13 +163,13 @@ body {
 
 .hero-headline {
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 9vw, 2.5rem);
   font-weight: 600;
   color: white;
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: 1rem;
   margin-top: 16px;
-  max-width: 20ch;
+  white-space: pre-line; /* Respect \n line breaks from content */
 }
 
 .hero-subheadline {
@@ -350,6 +350,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   margin-top: 0px;
+  white-space: nowrap;
 }
 
 .hero-cta:hover {

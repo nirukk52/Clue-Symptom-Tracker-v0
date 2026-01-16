@@ -63,7 +63,7 @@ export function Hero({
             Just talk to log
           </div>
 
-          {/* Main headline */}
+          {/* Main headline - 3 lines via \n in content + CSS white-space: pre-line */}
           <h1 className="hero-headline">{headline}</h1>
 
           {/* Subheadline */}

@@ -23,10 +23,10 @@ export const spoonSaverContent: LandingPageContent = {
 
   hero: {
     headlines: {
-      default: 'Track symptoms without draining your energy.',
-      alt1: 'No streaks. No sad faces. No guilt.',
-      alt2: 'Built for days when you can barely function.',
-      altFocus: 'A tracker that finally gets it.',
+      default: 'Track symptoms\nwithout draining\nyour energy',
+      alt1: 'No streaks.\nNo sad faces.\nNo guilt.',
+      alt2: 'Built for days\nwhen you can\nbarely function.',
+      altFocus: 'A tracker\nthat finally\ngets it.',
     },
     subheadline:
       "When every task costs energy, tracking shouldn't. Log symptoms in 20 seconds, even on your worst days.",

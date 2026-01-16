@@ -1,6 +1,6 @@
 ---
 name: marketing-campaigns
-description: Create and manage marketing campaigns, ads, and tracking URLs for Reddit and other channels. Use when: (1) Creating new campaigns or ads in Supabase, (2) Generating tracking URLs with UTM parameters, (3) Setting up A/B tests with multiple ad variants, (4) Querying campaign performance data, or (5) Understanding the campaign tracking system architecture.
+description: Create and manage marketing campaigns, ads, and tracking URLs for Reddit and other channels. Use when: (1) Creating new campaigns or ads in Supabase, (2) Generating tracking URLs with UTM parameters, (3) Listing existing campaign ads, (4) Updating campaign versions, or (5) Querying campaign performance data.
 ---
 
 # Marketing Campaigns
@@ -9,190 +9,220 @@ description: Create and manage marketing campaigns, ads, and tracking URLs for R
 
 This skill enables creation and management of marketing campaigns with proper tracking setup. It handles campaign/ad creation in Supabase, generates tracking URLs with UTM parameters, and provides tools for analyzing campaign performance.
 
-## Quick Start
+## Quick Reference
 
-### Creating a New Campaign Ad
+### URL Pattern
 
-To create a new ad in a campaign:
-
-1. **Use the Supabase MCP** to insert into `campaign_config` table
-2. **Generate tracking URL** with proper UTM parameters
-3. **Verify** the ad appears in the tracking dashboard
-
-**Example workflow:**
-
-```sql
--- Create ad entry
-INSERT INTO campaign_config (
-  config_type, config_key, product_offering, config_data, active, display_order
-) VALUES (
-  'ad',
-  'chat_not_forms',
-  'spoon-saver',
-  jsonb_build_object(
-    'headline', 'Too tired to track symptoms? Same. Chat, don''t fill forms.',
-    'description', 'Track symptoms without draining your energy.',
-    'primary_cta', 'Start a 20-second check-in',
-    'utm_content', 'chat_not_forms',
-    'utm_campaign', 'spoon_saver_v1',
-    'ad_group', 'spoon_saver_v1',
-    'target_subreddits', ARRAY['r/cfs', 'r/ChronicIllness', 'r/Fibromyalgia']
-  ),
-  true,
-  20
-);
+```
+https://chroniclife.app/{product}?utm_source=reddit&utm_medium=paid&utm_campaign={campaign}&utm_content={content_id}
 ```
 
-**Generated tracking URL:**
-```
-https://chroniclife.app/spoon-saver?utm_source=reddit&utm_medium=paid&utm_campaign=spoon_saver_v1&utm_content=chat_not_forms
-```
+### Current Active Campaign
+
+- **Campaign**: `spoon_saver_v3`
+- **Product**: `spoon-saver`
+- **Dashboard**: `https://chroniclife.app/tracking`
+
+---
 
 ## Core Workflows
 
-### 1. Creating Campaigns and Ads
+### 1. List All Ads in a Campaign
 
-**When to use:** Setting up a new campaign or adding ad variants to an existing campaign.
-
-**Process:**
-
-1. **Define campaign structure:**
-   - Campaign name (e.g., `spoon_saver_v1`)
-   - Product offering (e.g., `spoon-saver`, `flare-forecast`)
-   - Ad headline and description
-
-2. **Create ad entry** using Supabase MCP:
-   - Use `config_type = 'ad'`
-   - Set `config_key` to unique identifier (matches `utm_content`)
-   - Include `utm_campaign` and `utm_content` in `config_data`
-   - Set `display_order` for sorting
-
-3. **Generate tracking URL** using the pattern:
-   ```
-   https://chroniclife.app/{product}?utm_source=reddit&utm_medium=paid&utm_campaign={campaign}&utm_content={content_id}
-   ```
-
-**Scripts available:**
-- `scripts/create_campaign_ad.py` - Generates SQL and tracking URL
-- `scripts/generate_tracking_url.py` - Generates URL for existing ads
-
-**Reference:** See `references/database_schema.md` for table structure and examples.
-
-### 2. Generating Tracking URLs
-
-**When to use:** Need a tracking URL for an existing campaign/ad or creating URLs programmatically.
-
-**Standard pattern:**
-```
-https://chroniclife.app/{product}?utm_source={source}&utm_medium={medium}&utm_campaign={campaign}&utm_content={content_id}
-```
-
-**Parameters:**
-- `utm_source`: Traffic source (`reddit`, `google`, `facebook`, etc.)
-- `utm_medium`: Marketing medium (`paid`, `organic`, `social`, `cpc`)
-- `utm_campaign`: Campaign identifier (groups multiple ads)
-- `utm_content`: Unique ad identifier (individual ad variant)
-
-**Reference:** See `references/url_patterns.md` for complete URL patterns and examples.
-
-### 3. A/B Testing Setup
-
-**When to use:** Creating multiple ad variants to test headline performance.
-
-**Process:**
-
-1. Create multiple ads with same `utm_campaign` but different `utm_content`
-2. Use different headlines but same product/description
-3. Generate unique tracking URLs for each variant
-4. Compare performance in tracking dashboard filtered by `utm_campaign`
-
-**Example:** Campaign `spoon_saver_v1` with variants:
-- `chat_not_forms` - "Too tired to track symptoms? Same. Chat, don't fill forms."
-- `spoon_cost_chat` - "Tracking shouldn't cost you a spoon..."
-- `no_forms_20sec` - "Log symptoms without filling forms. 20 seconds. That's it."
-
-All share `utm_campaign=spoon_saver_v1` but have unique `utm_content` values.
-
-### 4. Querying Campaign Performance
-
-**When to use:** Analyzing campaign results, comparing ad variants, or generating reports.
-
-**Key tables:**
-- `campaign_config` - Campaign/ad definitions
-- `landing_visits` - Page views with UTM tracking
-- `modal_sessions` - Modal engagement
-- `modal_responses` - Question answers
-- `beta_signups` - Conversions
-
-**Common queries:**
+**Always do this first** to see what exists:
 
 ```sql
--- Get all ads in a campaign
-SELECT config_key, config_data->>'headline' as headline, config_data->>'utm_content' as utm_content
+SELECT config_key, config_data->>'headline' as headline
 FROM campaign_config
-WHERE config_data->>'utm_campaign' = 'spoon_saver_v1'
+WHERE config_type = 'ad'
+AND config_data->>'utm_campaign' = 'spoon_saver_v3'
 ORDER BY display_order;
+```
 
--- Get campaign funnel metrics
+### 2. Create a New Ad
+
+**Step 1:** Insert into `campaign_config`:
+
+```sql
+INSERT INTO campaign_config (config_type, config_key, product_offering, config_data, active, display_order)
+VALUES (
+  'ad',
+  'my_new_ad',  -- This becomes utm_content
+  'spoon-saver',
+  '{
+    "ad_group": "my_ad_group",
+    "headline": "Your ad headline here",
+    "description": "Track symptoms without draining your energy.",
+    "primary_cta": "Start a 20-second check-in",
+    "utm_content": "my_new_ad",
+    "utm_campaign": "spoon_saver_v3",
+    "target_subreddits": ["r/cfs", "r/ChronicIllness", "r/Fibromyalgia", "r/LongCOVID", "r/spoonies", "r/endometriosis", "r/PCOS"]
+  }',
+  true,
+  40
+);
+```
+
+**Step 2:** Generate tracking URL:
+
+```
+https://chroniclife.app/spoon-saver?utm_source=reddit&utm_medium=paid&utm_campaign=spoon_saver_v3&utm_content=my_new_ad
+```
+
+### 3. Create Multiple Ads at Once
+
+```sql
+INSERT INTO campaign_config (config_type, config_key, product_offering, config_data, active, display_order)
+VALUES
+('ad', 'ad_variant_1', 'spoon-saver', '{"headline": "Headline 1", "utm_content": "ad_variant_1", "utm_campaign": "spoon_saver_v3", ...}', true, 41),
+('ad', 'ad_variant_2', 'spoon-saver', '{"headline": "Headline 2", "utm_content": "ad_variant_2", "utm_campaign": "spoon_saver_v3", ...}', true, 42),
+('ad', 'ad_variant_3', 'spoon-saver', '{"headline": "Headline 3", "utm_content": "ad_variant_3", "utm_campaign": "spoon_saver_v3", ...}', true, 43);
+```
+
+### 4. Update Campaign Version (e.g., v1 → v3)
+
+When reusing existing ads in a new campaign version:
+
+```sql
+UPDATE campaign_config
+SET config_data = jsonb_set(config_data, '{utm_campaign}', '"spoon_saver_v3"')
+WHERE config_type = 'ad'
+AND config_key IN ('ad_1', 'ad_2', 'ad_3');
+```
+
+### 5. Query Campaign Performance
+
+```sql
 SELECT
   lv.utm_content,
   COUNT(DISTINCT lv.id) as visits,
   COUNT(DISTINCT ms.id) as modal_opens,
-  COUNT(DISTINCT CASE WHEN ms.completed THEN ms.id END) as completed,
-  COUNT(DISTINCT bs.id) as signups
+  COUNT(DISTINCT CASE WHEN ms.completed THEN ms.id END) as completed
 FROM landing_visits lv
 LEFT JOIN modal_sessions ms ON ms.visit_id = lv.id
-LEFT JOIN beta_signups bs ON bs.utm_content = lv.utm_content
-WHERE lv.utm_campaign = 'spoon_saver_v1'
-GROUP BY lv.utm_content;
+WHERE lv.utm_campaign = 'spoon_saver_v3'
+GROUP BY lv.utm_content
+ORDER BY visits DESC;
 ```
 
-**Reference:** See `references/database_schema.md` for complete schema and query examples.
+---
 
-## Tracking Dashboard
+## Current spoon_saver_v3 Ads
 
-View campaign performance at: `https://chroniclife.app/tracking`
+| utm_content            | Headline                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| `doctor_summaries`     | A chat-based symptom tracker that creates summaries your doctor will actually read. |
+| `log_flare_niranjan`   | Log the flare without explaining your whole life... - Niranjan                      |
+| `wiped_mode_niranjan`  | "I'm wiped" mode: For days when you can't even look at a screen. - Niranjan         |
+| `tracking_cost_spoons` | Tracking shouldn't cost spoons.                                                     |
+| `chat_not_forms`       | Too tired to track symptoms? Same. Chat, don't fill forms.                          |
+| `no_forms_20sec`       | Log symptoms without filling forms. 20 seconds. That's it.                          |
+| `log_flare_priyanka`   | Log the flare without explaining your whole life... - Priyanka                      |
+| `wiped_mode_priyanka`  | "I'm wiped" mode: For days when you can't even look at a screen. - Priyanka         |
 
-**Features:**
-- Filter by `utm_campaign` to see all ads in a campaign
-- Compare by `utm_content` to see individual ad performance
-- View funnel metrics: visits → modal opens → completion → signups
-- Analyze drop-off points and user journeys
+---
 
-## Resources
+## Important Rules
 
-### Scripts
+### 1. config_key = utm_content
 
-- **`scripts/create_campaign_ad.py`** - Creates ad entry and generates tracking URL
-  - Usage: `python create_campaign_ad.py --campaign CAMPAIGN --headline "HEADLINE" --product PRODUCT --content-id CONTENT_ID`
-  - Outputs SQL INSERT statement and tracking URL
+The `config_key` field MUST match the `utm_content` value in `config_data`. This is how the tracking dashboard looks up ad details.
 
-- **`scripts/generate_tracking_url.py`** - Generates tracking URL for existing ads
-  - Usage: `python generate_tracking_url.py --campaign CAMPAIGN --content CONTENT_ID --product PRODUCT`
-  - Outputs complete tracking URL
+### 2. Always verify after creating
 
-### References
+After creating ads, always query to confirm they exist:
 
-- **`references/url_patterns.md`** - Complete guide to URL patterns, UTM parameters, and encoding
-- **`references/database_schema.md`** - Database schema, table structures, and query examples
+```sql
+SELECT config_key, config_data->>'utm_campaign' as campaign
+FROM campaign_config WHERE config_key = 'your_new_ad';
+```
 
-## Best Practices
+### 3. Escape apostrophes in SQL
 
-1. **Naming conventions:**
-   - Campaign names: lowercase with underscores (e.g., `spoon_saver_v1`)
-   - Content IDs: lowercase with underscores (e.g., `chat_not_forms`)
-   - Match `config_key` to `utm_content` for consistency
+Use `''` (double single quote) for apostrophes:
 
-2. **URL encoding:**
-   - Use `urllib.parse.urlencode()` when generating URLs programmatically
-   - Escape apostrophes in SQL as `''` (double single quote)
+```sql
+'{"headline": "I''m wiped mode"}'  -- Correct
+'{"headline": "I'm wiped mode"}'   -- WRONG - will error
+```
 
-3. **Campaign organization:**
-   - Group related ads under same `utm_campaign`
-   - Use `display_order` to control sorting
-   - Keep `active=true` for live campaigns
+### 4. Don't give URLs for non-existent ads
 
-4. **Tracking:**
-   - Always include all UTM parameters in tracking URLs
-   - Use consistent `utm_source` and `utm_medium` values
-   - Verify URLs work before deploying ads
+Before providing a tracking URL, verify the ad exists in the database. Never assume an ad exists.
+
+---
+
+## Tracking Dashboard Features
+
+**URL**: `https://chroniclife.app/tracking`
+
+The dashboard shows:
+
+- **Individual User Journeys**: Each session with campaign/ad info
+- **Session Detail**: Full ad headline shown when clicking a row
+- **Device breakdown**: mobile vs desktop
+- **Funnel metrics**: visits → modal opens → completion → signups
+
+When a user clicks through an ad, the dashboard displays:
+
+- Campaign name
+- Ad content ID (utm_content)
+- Full ad headline (looked up from campaign_config)
+- Target subreddits
+- Device type and source
+
+---
+
+## Database Schema
+
+### campaign_config (ads)
+
+```
+config_type: 'ad'
+config_key: unique ad identifier (= utm_content)
+product_offering: 'spoon-saver' | 'flare-forecast' | etc.
+config_data: {
+  headline: string,
+  description: string,
+  primary_cta: string,
+  utm_content: string,
+  utm_campaign: string,
+  ad_group: string,
+  target_subreddits: string[]
+}
+active: boolean
+display_order: integer
+```
+
+### landing_visits
+
+Tracks page views with UTM parameters, device type, time on page, scroll depth, CTA clicks.
+
+### modal_sessions
+
+Tracks modal engagement: step_reached, completed, abandoned_at_step.
+
+### beta_signups
+
+Tracks conversions with UTM attribution.
+
+---
+
+## Product Landing Pages
+
+| Product          | URL                                        |
+| ---------------- | ------------------------------------------ |
+| Spoon Saver      | `https://chroniclife.app/spoon-saver`      |
+| Flare Forecast   | `https://chroniclife.app/flare-forecast`   |
+| Top Suspect      | `https://chroniclife.app/top-suspect`      |
+| Crash Prevention | `https://chroniclife.app/crash-prevention` |
+
+---
+
+## Common Mistakes to Avoid
+
+1. **Creating URLs for ads that don't exist** - Always query first
+2. **Mismatched config_key and utm_content** - They must be identical
+3. **Forgetting to escape apostrophes** - Use `''` in SQL strings
+4. **Not verifying after insert** - Always confirm the ad was created
+5. **Confusing campaign versions** - Check which version (v1, v2, v3) is active

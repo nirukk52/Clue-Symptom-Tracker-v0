@@ -48,9 +48,9 @@ export function ClueIntroduction({ onCtaClick }: ClueIntroductionProps) {
         </div>
 
         {/* Content Grid */}
-        <div className="mb-12 grid gap-6 md:grid-cols-3">
-          {/* Chat Demo Card - Takes 2 columns */}
-          <div className="shadow-soft border-primary/5 hover-lift rounded-[2rem] border bg-white p-6 md:col-span-2">
+        <div className="mb-12 grid gap-6">
+          {/* Chat Demo Card - Full width now */}
+          <div className="shadow-soft border-primary/5 hover-lift rounded-[2rem] border bg-white p-6">
             {/* Card Header */}
             <div className="mb-6 flex items-center gap-3">
               <div className="bg-accent-purple/30 flex size-10 items-center justify-center rounded-xl">
@@ -215,8 +215,8 @@ export function ClueIntroduction({ onCtaClick }: ClueIntroductionProps) {
             </div>
           </div>
 
-          {/* Key Features Card */}
-          <div className="from-accent-purple/20 to-accent-blue/20 border-accent-purple/30 hover-lift space-y-4 rounded-[2rem] border bg-gradient-to-br p-6">
+          {/* Key Features Card - Hidden for now */}
+          {/* <div className="from-accent-purple/20 to-accent-blue/20 border-accent-purple/30 hover-lift space-y-4 rounded-[2rem] border bg-gradient-to-br p-6">
             <h4 className="font-display text-primary text-lg font-semibold">
               Not your typical tracker
             </h4>
@@ -255,7 +255,7 @@ export function ClueIntroduction({ onCtaClick }: ClueIntroductionProps) {
               Try chatting with Clue
               <MaterialIcon name="arrow_forward" size="sm" />
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* CTA */}
