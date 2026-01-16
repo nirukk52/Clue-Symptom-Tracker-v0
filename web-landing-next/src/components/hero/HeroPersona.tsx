@@ -18,7 +18,7 @@ interface HeroPersonaProps {
 
 const personaImages: Record<PersonaKey, { src: string; alt: string }> = {
   maya: {
-    src: '/personas/heroImage-all-persona.png',
+    src: '/personas/maya6.png',
     alt: 'Maya, living with chronic fatigue and fibromyalgia',
   },
   jordan: {
