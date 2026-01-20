@@ -23,25 +23,25 @@ export const spoonSaverContent: LandingPageContent = {
 
   hero: {
     headlines: {
-      default: 'Track symptoms\nwithout draining\nyour energy',
+      default: 'Log how you’re feeling\nwithout forms,\ntracking, or effort',
       alt1: 'No streaks.\nNo sad faces.\nNo guilt.',
       alt2: 'Built for days\nwhen you can\nbarely function.',
       altFocus: 'A tracker\nthat finally\ngets it.',
     },
     subheadline:
-      "When every task costs energy, tracking shouldn't. Log symptoms in 20 seconds, even on your worst days.",
-    ctaText: 'Start a 20-second check-in',
+      "Bad days are hard to explain. Just say what’s going on — we’ll help find patterns and which issue to tackle first.",
+    ctaText: 'Just say how today feels',
     ctaId: 'hero_quick_checkin',
     altCtaText: 'See how it works on bad days',
     altCtaId: 'hero_flare_mode',
   },
 
   conditions: [
-    'Long COVID',
-    'ME/CFS',
-    'Fibromyalgia',
-    'POTS',
-    'EDS',
+    'Low energy day',
+    'Brain fog',
+    'Flare day',
+    'Pain spike',
+    'Overwhelmed',
     'Chronic Pain',
   ],
 

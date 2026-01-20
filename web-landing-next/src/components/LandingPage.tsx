@@ -88,6 +88,12 @@ export function LandingPage({
         onCtaClick={openModal}
       />
 
+
+      {/* Clue Introduction - Chat agent showcase (spoon-saver only) */}
+      {content.product === 'spoon-saver' && (
+        <ClueIntroduction onCtaClick={openModal} />
+      )}
+      
       {/* Quick Entry - Energy-conscious design showcase */}
       <QuickEntry onCtaClick={openModal} />
 
@@ -98,11 +104,6 @@ export function LandingPage({
 
       {/* Flare Mode - One-tap logging for bad days */}
       <FlareMode onCtaClick={openModal} />
-
-      {/* Clue Introduction - Chat agent showcase (spoon-saver only) */}
-      {content.product === 'spoon-saver' && (
-        <ClueIntroduction onCtaClick={openModal} />
-      )}
 
       {/* === OTHER PRODUCT SPECIFIC SECTIONS === */}
       {/* Predictive Insights - Lag effect detection (flare-forecast specific) */}

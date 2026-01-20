@@ -50,10 +50,13 @@ interface LandingVisit {
 
 interface ModalSession {
   id: string;
+  visit_id: string;
   product_offering: string;
   persona_shown: string;
+  step_reached: number;
   completed: boolean;
-  utm_campaign: string | null;
+  // Note: utm_campaign is NOT in modal_sessions table - it's in landing_visits
+  // Campaign filtering for modal sessions is done via visit_id join to landing_visits
   created_at: string;
 }
 
@@ -171,6 +174,9 @@ export default function TrackingPage() {
 
   // Filter state
   const [selectedCampaign, setSelectedCampaign] = useState('all');
+  const [dateFilter, setDateFilter] = useState<'all' | '24h' | '7d' | '30d' | 'custom'>('all');
+  const [customDateStart, setCustomDateStart] = useState<string>('');
+  const [customDateEnd, setCustomDateEnd] = useState<string>('');
 
   // Modal states
   const [referrerModalData, setReferrerModalData] = useState<{
@@ -389,41 +395,78 @@ export default function TrackingPage() {
     return Array.from(campaignSet).sort();
   }, [allEvents, allSignups, allLandingVisits]);
 
-  // Filter data based on selected campaign
-  const filteredData = useMemo(() => {
-    if (selectedCampaign === 'all') {
-      return {
-        events: allEvents,
-        signups: allSignups,
-        landingVisits: allLandingVisits,
-        modalSessions: allModalSessions,
-        modalResponses: allModalResponses,
-      };
-    }
+  // Calculate date filter boundaries
+  const dateFilterBounds = useMemo(() => {
+    const now = new Date();
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
 
+    switch (dateFilter) {
+      case '24h':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'custom':
+        if (customDateStart) startDate = new Date(customDateStart);
+        if (customDateEnd) {
+          endDate = new Date(customDateEnd);
+          // Set to end of day
+          endDate.setHours(23, 59, 59, 999);
+        }
+        break;
+      case 'all':
+      default:
+        break;
+    }
+    return { startDate, endDate };
+  }, [dateFilter, customDateStart, customDateEnd]);
+
+  // Filter data based on selected campaign AND date
+  const filteredData = useMemo(() => {
+    // Date filter function
+    const dateFilterFn = (item: { created_at: string }) => {
+      if (dateFilter === 'all') return true;
+      const itemDate = new Date(item.created_at);
+      const { startDate, endDate } = dateFilterBounds;
+      if (startDate && itemDate < startDate) return false;
+      if (endDate && itemDate > endDate) return false;
+      return true;
+    };
+
+    // Campaign filter function
     const isDirect = selectedCampaign === 'direct';
-    const filterFn = (item: { utm_campaign?: string | null }) => {
+    const campaignFilterFn = (item: { utm_campaign?: string | null }) => {
+      if (selectedCampaign === 'all') return true;
       if (isDirect) return !item.utm_campaign || item.utm_campaign === '';
       return item.utm_campaign === selectedCampaign;
     };
 
-    // Modal responses don't have utm_campaign, so we filter by product_offering instead
-    const filterModalResponses = (_item: {
-      product_offering?: string | null;
-    }) => {
-      // Modal responses are already linked to sessions, just include all
-      return true;
+    // Combined filter
+    const combinedFilter = <T extends { created_at: string; utm_campaign?: string | null }>(item: T) => {
+      return dateFilterFn(item) && campaignFilterFn(item);
+    };
+
+    // Modal responses don't have utm_campaign, so we only filter by date
+    const filterModalResponses = (item: { created_at: string }) => {
+      return dateFilterFn(item);
     };
 
     return {
-      events: allEvents.filter(filterFn),
-      signups: allSignups.filter(filterFn),
-      landingVisits: allLandingVisits.filter(filterFn),
-      modalSessions: allModalSessions.filter(filterFn),
+      events: allEvents.filter(combinedFilter),
+      signups: allSignups.filter(combinedFilter),
+      landingVisits: allLandingVisits.filter(combinedFilter),
+      modalSessions: allModalSessions.filter((s) => dateFilterFn(s) && (selectedCampaign === 'all' || true)),
       modalResponses: allModalResponses.filter(filterModalResponses),
     };
   }, [
     selectedCampaign,
+    dateFilter,
+    dateFilterBounds,
     allEvents,
     allSignups,
     allLandingVisits,
@@ -538,6 +581,68 @@ export default function TrackingPage() {
     viewSessions > 0
       ? ((filteredData.signups.length / viewSessions) * 100).toFixed(2)
       : '0';
+
+  /**
+   * Onboarding Funnel Metrics (Onboarding1-4)
+   *
+   * Why this exists: Tracks the modal onboarding flow with proper naming:
+   * - Onboarding1 = Q1 (condition selection)
+   * - Onboarding2 = Q2 (pain point)
+   * - Onboarding3 = Q3 (baseline capture widget)
+   * - Onboarding4 = Conversion screen (ValuePropScreen + OAuth)
+   *
+   * Uses filteredData which already includes both campaign AND date filters.
+   * Note: modal_sessions needs additional filtering via visit_id join for campaign attribution.
+   */
+  const onboardingFunnel = useMemo(() => {
+    // Use already-filtered landing visits (includes campaign + date filters)
+    const landingVisits = filteredData.landingVisits.length;
+
+    // Create a Set of visit IDs from filtered visits for modal session filtering
+    const filteredVisitIds = new Set(filteredData.landingVisits.map(v => v.id));
+
+    // Get modal sessions that belong to filtered visits via visit_id join
+    // Also apply date filter to modal sessions
+    const filteredSessions = filteredData.modalSessions.filter(s => {
+      if (selectedCampaign === 'all') return true;
+      return s.visit_id && filteredVisitIds.has(s.visit_id);
+    });
+    const modalOpens = filteredSessions.length;
+
+    // Count sessions by step reached
+    const onboarding1 = filteredSessions.filter(s => s.step_reached >= 1).length;
+    const onboarding2 = filteredSessions.filter(s => s.step_reached >= 2).length;
+    const onboarding3 = filteredSessions.filter(s => s.step_reached >= 3).length;
+    const onboarding4Completed = filteredSessions.filter(s => s.completed).length;
+
+    // Get unique signups (already filtered by campaign + date)
+    const uniqueEmails = new Set(filteredData.signups.map(s => s.email));
+    const uniqueSignups = uniqueEmails.size;
+
+    // Calculate rates
+    const modalOpenRate = landingVisits > 0 ? ((modalOpens / landingVisits) * 100).toFixed(1) : '0';
+    const q1Rate = modalOpens > 0 ? ((onboarding1 / modalOpens) * 100).toFixed(1) : '0';
+    const q2Rate = modalOpens > 0 ? ((onboarding2 / modalOpens) * 100).toFixed(1) : '0';
+    const q3Rate = modalOpens > 0 ? ((onboarding3 / modalOpens) * 100).toFixed(1) : '0';
+    const completionRate = modalOpens > 0 ? ((onboarding4Completed / modalOpens) * 100).toFixed(1) : '0';
+    const overallConversionRate = landingVisits > 0 ? ((uniqueSignups / landingVisits) * 100).toFixed(2) : '0';
+
+    return {
+      landingVisits,
+      modalOpens,
+      modalOpenRate,
+      onboarding1,
+      q1Rate,
+      onboarding2,
+      q2Rate,
+      onboarding3,
+      q3Rate,
+      onboarding4Completed,
+      completionRate,
+      uniqueSignups,
+      overallConversionRate,
+    };
+  }, [filteredData, selectedCampaign]);
 
   // Helper functions
   const formatUTCDate = (isoString: string) => {
@@ -1003,7 +1108,7 @@ export default function TrackingPage() {
               Reddit ad performance for Chronic Life
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Campaign Filter */}
             <div className="relative">
               <select
@@ -1023,6 +1128,46 @@ export default function TrackingPage() {
                 expand_more
               </span>
             </div>
+
+            {/* Date Filter */}
+            <div className="relative">
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)}
+                className="min-w-[140px] cursor-pointer appearance-none rounded-full border border-[#20132e]/10 bg-white px-4 py-2 pr-10 text-sm font-medium text-[#20132e] focus:border-[#e8974f] focus:outline-none"
+              >
+                <option value="all">All Time</option>
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+              <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-[#554b66]">
+                calendar_today
+              </span>
+            </div>
+
+            {/* Custom Date Inputs (shown when custom is selected) */}
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={customDateStart}
+                  onChange={(e) => setCustomDateStart(e.target.value)}
+                  className="rounded-full border border-[#20132e]/10 bg-white px-3 py-2 text-sm text-[#20132e] focus:border-[#e8974f] focus:outline-none"
+                  placeholder="Start date"
+                />
+                <span className="text-[#554b66]">to</span>
+                <input
+                  type="date"
+                  value={customDateEnd}
+                  onChange={(e) => setCustomDateEnd(e.target.value)}
+                  className="rounded-full border border-[#20132e]/10 bg-white px-3 py-2 text-sm text-[#20132e] focus:border-[#e8974f] focus:outline-none"
+                  placeholder="End date"
+                />
+              </div>
+            )}
+
             <button
               onClick={loadDashboardData}
               disabled={isLoading}
@@ -1038,467 +1183,298 @@ export default function TrackingPage() {
           </div>
         </div>
 
-        {/* Active Filter Badge */}
-        {selectedCampaign !== 'all' && (
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#d0bdf4]/20 bg-[#d0bdf4]/10 px-4 py-2">
-              <span className="material-symbols-outlined text-lg text-[#d0bdf4]">
-                filter_alt
-              </span>
-              <span className="text-sm font-medium text-[#20132e]">
-                Filtering by:{' '}
-                <span className="text-[#d0bdf4]">
-                  {selectedCampaign === 'direct'
-                    ? 'Direct (No Campaign)'
-                    : selectedCampaign}
+        {/* Active Filter Badges */}
+        {(selectedCampaign !== 'all' || dateFilter !== 'all') && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {/* Campaign Filter Badge */}
+            {selectedCampaign !== 'all' && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#d0bdf4]/20 bg-[#d0bdf4]/10 px-4 py-2">
+                <span className="material-symbols-outlined text-lg text-[#d0bdf4]">
+                  campaign
                 </span>
-              </span>
+                <span className="text-sm font-medium text-[#20132e]">
+                  Campaign:{' '}
+                  <span className="text-[#d0bdf4]">
+                    {selectedCampaign === 'direct'
+                      ? 'Direct (No Campaign)'
+                      : selectedCampaign}
+                  </span>
+                </span>
+                <button
+                  onClick={() => setSelectedCampaign('all')}
+                  className="ml-2 rounded-full p-1 transition-colors hover:bg-[#d0bdf4]/20"
+                >
+                  <span className="material-symbols-outlined text-sm text-[#554b66]">
+                    close
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* Date Filter Badge */}
+            {dateFilter !== 'all' && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#e8974f]/20 bg-[#e8974f]/10 px-4 py-2">
+                <span className="material-symbols-outlined text-lg text-[#e8974f]">
+                  calendar_today
+                </span>
+                <span className="text-sm font-medium text-[#20132e]">
+                  Date:{' '}
+                  <span className="text-[#e8974f]">
+                    {dateFilter === '24h' && 'Last 24 Hours'}
+                    {dateFilter === '7d' && 'Last 7 Days'}
+                    {dateFilter === '30d' && 'Last 30 Days'}
+                    {dateFilter === 'custom' && `${customDateStart || '...'} to ${customDateEnd || '...'}`}
+                  </span>
+                </span>
+                <button
+                  onClick={() => {
+                    setDateFilter('all');
+                    setCustomDateStart('');
+                    setCustomDateEnd('');
+                  }}
+                  className="ml-2 rounded-full p-1 transition-colors hover:bg-[#e8974f]/20"
+                >
+                  <span className="material-symbols-outlined text-sm text-[#554b66]">
+                    close
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* Clear All Filters */}
+            {selectedCampaign !== 'all' && dateFilter !== 'all' && (
               <button
-                onClick={() => setSelectedCampaign('all')}
-                className="ml-2 rounded-full p-1 transition-colors hover:bg-[#d0bdf4]/20"
+                onClick={() => {
+                  setSelectedCampaign('all');
+                  setDateFilter('all');
+                  setCustomDateStart('');
+                  setCustomDateEnd('');
+                }}
+                className="inline-flex items-center gap-1 rounded-full border border-[#20132e]/10 bg-white px-3 py-2 text-sm font-medium text-[#554b66] transition-colors hover:bg-[#f3f0fa]"
               >
-                <span className="material-symbols-outlined text-sm text-[#554b66]">
-                  close
-                </span>
+                Clear all
               </button>
-            </div>
+            )}
           </div>
         )}
 
-        {/* Experiment Results Section */}
-        <div className="mb-8 rounded-3xl border border-[#d0bdf4]/20 bg-gradient-to-br from-[#d0bdf4]/10 to-[#b8e3d6]/10 p-8">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-[#d0bdf4]/20">
-              <span className="material-symbols-outlined text-2xl text-[#20132e]">
-                science
-              </span>
-            </div>
+        {/* Recent Signups */}
+        <div className="mb-8 overflow-hidden rounded-3xl border border-[#20132e]/5 bg-white">
+          <div className="flex items-center justify-between border-b border-[#20132e]/5 px-6 py-4">
             <div>
-              <h2 className="font-display text-2xl font-semibold text-[#20132e]">
-                Experiment Results
+              <h2 className="font-display text-xl font-semibold text-[#20132e]">
+                Recent Signups
               </h2>
-              <p className="text-sm text-[#554b66]">
-                The Clarity Experiment — $100 budget, 10 days
+              <p className="mt-1 text-sm text-[#554b66]">
+                Click on a user to view their complete journey
               </p>
             </div>
-          </div>
-
-          {/* Winner Banner */}
-          <div className="mb-6 rounded-2xl border border-[#b8e3d6]/50 bg-[#b8e3d6]/30 p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-xl text-teal-700">
-                emoji_events
-              </span>
-              <span className="text-sm font-bold uppercase tracking-wide text-teal-800">
-                Winner: Pattern Discovery
-              </span>
-            </div>
-            <p className="font-display mb-2 text-xl font-semibold text-[#20132e]">
-              Users want to{' '}
-              <span className="text-teal-700">
-                predict flares and find triggers
-              </span>{' '}
-              — not just track symptoms.
-            </p>
-            <p className="text-sm text-[#554b66]">
-              &ldquo;Predict Flares&rdquo; dominated with 59 clicks at $0.05
-              CPC. The &ldquo;prediction&rdquo; angle resonates 4.5x better than
-              energy-saving or doctor-proof messaging.
-            </p>
-          </div>
-
-          {/* Campaign Results Grid */}
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Pattern Discovery - WINNER */}
-            <div className="relative overflow-hidden rounded-2xl border-2 border-[#b8e3d6] bg-white p-5 shadow-sm">
-              <div className="absolute right-0 top-0 rounded-bl-xl bg-[#b8e3d6] px-3 py-1 text-xs font-bold text-teal-900">
-                🏆 WINNER
-              </div>
-              <div className="mb-3 mt-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#b8e3d6]">
-                  visibility
-                </span>
-                <span className="font-semibold text-[#20132e]">
-                  Pattern Discovery
-                </span>
-              </div>
-              <div className="mb-4 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-[#fdfbf9] p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-teal-700">
-                    72
-                  </p>
-                  <p className="text-xs text-[#554b66]">Clicks</p>
-                </div>
-                <div className="rounded-xl bg-[#fdfbf9] p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-teal-700">
-                    $0.05
-                  </p>
-                  <p className="text-xs text-[#554b66]">CPC</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[#554b66]">predict_flares</span>
-                  <span className="font-semibold text-[#b8e3d6]">
-                    59 clicks
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#554b66]">find_triggers</span>
-                  <span className="font-semibold text-[#20132e]">
-                    13 clicks
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Exhaustion & Brain Fog */}
-            <div className="rounded-2xl border border-[#20132e]/10 bg-white p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#e8974f]">
-                  battery_low
-                </span>
-                <span className="font-semibold text-[#20132e]">
-                  Exhaustion & Brain Fog
-                </span>
-              </div>
-              <div className="mb-4 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-[#fdfbf9] p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-[#554b66]">
-                    8
-                  </p>
-                  <p className="text-xs text-[#554b66]">Clicks</p>
-                </div>
-                <div className="rounded-xl bg-[#fdfbf9] p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-[#554b66]">
-                    $0.12
-                  </p>
-                  <p className="text-xs text-[#554b66]">CPC</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[#554b66]">spoon_saver</span>
-                  <span className="text-[#554b66]">5 clicks</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#554b66]">foggy_minds</span>
-                  <span className="text-[#554b66]">3 clicks</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Doctor Mistrust */}
-            <div className="rounded-2xl border border-[#20132e]/10 bg-white p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#f4c4c4]">
-                  medical_information
-                </span>
-                <span className="font-semibold text-[#20132e]">
-                  Doctor Mistrust
-                </span>
-              </div>
-              <div className="mb-4 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-[#fdfbf9] p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-[#554b66]">
-                    11
-                  </p>
-                  <p className="text-xs text-[#554b66]">Clicks</p>
-                </div>
-                <div className="rounded-xl bg-[#fdfbf9] p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-[#554b66]">
-                    $0.09
-                  </p>
-                  <p className="text-xs text-[#554b66]">CPC</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[#554b66]">doctor_proof</span>
-                  <span className="text-[#554b66]">7 clicks</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#554b66]">appointment_prep</span>
-                  <span className="text-[#554b66]">4 clicks</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Key Insights */}
-          <div className="mt-6 rounded-2xl border border-[#20132e]/10 bg-white p-5">
-            <h3 className="mb-3 flex items-center gap-2 font-semibold text-[#20132e]">
+            <div className="flex items-center gap-2 text-[#b8e3d6]">
               <span className="material-symbols-outlined text-lg">
-                lightbulb
+                celebration
               </span>
-              Key Takeaways
-            </h3>
-            <div className="grid gap-4 text-sm md:grid-cols-2">
-              <div className="flex gap-3">
-                <span className="material-symbols-outlined mt-0.5 text-lg text-[#b8e3d6]">
-                  check_circle
-                </span>
-                <div>
-                  <p className="font-medium text-[#20132e]">
-                    Product Direction: Prediction Engine
-                  </p>
-                  <p className="text-[#554b66]">
-                    Build flare forecasting and trigger detection as core
-                    features.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="material-symbols-outlined mt-0.5 text-lg text-[#b8e3d6]">
-                  check_circle
-                </span>
-                <div>
-                  <p className="font-medium text-[#20132e]">
-                    Messaging: &ldquo;Know Before It Hits&rdquo;
-                  </p>
-                  <p className="text-[#554b66]">
-                    Lead with prediction/foresight, not energy savings.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="material-symbols-outlined mt-0.5 text-lg text-[#e8974f]">
-                  cancel
-                </span>
-                <div>
-                  <p className="font-medium text-[#20132e]">
-                    Deprioritize: &ldquo;Save Spoons&rdquo; Angle
-                  </p>
-                  <p className="text-[#554b66]">
-                    Energy-saving messaging underperformed significantly.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="material-symbols-outlined mt-0.5 text-lg text-[#a4c8d8]">
-                  arrow_forward
-                </span>
-                <div>
-                  <p className="font-medium text-[#20132e]">
-                    Next Test: Prediction Depth
-                  </p>
-                  <p className="text-[#554b66]">
-                    Testing: Flare Forecast vs Top Suspect vs Crash Prevention.
-                  </p>
-                </div>
-              </div>
+              <span className="font-semibold">
+                {filteredData.signups.length}
+              </span>
+              <span className="text-sm text-[#554b66]">total</span>
             </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-[#fdfbf9]">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
+                    Campaign
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
+                    Content
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
+                    Source
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-[#554b66]">
+                    Journey
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.signups.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-8 text-center text-[#554b66]"
+                    >
+                      No signups yet. Keep pushing!
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.signups.slice(0, 20).map((s) => (
+                    <tr
+                      key={s.id}
+                      className="cursor-pointer border-b border-[#20132e]/5 transition-colors hover:bg-[#d0bdf4]/10"
+                      onClick={() => setUserJourneyEmail(s.email)}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex size-8 items-center justify-center rounded-full bg-[#d0bdf4]/20 text-sm font-semibold text-[#20132e]">
+                            {(s.email || '?')[0].toUpperCase()}
+                          </div>
+                          <span className="font-medium text-[#20132e]">
+                            {s.email}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {s.utm_campaign || 'Direct'}
+                      </td>
+                      <td className="px-6 py-4 text-[#554b66]">
+                        {s.utm_content || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-[#554b66]">
+                        {s.utm_source || 'Direct'}
+                      </td>
+                      <td className="px-6 py-4 text-[#554b66]">
+                        {formatUTCDate(s.created_at)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-[#d0bdf4]">
+                          View{' '}
+                          <span className="material-symbols-outlined text-base">
+                            arrow_forward
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Prediction Depth Test v2 Section */}
-        <div className="mb-8 rounded-3xl border border-[#a4c8d8]/20 bg-gradient-to-br from-[#a4c8d8]/10 to-[#d0bdf4]/10 p-8">
+        {/* Onboarding Funnel (Onboarding1-4) */}
+        <div className="mb-8 rounded-3xl border border-[#34d399]/30 bg-gradient-to-br from-[#34d399]/5 to-[#d0bdf4]/5 p-6">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-[#a4c8d8]/20">
-              <span className="material-symbols-outlined text-2xl text-[#20132e]">
-                labs
+            <div className="flex size-10 items-center justify-center rounded-xl bg-[#34d399]/20">
+              <span className="material-symbols-outlined text-[#20132e]">
+                conversion_path
               </span>
             </div>
             <div>
-              <h2 className="font-display text-2xl font-semibold text-[#20132e]">
-                Prediction Depth Test v2
+              <h2 className="font-display text-xl font-semibold text-[#20132e]">
+                Onboarding Funnel (Onboarding1→4)
               </h2>
               <p className="text-sm text-[#554b66]">
-                Testing: Time vs Variable vs Action — Live Campaign
+                Real conversion path: Landing → Modal Q1-Q3 → OAuth Signup
               </p>
             </div>
           </div>
 
-          {/* Product Offering Performance Grid */}
-          <div className="mb-6 grid gap-4 md:grid-cols-4">
-            {[
-              {
-                name: 'Flare Forecast',
-                product: 'flare-forecast',
-                icon: 'cloud',
-                color: 'purple',
-              },
-              {
-                name: 'Top Suspect',
-                product: 'top-suspect',
-                icon: 'search',
-                color: 'peach',
-              },
-              {
-                name: 'Crash Prevention',
-                product: 'crash-prevention',
-                icon: 'battery_horiz_075',
-                color: 'mint',
-              },
-              {
-                name: 'Spoon Saver',
-                product: 'spoon-saver',
-                icon: 'bolt',
-                color: 'blue',
-              },
-            ].map((item) => {
-              const metrics = getPredictionMetrics(item.product);
-              const colorClass =
-                item.color === 'purple'
-                  ? 'border-[#d0bdf4]/20'
-                  : item.color === 'peach'
-                    ? 'border-[#e8974f]/20'
-                    : item.color === 'mint'
-                      ? 'border-[#b8e3d6]/30'
-                      : 'border-[#a4c8d8]/20';
-              const iconColor =
-                item.color === 'purple'
-                  ? 'text-[#d0bdf4]'
-                  : item.color === 'peach'
-                    ? 'text-[#e8974f]'
-                    : item.color === 'mint'
-                      ? 'text-teal-600'
-                      : 'text-[#a4c8d8]';
-
-              return (
-                <div
-                  key={item.product}
-                  className={`rounded-2xl border bg-white p-5 ${colorClass} transition-shadow hover:shadow-lg`}
-                >
-                  <div className="mb-3 flex items-center gap-2">
-                    <span className={`material-symbols-outlined ${iconColor}`}>
-                      {item.icon}
+          {/* Funnel Steps */}
+          <div className="mb-6 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#20132e]/10">
+                  <th className="py-2 text-left font-semibold text-[#20132e]">Stage</th>
+                  <th className="py-2 text-right font-semibold text-[#20132e]">Count</th>
+                  <th className="py-2 text-right font-semibold text-[#20132e]">Rate</th>
+                  <th className="py-2 text-right font-semibold text-[#554b66]">Drop-off</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-[#20132e]/5">
+                  <td className="py-3 text-[#20132e]">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-[#d0bdf4]/30 text-xs font-bold">0</span>
+                      Landing Visits
                     </span>
-                    <span className="text-sm font-semibold text-[#20132e]">
-                      {item.name}
+                  </td>
+                  <td className="py-3 text-right font-mono font-bold text-[#20132e]">{onboardingFunnel.landingVisits}</td>
+                  <td className="py-3 text-right text-[#554b66]">100%</td>
+                  <td className="py-3 text-right text-[#554b66]">—</td>
+                </tr>
+                <tr className="border-b border-[#20132e]/5">
+                  <td className="py-3 text-[#20132e]">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-[#e8974f]/30 text-xs font-bold">1</span>
+                      Onboarding1 (Modal Open)
                     </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#554b66]">Visits</span>
-                      <span className="font-semibold text-[#20132e]">
-                        {metrics.visits}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#554b66]">Modal Opens</span>
-                      <span className="font-semibold text-[#20132e]">
-                        {metrics.modals}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#554b66]">Completes</span>
-                      <span className="font-semibold text-[#b8e3d6]">
-                        {metrics.completes}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#554b66]">Signups</span>
-                      <span className="font-semibold text-teal-700">
-                        {metrics.signups}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  </td>
+                  <td className="py-3 text-right font-mono font-bold text-[#20132e]">{onboardingFunnel.modalOpens}</td>
+                  <td className="py-3 text-right text-[#e8974f]">{onboardingFunnel.modalOpenRate}%</td>
+                  <td className="py-3 text-right text-red-400">{(100 - parseFloat(onboardingFunnel.modalOpenRate)).toFixed(1)}%</td>
+                </tr>
+                <tr className="border-b border-[#20132e]/5">
+                  <td className="py-3 text-[#20132e]">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-[#e8974f]/40 text-xs font-bold">2</span>
+                      Onboarding2 (Q2 Reached)
+                    </span>
+                  </td>
+                  <td className="py-3 text-right font-mono font-bold text-[#20132e]">{onboardingFunnel.onboarding2}</td>
+                  <td className="py-3 text-right text-[#e8974f]">{onboardingFunnel.q2Rate}% of O1</td>
+                  <td className="py-3 text-right text-red-400">{onboardingFunnel.onboarding1 > 0 ? (100 - parseFloat(onboardingFunnel.q2Rate)).toFixed(1) : 0}%</td>
+                </tr>
+                <tr className="border-b border-[#20132e]/5">
+                  <td className="py-3 text-[#20132e]">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-[#e8974f]/50 text-xs font-bold">3</span>
+                      Onboarding3 (Q3 Reached)
+                    </span>
+                  </td>
+                  <td className="py-3 text-right font-mono font-bold text-[#20132e]">{onboardingFunnel.onboarding3}</td>
+                  <td className="py-3 text-right text-[#e8974f]">{onboardingFunnel.q3Rate}% of O2</td>
+                  <td className="py-3 text-right text-red-400">{onboardingFunnel.onboarding2 > 0 ? (100 - parseFloat(onboardingFunnel.q3Rate)).toFixed(1) : 0}%</td>
+                </tr>
+                <tr className="border-b border-[#20132e]/5 bg-[#34d399]/5">
+                  <td className="py-3 text-[#20132e]">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-[#34d399]/60 text-xs font-bold text-white">4</span>
+                      <strong>Onboarding4 (Completed + OAuth)</strong>
+                    </span>
+                  </td>
+                  <td className="py-3 text-right font-mono font-bold text-[#34d399]">{onboardingFunnel.onboarding4Completed}</td>
+                  <td className="py-3 text-right font-semibold text-[#34d399]">{onboardingFunnel.completionRate}% of opens</td>
+                  <td className="py-3 text-right text-red-400">{onboardingFunnel.modalOpens > 0 ? (100 - parseFloat(onboardingFunnel.completionRate)).toFixed(1) : 0}%</td>
+                </tr>
+                <tr>
+                  <td className="py-3 text-[#20132e]">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-full bg-[#34d399] text-xs font-bold text-white">✓</span>
+                      <strong>Unique Signups</strong>
+                    </span>
+                  </td>
+                  <td className="py-3 text-right font-mono font-bold text-[#34d399]">{onboardingFunnel.uniqueSignups}</td>
+                  <td className="py-3 text-right font-semibold text-[#34d399]">{onboardingFunnel.overallConversionRate}% of visits</td>
+                  <td className="py-3 text-right text-[#554b66]">—</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          {/* Modal Question Responses */}
-          <div className="rounded-2xl border border-[#20132e]/10 bg-white p-5">
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-[#20132e]">
-              <span className="material-symbols-outlined text-lg">ballot</span>
-              Modal Response Distribution
-            </h3>
-            {/* Info banner about flow change */}
-            <div className="mb-4 rounded-lg border border-[#d0bdf4]/30 bg-[#d0bdf4]/10 p-3">
-              <p className="flex items-center gap-2 text-xs text-[#554b66]">
-                <span className="material-symbols-outlined text-sm">info</span>
-                <span>
-                  <strong>Flow Update (Jan 13, 2026):</strong> New system has 3 questions (Q1→Q2→Q3→Conversion).
-                  Q4 data below is from the old 4-question flow only.
-                </span>
-              </p>
+          {/* Key Insights */}
+          <div className="grid grid-cols-2 gap-4 rounded-xl bg-white/50 p-4 md:grid-cols-4">
+            <div className="text-center">
+              <p className="font-display text-2xl font-bold text-[#e8974f]">{onboardingFunnel.modalOpenRate}%</p>
+              <p className="text-xs text-[#554b66]">Modal Open Rate</p>
             </div>
-            <div className="grid gap-6 md:grid-cols-4">
-              {[
-                { key: 'q1_entry', label: 'Q1: What brings you here?', legacy: false },
-                { key: 'q2_pain_point', label: 'Q2: Hardest part?', legacy: false },
-                { key: 'q3_product_specific', label: 'Q3: Condition + Baseline', legacy: false },
-                { key: 'q4_product_specific', label: 'Q4: Legacy (old flow only)', legacy: true },
-              ].map((q) => {
-                const distribution = getQuestionDistribution(q.key);
-                const colors = [
-                  'bg-[#d0bdf4]',
-                  'bg-[#e8974f]',
-                  'bg-[#b8e3d6]',
-                  'bg-[#a4c8d8]',
-                  'bg-[#f4c4c4]',
-                ];
-
-                return (
-                  <div key={q.key} className={q.legacy ? 'opacity-60' : ''}>
-                    <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#554b66]">
-                      {q.label}
-                      {q.legacy && (
-                        <span className="rounded bg-[#e8974f]/20 px-1.5 py-0.5 text-[10px] font-medium text-[#e8974f]">
-                          DEPRECATED
-                        </span>
-                      )}
-                    </p>
-                    <div className="space-y-2">
-                      {distribution.length === 0 ? (
-                        <p className="text-xs text-[#554b66]">
-                          {q.legacy ? 'No legacy data' : 'No responses yet'}
-                        </p>
-                      ) : (
-                        distribution.map((item, i) => (
-                          <div
-                            key={item.label}
-                            className="flex items-center gap-2"
-                          >
-                            <div className="h-2 w-16 overflow-hidden rounded-full bg-[#fdfbf9]">
-                              <div
-                                className={`${colors[i % colors.length]}/60 h-full rounded-full`}
-                                style={{ width: `${item.percentage}%` }}
-                              />
-                            </div>
-                            <span className="flex-1 truncate text-xs text-[#554b66]">
-                              {item.label}
-                            </span>
-                            <span className="text-xs font-semibold text-[#20132e]">
-                              {item.count}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="text-center">
+              <p className="font-display text-2xl font-bold text-[#d0bdf4]">{onboardingFunnel.onboarding1 > 0 ? ((onboardingFunnel.onboarding3 / onboardingFunnel.onboarding1) * 100).toFixed(1) : 0}%</p>
+              <p className="text-xs text-[#554b66]">Q1→Q3 Retention</p>
             </div>
-          </div>
-
-          {/* Persona Performance */}
-          <div className="mt-6 rounded-2xl border border-[#20132e]/10 bg-white p-5">
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-[#20132e]">
-              <span className="material-symbols-outlined text-lg">group</span>
-              Persona A/B Test Results
-            </h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                { name: 'Maya', color: 'text-[#d0bdf4]' },
-                { name: 'Jordan', color: 'text-[#e8974f]' },
-                { name: 'Marcus', color: 'text-[#b8e3d6]' },
-              ].map((persona) => (
-                <div
-                  key={persona.name}
-                  className="rounded-xl bg-[#fdfbf9] p-4 text-center"
-                >
-                  <p className="font-semibold text-[#20132e]">{persona.name}</p>
-                  <p
-                    className={`font-display text-2xl font-bold ${persona.color} mt-1`}
-                  >
-                    {getPersonaRate(persona.name.toLowerCase())}
-                  </p>
-                  <p className="text-xs text-[#554b66]">conversion rate</p>
-                </div>
-              ))}
+            <div className="text-center">
+              <p className="font-display text-2xl font-bold text-[#34d399]">{onboardingFunnel.completionRate}%</p>
+              <p className="text-xs text-[#554b66]">Completion Rate</p>
+            </div>
+            <div className="text-center">
+              <p className="font-display text-2xl font-bold text-[#20132e]">{onboardingFunnel.overallConversionRate}%</p>
+              <p className="text-xs text-[#554b66]">Overall Conversion</p>
             </div>
           </div>
         </div>
@@ -1935,7 +1911,7 @@ export default function TrackingPage() {
           </div>
         </div>
 
-        {/* Conversion Funnel */}
+        {/* Legacy Conversion Funnel (kept for backwards compatibility) */}
         <div className="mb-8 rounded-3xl border border-[#20132e]/5 bg-white p-6">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-[#d0bdf4]/20">
@@ -1945,10 +1921,10 @@ export default function TrackingPage() {
             </div>
             <div>
               <h2 className="font-display text-xl font-semibold text-[#20132e]">
-                Conversion Funnel
+                Legacy Funnel (Page Views → CTA Clicks)
               </h2>
               <p className="text-sm text-[#554b66]">
-                Track visitors through to Beta signup
+                Marketing events based tracking (deprecated)
               </p>
             </div>
           </div>
@@ -2270,106 +2246,6 @@ export default function TrackingPage() {
                       </tr>
                     );
                   })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Recent Signups */}
-        <div className="overflow-hidden rounded-3xl border border-[#20132e]/5 bg-white">
-          <div className="flex items-center justify-between border-b border-[#20132e]/5 px-6 py-4">
-            <div>
-              <h2 className="font-display text-xl font-semibold text-[#20132e]">
-                Recent Signups
-              </h2>
-              <p className="mt-1 text-sm text-[#554b66]">
-                Click on a user to view their complete journey
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-[#b8e3d6]">
-              <span className="material-symbols-outlined text-lg">
-                celebration
-              </span>
-              <span className="font-semibold">
-                {filteredData.signups.length}
-              </span>
-              <span className="text-sm text-[#554b66]">total</span>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#fdfbf9]">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
-                    Campaign
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
-                    Content
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
-                    Source
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-[#554b66]">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-[#554b66]">
-                    Journey
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.signups.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-6 py-8 text-center text-[#554b66]"
-                    >
-                      No signups yet. Keep pushing!
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.signups.slice(0, 20).map((s) => (
-                    <tr
-                      key={s.id}
-                      className="cursor-pointer border-b border-[#20132e]/5 transition-colors hover:bg-[#d0bdf4]/10"
-                      onClick={() => setUserJourneyEmail(s.email)}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex size-8 items-center justify-center rounded-full bg-[#d0bdf4]/20 text-sm font-semibold text-[#20132e]">
-                            {(s.email || '?')[0].toUpperCase()}
-                          </div>
-                          <span className="font-medium text-[#20132e]">
-                            {s.email}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {s.utm_campaign || 'Direct'}
-                      </td>
-                      <td className="px-6 py-4 text-[#554b66]">
-                        {s.utm_content || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-[#554b66]">
-                        {s.utm_source || 'Direct'}
-                      </td>
-                      <td className="px-6 py-4 text-[#554b66]">
-                        {formatUTCDate(s.created_at)}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="inline-flex items-center gap-1 text-sm font-medium text-[#d0bdf4]">
-                          View{' '}
-                          <span className="material-symbols-outlined text-base">
-                            arrow_forward
-                          </span>
-                        </span>
-                      </td>
-                    </tr>
-                  ))
                 )}
               </tbody>
             </table>

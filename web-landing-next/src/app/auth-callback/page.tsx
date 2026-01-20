@@ -87,6 +87,9 @@ export default function AuthCallbackPage() {
         sessionStorage.getItem('product_offering') || null;
       const sessionId = sessionStorage.getItem('session_id') || null;
 
+      // Get modal_session_id for tracing full journey
+      const modalSessionId = sessionStorage.getItem('modal_session_id');
+
       // Record signup in beta_signups for marketing attribution
       await supabase.from('beta_signups').insert({
         email: user.email,
@@ -113,9 +116,20 @@ export default function AuthCallbackPage() {
         session_id: sessionId,
       });
 
-      // Update AI generation as converted if modal_session_id exists
-      const modalSessionId = sessionStorage.getItem('modal_session_id');
+      // Update modal_session and AI generation as converted if modal_session_id exists
       if (modalSessionId) {
+        // CRITICAL: Mark modal_session as completed
+        // Why this exists: This was missing, causing modal_sessions.completed to always be false
+        // even when users successfully signed up via Google OAuth.
+        await supabase
+          .from('modal_sessions')
+          .update({
+            completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', modalSessionId);
+
+        // Also mark AI generation as converted (existing behavior)
         await supabase
           .from('ai_generations')
           .update({ converted: true })
