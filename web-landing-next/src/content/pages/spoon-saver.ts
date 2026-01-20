@@ -40,7 +40,6 @@ export const spoonSaverContent: LandingPageContent = {
     'Low energy day',
     'Brain fog',
     'Flare day',
-    'Pain spike',
     'Overwhelmed',
     'Chronic Pain',
   ],
