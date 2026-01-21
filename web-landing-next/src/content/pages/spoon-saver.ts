@@ -23,7 +23,7 @@ export const spoonSaverContent: LandingPageContent = {
 
   hero: {
     headlines: {
-      default: 'Log how you’re feeling\nwithout forms,\ntracking, or effort',
+      default: 'A tracker for illness,\nnot fitness!',
       alt1: 'No streaks.\nNo sad faces.\nNo guilt.',
       alt2: 'Built for days\nwhen you can\nbarely function.',
       altFocus: 'A tracker\nthat finally\ngets it.',
