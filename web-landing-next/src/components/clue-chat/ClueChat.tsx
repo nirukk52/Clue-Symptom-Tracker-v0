@@ -15,6 +15,7 @@ import type { ChatMessage, ChatUser, NavItem } from './types';
  * Why this exists: This is the core product interface. Matches aicofounder.com
  * design with mobile-first chat and desktop two-panel layout (chat + canvas).
  * Users interact with an AI assistant to track symptoms and manage conditions.
+ * Supports Chat/Calendar toggle to switch between conversation and calendar view.
  */
 
 interface ClueChatProps {
@@ -30,6 +31,7 @@ export function ClueChat({
 }: ClueChatProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNavId, setActiveNavId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState<'chat' | 'calendar'>('chat');
   const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -92,11 +94,16 @@ export function ClueChat({
         {/* Header with menu - visible on mobile only */}
         <ChatHeader onMenuClick={handleMenuClick} />
 
-        {/* Messages */}
-        <ChatMessages messages={messages} user={user} isTyping={isTyping} />
+        {/* Messages or Calendar view based on active tab */}
+        <ChatMessages messages={messages} user={user} isTyping={isTyping} activeTab={activeTab} />
 
-        {/* Input */}
-        <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+        {/* Input with Chat/Calendar toggle */}
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={isTyping}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
       </div>
 
       {/* Canvas - desktop only, blank for now */}

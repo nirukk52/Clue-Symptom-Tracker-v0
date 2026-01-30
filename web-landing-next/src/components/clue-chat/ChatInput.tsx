@@ -8,7 +8,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  * ChatInput - Input area for ClueChat
  *
  * Why this exists: Provides the message input with attachment button,
- * Chat/Canvas tab toggle, and coral send button. Matches aicofounder.com
+ * Chat/Calendar tab toggle, and coral send button. Matches aicofounder.com
  * design with text input on top and controls row below.
  */
 
@@ -16,15 +16,18 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  activeTab: 'chat' | 'calendar';
+  onTabChange: (tab: 'chat' | 'calendar') => void;
 }
 
 export function ChatInput({
   onSendMessage,
   disabled = false,
   placeholder = 'Type a message...',
+  activeTab,
+  onTabChange,
 }: ChatInputProps) {
   const [inputValue, setInputValue] = useState('');
-  const [activeTab, setActiveTab] = useState<'chat' | 'canvas'>('chat');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus input on mount and when not disabled
@@ -89,7 +92,7 @@ export function ChatInput({
             <MaterialIcon name="attach_file" size="sm" />
           </button>
 
-          {/* Chat/Canvas tabs - gray pill with animated white slider */}
+          {/* Chat/Calendar tabs - gray pill with animated white slider */}
           <div className="flex-1 flex rounded-full bg-[#e8e8e8] p-1 relative">
             {/* Animated slider background */}
             <div
@@ -105,20 +108,20 @@ export function ChatInput({
                   ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
-              onClick={() => setActiveTab('chat')}
+              onClick={() => onTabChange('chat')}
             >
               Chat
             </button>
             <button
               type="button"
               className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-colors duration-200 relative z-10 ${
-                activeTab === 'canvas'
+                activeTab === 'calendar'
                   ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
-              onClick={() => setActiveTab('canvas')}
+              onClick={() => onTabChange('calendar')}
             >
-              Canvas
+              Calendar
             </button>
           </div>
 
