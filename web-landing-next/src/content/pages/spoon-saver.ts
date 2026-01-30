@@ -29,7 +29,7 @@ export const spoonSaverContent: LandingPageContent = {
       altFocus: 'A tracker\nthat finally\ngets it.',
     },
     subheadline:
-      "Bad days are hard to explain. Just say what’s going on — we’ll help find patterns and which issue to tackle first.",
+      "Just say what’s going on — we’ll help find patterns and which issue to tackle first.",
     ctaText: 'Just say how today feels',
     ctaId: 'hero_quick_checkin',
     altCtaText: 'See how it works on bad days',
@@ -37,7 +37,6 @@ export const spoonSaverContent: LandingPageContent = {
   },
 
   conditions: [
-    'Low energy day',
     'Brain fog',
     'Flare day',
     'Overwhelmed',
