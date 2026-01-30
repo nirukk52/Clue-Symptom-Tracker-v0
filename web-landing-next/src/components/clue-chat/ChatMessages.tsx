@@ -65,16 +65,16 @@ function getEntryColor(type: TimelineEntryType): { icon: string; bg: string; bor
  * Why this exists: Status badges provide quick feedback on intervention outcomes
  * Uses softer colors to avoid judgmental appearance per chronic illness UX guidelines
  */
-function getStatusStyle(status: TimelineEntryStatus): { text: string; bg: string } {
-  const styleMap: Record<TimelineEntryStatus, { text: string; bg: string }> = {
-    start: { text: 'text-slate-500', bg: 'bg-slate-50' },
-    ongoing: { text: 'text-blue-500', bg: 'bg-blue-50' },
-    tolerated: { text: 'text-teal-600', bg: 'bg-teal-50' },
-    issue: { text: 'text-red-400', bg: 'bg-red-50/70' },
-    current: { text: 'text-amber-500', bg: 'bg-amber-50' },
-    completed: { text: 'text-slate-400', bg: 'bg-slate-50' },
+function getStatusStyle(status: TimelineEntryStatus): { text: string; bg: string; border: string } {
+  const styleMap: Record<TimelineEntryStatus, { text: string; bg: string; border: string }> = {
+    start: { text: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200' },
+    ongoing: { text: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
+    tolerated: { text: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-200' },
+    issue: { text: 'text-red-400', bg: 'bg-red-50/70', border: 'border-red-200' },
+    current: { text: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+    completed: { text: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200' },
   };
-  return styleMap[status] || { text: 'text-gray-500', bg: 'bg-gray-50' };
+  return styleMap[status] || { text: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-200' };
 }
 
 /**
@@ -124,7 +124,7 @@ function TimelineEntryCard({ entry, isLast }: { entry: TimelineEntry; isLast: bo
 
           {/* Status badge inline */}
           {statusStyle && entry.status && (
-            <span className={`text-[9px] font-medium ${statusStyle.text} ${statusStyle.bg} px-1 py-px rounded flex items-center gap-0.5`}>
+            <span className={`text-[9px] font-medium ${statusStyle.text} ${statusStyle.bg} px-1 py-px rounded flex items-center gap-0.5 border ${statusStyle.border}`}>
               {entry.status === 'tolerated' && <span className="text-teal-500">✓</span>}
               {entry.status === 'issue' && <span className="text-red-400">!</span>}
               {entry.status === 'ongoing' && <span className="text-blue-400">◷</span>}
