@@ -89,13 +89,20 @@ export function ChatInput({
             <MaterialIcon name="attach_file" size="sm" />
           </button>
 
-          {/* Chat/Canvas tabs - gray pill with white selected indicator */}
-          <div className="flex-1 flex rounded-full bg-[#e8e8e8] p-1">
+          {/* Chat/Canvas tabs - gray pill with animated white slider */}
+          <div className="flex-1 flex rounded-full bg-[#e8e8e8] p-1 relative">
+            {/* Animated slider background */}
+            <div
+              className="absolute inset-1 w-[calc(50%-4px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-out"
+              style={{
+                left: activeTab === 'chat' ? '4px' : 'calc(50% + 0px)',
+              }}
+            />
             <button
               type="button"
-              className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-all ${
+              className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-colors duration-200 relative z-10 ${
                 activeTab === 'chat'
-                  ? 'bg-white text-primary shadow-sm'
+                  ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
               onClick={() => setActiveTab('chat')}
@@ -104,9 +111,9 @@ export function ChatInput({
             </button>
             <button
               type="button"
-              className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-all ${
+              className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-colors duration-200 relative z-10 ${
                 activeTab === 'canvas'
-                  ? 'bg-white text-primary shadow-sm'
+                  ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
               onClick={() => setActiveTab('canvas')}
