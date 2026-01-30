@@ -31,10 +31,11 @@ export type NavItem = {
 
 /** Navigation items for Clue symptom tracker sidebar */
 export const CLUE_NAV_ITEMS: NavItem[] = [
-  { id: 'symptoms', label: 'Symptoms', icon: 'monitor_heart' },
-  { id: 'insights', label: 'Insights', icon: 'lightbulb' },
-  { id: 'history', label: 'History', icon: 'history' },
-  { id: 'doctor-pack', label: 'Doctor Summary', icon: 'medical_services' },
+  { id: 'chat', label: 'Chat', icon: 'chat_bubble' },
+  { id: 'insights', label: 'Insights', icon: 'auto_awesome' },
+  { id: 'doctor-pack', label: 'Doctor\nSummary', icon: 'stethoscope' },
+  { id: 'quick-entry', label: 'Quick\nEntry', icon: 'add_circle' },
+  { id: 'flare-mode', label: 'Flare\nMode', icon: 'local_fire_department' },
 ];
 
 /**
@@ -77,4 +78,23 @@ export interface TimelineEntry {
   duration?: string; // e.g., "4 months", "1 week"
   dosage?: string; // e.g., "150mg (2 billion CFU)"
   intensity?: 1 | 2 | 3 | 4 | 5; // For symptoms
+}
+
+/**
+ * InsightStatus - Indicates the review state of an AI insight
+ * Why this exists: Tracks whether insights have been validated by practitioners
+ */
+export type InsightStatus = 'pending' | 'validated' | 'correcting';
+
+/**
+ * Insight - An AI-generated health insight or suggestion
+ * Why this exists: Represents actionable insights derived from chat conversations
+ * and symptom tracking data. Users can validate, correct, or delete these.
+ */
+export interface Insight {
+  id: string;
+  content: string;
+  status: InsightStatus;
+  validatedAt?: Date;
+  validatedBy?: string;
 }

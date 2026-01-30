@@ -7,6 +7,7 @@ import { ChatHeader } from './ChatHeader';
 import { ChatInput } from './ChatInput';
 import { ChatMessages } from './ChatMessages';
 import { ChatSidebar } from './ChatSidebar';
+import { InsightsPanel } from './InsightsPanel';
 import type { ChatMessage, ChatUser, NavItem } from './types';
 
 /**
@@ -106,8 +107,8 @@ export function ClueChat({
         />
       </div>
 
-      {/* Canvas - desktop only, blank for now */}
-      <ChatCanvas />
+      {/* Right panel - Canvas or Insights based on nav selection */}
+      {activeNavId === 'insights' ? <InsightsPanel /> : <ChatCanvas />}
     </div>
   );
 }
