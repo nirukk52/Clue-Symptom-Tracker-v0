@@ -8,7 +8,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  * ChatInput - Input area for ClueChat
  *
  * Why this exists: Provides the message input with attachment button,
- * Chat/Calendar tab toggle, and coral send button. Matches aicofounder.com
+ * Chat/Canvas tab toggle, and coral send button. Matches aicofounder.com
  * design with text input on top and controls row below.
  */
 
@@ -16,18 +16,15 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
-  activeTab: 'chat' | 'timeline';
-  onTabChange: (tab: 'chat' | 'timeline') => void;
 }
 
 export function ChatInput({
   onSendMessage,
   disabled = false,
   placeholder = 'Type a message...',
-  activeTab,
-  onTabChange,
 }: ChatInputProps) {
   const [inputValue, setInputValue] = useState('');
+  const [activeTab, setActiveTab] = useState<'chat' | 'canvas'>('chat');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus input on mount and when not disabled
@@ -92,7 +89,7 @@ export function ChatInput({
             <MaterialIcon name="attach_file" size="sm" />
           </button>
 
-          {/* Chat/Timeline tabs - gray pill with animated white slider */}
+          {/* Chat/Canvas tabs - gray pill with animated white slider */}
           <div className="flex-1 flex rounded-full bg-[#e8e8e8] p-1 relative">
             {/* Animated slider background */}
             <div
@@ -108,27 +105,27 @@ export function ChatInput({
                   ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
-              onClick={() => onTabChange('chat')}
+              onClick={() => setActiveTab('chat')}
             >
               Chat
             </button>
             <button
               type="button"
               className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-colors duration-200 relative z-10 ${
-                activeTab === 'timeline'
+                activeTab === 'canvas'
                   ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
-              onClick={() => onTabChange('timeline')}
+              onClick={() => setActiveTab('canvas')}
             >
-              Timeline
+              Canvas
             </button>
           </div>
 
           {/* Send button - coral/peach colored squircle */}
           <button
             type="button"
-            className="w-10 h-10 rounded-[16px] border-none bg-accent-peach text-white flex items-center justify-center cursor-pointer hover:brightness-105 hover:shadow-[0_4px_12px_-2px_rgba(232,151,79,0.35)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="w-10 h-10 rounded-[16px] border-none bg-accent-peach brightness-95 text-white flex items-center justify-center cursor-pointer hover:brightness-105 hover:shadow-[0_4px_12px_-2px_rgba(232,151,79,0.35)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             onClick={handleSend}
             disabled={!inputValue.trim() || disabled}
             aria-label="Send message"

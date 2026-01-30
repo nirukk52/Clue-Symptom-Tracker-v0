@@ -1,13 +1,14 @@
 'use client';
 
-import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { SpoonBurgerIcon } from '@/components/ui/SpoonBurgerIcon';
 
 /**
  * ChatHeader - Minimal header with hamburger menu
  *
  * Why this exists: Provides a clean, minimal header that matches the
- * aicofounder design. Hamburger menu visible on mobile only (sidebar
- * is always visible on desktop).
+ * aicofounder design. Uses the SpoonBurgerIcon (three spoons) for brand
+ * consistency with the landing page. Hamburger menu visible on mobile
+ * only (sidebar is always visible on desktop).
  */
 
 interface ChatHeaderProps {
@@ -23,7 +24,7 @@ export function ChatHeader({ onMenuClick }: ChatHeaderProps) {
         onClick={onMenuClick}
         aria-label="Open menu"
       >
-        <MaterialIcon name="menu" size="md" />
+        <SpoonBurgerIcon size={24} />
       </button>
     </header>
   );
