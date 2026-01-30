@@ -16,8 +16,8 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
-  activeTab: 'chat' | 'calendar';
-  onTabChange: (tab: 'chat' | 'calendar') => void;
+  activeTab: 'chat' | 'timeline';
+  onTabChange: (tab: 'chat' | 'timeline') => void;
 }
 
 export function ChatInput({
@@ -92,7 +92,7 @@ export function ChatInput({
             <MaterialIcon name="attach_file" size="sm" />
           </button>
 
-          {/* Chat/Calendar tabs - gray pill with animated white slider */}
+          {/* Chat/Timeline tabs - gray pill with animated white slider */}
           <div className="flex-1 flex rounded-full bg-[#e8e8e8] p-1 relative">
             {/* Animated slider background */}
             <div
@@ -115,13 +115,13 @@ export function ChatInput({
             <button
               type="button"
               className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-colors duration-200 relative z-10 ${
-                activeTab === 'calendar'
+                activeTab === 'timeline'
                   ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
-              onClick={() => onTabChange('calendar')}
+              onClick={() => onTabChange('timeline')}
             >
-              Calendar
+              Timeline
             </button>
           </div>
 

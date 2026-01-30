@@ -29,11 +29,52 @@ export type NavItem = {
   href?: string;
 };
 
-/** Navigation items matching aicofounder design (lightbulb, target, beaker, monitor, rocket icons) */
+/** Navigation items for Clue symptom tracker sidebar */
 export const CLUE_NAV_ITEMS: NavItem[] = [
-  { id: 'ideation', label: 'Ideation', icon: 'lightbulb' },
-  { id: 'research', label: 'Research', icon: 'my_location' },
-  { id: 'solution', label: 'Solution', icon: 'science' },
-  { id: 'website', label: 'Website', icon: 'desktop_windows' },
-  { id: 'marketing', label: 'Marketing', icon: 'rocket_launch' },
+  { id: 'symptoms', label: 'Symptoms', icon: 'monitor_heart' },
+  { id: 'insights', label: 'Insights', icon: 'lightbulb' },
+  { id: 'history', label: 'History', icon: 'history' },
+  { id: 'doctor-pack', label: 'Doctor Summary', icon: 'medical_services' },
 ];
+
+/**
+ * Timeline entry type - categorizes different kinds of health events
+ * Why this exists: Different entry types need different icons and styling
+ */
+export type TimelineEntryType =
+  | 'symptom'
+  | 'medication'
+  | 'supplement'
+  | 'diet'
+  | 'test'
+  | 'reaction'
+  | 'note';
+
+/**
+ * Timeline entry status - indicates the state of an intervention or symptom
+ * Why this exists: Provides quick visual feedback on whether something helped or caused issues
+ */
+export type TimelineEntryStatus =
+  | 'start'
+  | 'ongoing'
+  | 'tolerated'
+  | 'issue'
+  | 'current'
+  | 'completed';
+
+/**
+ * TimelineEntry - A single entry in the user's daily timeline
+ * Why this exists: Represents health events extracted from chat conversations,
+ * displayed chronologically to help users track patterns throughout the day.
+ */
+export interface TimelineEntry {
+  id: string;
+  type: TimelineEntryType;
+  title: string;
+  description?: string;
+  time?: string; // e.g., "2:00 PM" - optional for long-running interventions
+  status?: TimelineEntryStatus;
+  duration?: string; // e.g., "4 months", "1 week"
+  dosage?: string; // e.g., "150mg (2 billion CFU)"
+  intensity?: 1 | 2 | 3 | 4 | 5; // For symptoms
+}
