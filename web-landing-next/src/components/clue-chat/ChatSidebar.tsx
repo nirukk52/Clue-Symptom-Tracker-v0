@@ -108,13 +108,18 @@ export function ChatSidebar({
             <div key={item.id} className="w-full">
               <button
                 type="button"
-                className={`flex flex-col items-center justify-center gap-1 py-3 px-1 w-full border-none bg-transparent cursor-pointer rounded-lg transition-all ${
+                className={`relative flex flex-col items-center justify-center gap-1 py-3 px-1 w-full border-none bg-transparent cursor-pointer rounded-lg transition-all ${
                   activeNavId === item.id
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/15 text-primary font-semibold'
                     : 'text-text-muted hover:bg-primary/5 hover:text-primary'
                 }`}
                 onClick={() => onNavClick?.(item)}
+                aria-current={activeNavId === item.id ? 'page' : undefined}
               >
+                {/* Active indicator bar */}
+                {activeNavId === item.id && (
+                  <span className="absolute left-0 top-2 bottom-2 w-[3px] bg-primary rounded-r-full" />
+                )}
                 <MaterialIcon name={item.icon} size="sm" />
                 <span className="text-[9px] font-medium text-center leading-tight whitespace-pre-line">
                   {item.label}
@@ -128,11 +133,32 @@ export function ChatSidebar({
           ))}
         </nav>
 
-        {/* Spacer to push login button to bottom */}
+        {/* Spacer to push login button/avatar to bottom */}
         <div className="flex-1" />
 
-        {/* Login button - only shown when logged out */}
-        {!isLoggedIn && (
+        {/* Login button when logged out, user avatar when logged in */}
+        {isLoggedIn ? (
+          <div
+            className="w-10 h-10 rounded-full bg-primary/10 border-2 border-solid border-primary/30 flex items-center justify-center overflow-hidden relative"
+            title={user.email ?? 'Logged in'}
+            aria-label="Your profile"
+          >
+            {user.avatarUrl && (
+              <img
+                src={user.avatarUrl}
+                alt=""
+                className="w-full h-full object-cover absolute inset-0"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+            <span className="text-primary text-xs font-semibold">
+              {user.initials}
+            </span>
+          </div>
+        ) : (
           <button
             type="button"
             onClick={handleGoogleSignIn}

@@ -6,6 +6,15 @@
  * UI design based on aicofounder.com chat interface.
  */
 
+/**
+ * Interactive component types that can appear in chat messages.
+ * Why this exists: Enables rich interactions beyond plain text.
+ * These are triggered by tool calls (e.g. ask_severity) rather than regex detection.
+ */
+export type ChatInteractiveComponent =
+  | { type: 'severity-slider'; symptom: string; prompt?: string; initialValue?: number }
+  | { type: 'quick-log'; options: string[] };
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -14,6 +23,10 @@ export interface ChatMessage {
   /** For system notifications like "Added to canvas" */
   isNotification?: boolean;
   notificationIcon?: string;
+  /** Interactive component to render after the message text */
+  interactive?: ChatInteractiveComponent;
+  /** Whether the interactive component has been completed */
+  interactiveCompleted?: boolean;
 }
 
 export interface ChatUser {
@@ -49,7 +62,8 @@ export type TimelineEntryType =
   | 'diet'
   | 'test'
   | 'reaction'
-  | 'note';
+  | 'note'
+  | 'mood';
 
 /**
  * Timeline entry status - indicates the state of an intervention or symptom

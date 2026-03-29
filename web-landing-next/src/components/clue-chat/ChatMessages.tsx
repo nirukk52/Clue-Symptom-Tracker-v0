@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { supabase } from '@/lib/supabase';
 
+import { SeveritySlider } from './SeveritySlider';
 import type { ChatMessage, ChatUser, TimelineEntry, TimelineEntryStatus, TimelineEntryType } from './types';
 
 /**
@@ -23,6 +25,8 @@ interface ChatMessagesProps {
   user: ChatUser;
   isTyping?: boolean;
   activeTab: 'chat' | 'timeline';
+  /** Callback when severity slider is submitted */
+  onSeveritySubmit?: (messageId: string, severity: number) => void;
 }
 
 /**
@@ -38,6 +42,7 @@ function getEntryIcon(type: TimelineEntryType): string {
     test: 'science',
     reaction: 'warning',
     note: 'edit_note',
+    mood: 'mood',
   };
   return iconMap[type] || 'circle';
 }
@@ -56,6 +61,7 @@ function getEntryColor(type: TimelineEntryType): { icon: string; bg: string; bor
     test: { icon: 'text-slate-400/80', bg: 'bg-slate-50/60', border: 'border-slate-100' },
     reaction: { icon: 'text-red-300/80', bg: 'bg-red-50/40', border: 'border-red-100' },
     note: { icon: 'text-violet-400/80', bg: 'bg-violet-50/50', border: 'border-violet-100' },
+    mood: { icon: 'text-purple-400/80', bg: 'bg-purple-50/50', border: 'border-purple-100' },
   };
   return colorMap[type] || { icon: 'text-gray-400/80', bg: 'bg-gray-50', border: 'border-gray-200' };
 }
@@ -270,57 +276,102 @@ const MOCK_TIMELINE_ENTRIES: TimelineEntry[] = [
 function TimelineView() {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
+  const [entries, setEntries] = useState<TimelineEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Generate days of current week (Mon-Sun)
-  const getWeekDays = () => {
-    const curr = new Date(today);
-    const first = curr.getDate() - curr.getDay() + 1; // Monday
+  const getCalendarDays = () => {
     const days = [];
-
-    for (let i = 0; i < 7; i++) {
+    const curr = new Date(today);
+    // Show 14 days before and 14 days after today (29 days total)
+    for (let i = -14; i <= 14; i++) {
       const day = new Date(curr);
-      day.setDate(first + i);
+      day.setDate(curr.getDate() + i);
       days.push(day);
     }
     return days;
   };
 
-  const weekDays = getWeekDays();
-  const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const calendarDays = getCalendarDays();
+  const getDayLabel = (date: Date) => ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.getDay()];
 
-  const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString();
-  };
+  const isToday = (date: Date) => date.toDateString() === today.toDateString();
+  const isSelected = (date: Date) => date.toDateString() === selectedDate.toDateString();
 
-  const isSelected = (date: Date) => {
-    return date.toDateString() === selectedDate.toDateString();
-  };
+  /** Fetch timeline entries from Supabase for the selected date */
+  const fetchEntries = useCallback(async (date: Date) => {
+    setIsLoading(true);
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('timeline_entries')
+        .select('*')
+        .gte('entry_time', `${dateStr}T00:00:00`)
+        .lte('entry_time', `${dateStr}T23:59:59`)
+        .order('entry_time', { ascending: true });
 
-  const formatDateHeader = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    };
-    return date.toLocaleDateString('en-US', options);
-  };
+      if (data && data.length > 0) {
+        setEntries(
+          data.map((e: Record<string, unknown>) => ({
+            id: e.id as string,
+            type: e.type as TimelineEntryType,
+            title: e.title as string,
+            description: (e.description as string) || undefined,
+            time: e.entry_time
+              ? new Date(e.entry_time as string).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })
+              : undefined,
+            status: (e.status as TimelineEntryStatus) || undefined,
+            severity: (e.severity as 1 | 2 | 3 | 4 | 5) || undefined,
+            dosage: (e.dosage as string) || undefined,
+            duration: (e.duration as string) || undefined,
+          }))
+        );
+      } else {
+        setEntries([]);
+      }
+    } catch {
+      setEntries([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  // TODO: Fetch entries for selected date from chat extraction
-  const entries = MOCK_TIMELINE_ENTRIES;
+  useEffect(() => {
+    fetchEntries(selectedDate);
+  }, [selectedDate, fetchEntries]);
+
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to today on mount
+  useEffect(() => {
+    if (calendarRef.current) {
+      const todayButton = calendarRef.current.querySelector('[data-today="true"]');
+      if (todayButton) {
+        todayButton.scrollIntoView({ inline: 'center', behavior: 'instant' });
+      }
+    }
+  }, []);
 
   return (
     <div className="flex-1 overflow-y-auto flex flex-col">
-      {/* Week strip - compact */}
-      <div className="flex justify-between px-3 pb-3">
-        {weekDays.map((day, index) => (
+      {/* Calendar strip - scrollable */}
+      <div
+        ref={calendarRef}
+        className="flex gap-1 px-3 pb-3 overflow-x-auto scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {calendarDays.map((day) => (
           <button
             key={day.toISOString()}
+            data-today={isToday(day) ? 'true' : undefined}
             onClick={() => setSelectedDate(day)}
-            className={`flex flex-col items-center gap-1 px-1.5 py-1.5 rounded-lg transition-all ${
+            className={`flex flex-col items-center gap-1 px-1.5 py-1.5 rounded-lg transition-all shrink-0 ${
               isSelected(day) ? 'bg-pill-selected' : 'hover:bg-pill-hover'
             }`}
           >
-            <span className="text-text-muted text-[10px] font-medium">{dayLabels[index]}</span>
+            <span className="text-text-muted text-[10px] font-medium">{getDayLabel(day)}</span>
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium transition-all ${
                 isToday(day)
@@ -335,7 +386,7 @@ function TimelineView() {
             {/* Tracking indicator dot */}
             <div
               className={`w-1 h-1 rounded-full ${
-                day.getDate() <= today.getDate() ? 'bg-accent-purple' : 'bg-transparent'
+                day <= today ? 'bg-accent-purple' : 'bg-transparent'
               }`}
             />
           </button>
@@ -349,7 +400,11 @@ function TimelineView() {
 
       {/* Timeline entries */}
       <div className="flex-1 px-3 pb-4">
-        {entries.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-text-muted text-[13px]">Loading timeline...</div>
+          </div>
+        ) : entries.length > 0 ? (
           entries.map((entry, index) => (
             <TimelineEntryCard
               key={entry.id}
@@ -371,7 +426,7 @@ function TimelineView() {
   );
 }
 
-export function ChatMessages({ messages, user, isTyping, activeTab }: ChatMessagesProps) {
+export function ChatMessages({ messages, user, isTyping, activeTab, onSeveritySubmit }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -384,7 +439,7 @@ export function ChatMessages({ messages, user, isTyping, activeTab }: ChatMessag
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4">
+    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 flex flex-col gap-4">
       {messages.map((message) => {
         // System notification - icon + text
         if (message.isNotification) {
@@ -410,7 +465,7 @@ export function ChatMessages({ messages, user, isTyping, activeTab }: ChatMessag
               <div className="max-w-[75%] bg-[#f0ede8] text-primary py-3 px-4 rounded-[18px] rounded-br-[5px] text-[15px] font-medium leading-relaxed">
                 {message.content}
               </div>
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-primary flex items-center justify-center">
                 {user.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
@@ -427,12 +482,22 @@ export function ChatMessages({ messages, user, isTyping, activeTab }: ChatMessag
           );
         }
 
-        // Assistant message - plain text, no bubble
+        // Assistant message - plain text, no bubble, with optional interactive component
         return (
-          <div key={message.id} className="flex items-start justify-start">
+          <div key={message.id} className="flex flex-col items-start justify-start gap-3">
             <div className="max-w-[90%] text-primary text-[15px] font-normal leading-[1.65] pr-6">
               {message.content}
             </div>
+            {/* Render interactive component if present (triggered by ask_severity tool) */}
+            {message.interactive?.type === 'severity-slider' && onSeveritySubmit && (
+              <SeveritySlider
+                symptom={message.interactive.symptom}
+                prompt={message.interactive.prompt}
+                initialValue={message.interactive.initialValue ?? 5}
+                disabled={message.interactiveCompleted}
+                onSubmit={(severity) => onSeveritySubmit(message.id, severity)}
+              />
+            )}
           </div>
         );
       })}

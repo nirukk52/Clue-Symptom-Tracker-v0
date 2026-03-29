@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { supabase } from '@/lib/supabase';
 
 import type { Insight, InsightStatus } from './types';
 
@@ -11,7 +12,7 @@ import type { Insight, InsightStatus } from './types';
  *
  * Why this exists: Displays AI-generated health insights derived from chat
  * conversations and symptom tracking. Users can validate, correct, or delete
- * insights. Validated insights gain practitioner approval status.
+ * insights. Fetches real data from Supabase insights table.
  */
 
 interface InsightsPanelProps {
@@ -21,57 +22,46 @@ interface InsightsPanelProps {
   onDelete?: (id: string) => void;
 }
 
-/** Demo insights for initial display - shows the range of insight types */
-const DEMO_INSIGHTS: Insight[] = [
-  {
-    id: '1',
-    content:
-      'Stop B. lactis HN019 for 5-7 days. The tension/nervousness symptoms suggest it\'s causing too much fermentation too quickly.',
-    status: 'validated',
-    validatedAt: new Date('2026-01-26'),
-    validatedBy: 'the practitioner',
-  },
-  {
-    id: '2',
-    content:
-      'Continue L. reuteri + B. coagulans as these were well tolerated and appropriate for IMO.',
-    status: 'pending',
-  },
-  {
-    id: '3',
-    content:
-      'Prioritize motility and transit support during recovery. With IMO, slow transit makes fermentation symptoms worse.',
-    status: 'pending',
-  },
-  {
-    id: '4',
-    content:
-      "Consider starting FODMAP reintroduction with microdoses even without probiotics. You don't need probiotics to reintroduce FODMAPs successfully.",
-    status: 'correcting',
-  },
-  {
-    id: '5',
-    content:
-      'If retrying HN019, use a microdose protocol: start at 1/8 capsule every other day and increase slowly over 10-14 days.',
-    status: 'validated',
-    validatedAt: new Date('2026-01-26'),
-    validatedBy: 'the practitioner',
-  },
-  {
-    id: '6',
-    content:
-      "Alternative to consider: Saccharomyces boulardii may be better tolerated as it's a beneficial yeast that tends to cause less gas.",
-    status: 'pending',
-  },
-];
-
 export function InsightsPanel({
-  insights = DEMO_INSIGHTS,
+  insights: initialInsights,
   onValidate,
   onCorrect,
   onDelete,
 }: InsightsPanelProps) {
-  const [localInsights, setLocalInsights] = useState<Insight[]>(insights);
+  const [localInsights, setLocalInsights] = useState<Insight[]>(initialInsights || []);
+  const [isLoading, setIsLoading] = useState(!initialInsights);
+
+  /** Fetch insights from Supabase on mount */
+  const fetchInsights = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await supabase
+        .from('insights')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (data && data.length > 0) {
+        setLocalInsights(
+          data.map((row: Record<string, unknown>) => ({
+            id: row.id as string,
+            content: row.content as string,
+            status: (row.status as InsightStatus) || 'pending',
+          }))
+        );
+      }
+    } catch {
+      // Keep current state on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!initialInsights) {
+      fetchInsights();
+    }
+  }, [initialInsights, fetchInsights]);
 
   const handleValidate = (id: string) => {
     setLocalInsights((prev) =>
@@ -107,6 +97,7 @@ export function InsightsPanel({
 
   const handleDelete = (id: string) => {
     setLocalInsights((prev) => prev.filter((insight) => insight.id !== id));
+    supabase.from('insights').update({ status: 'dismissed' }).eq('id', id).then(() => {});
     onDelete?.(id);
   };
 

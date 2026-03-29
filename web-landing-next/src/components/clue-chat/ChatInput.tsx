@@ -8,24 +8,31 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  * ChatInput - Input area for ClueChat
  *
  * Why this exists: Provides the message input with attachment button,
- * Chat/Canvas tab toggle, and coral send button. Matches aicofounder.com
+ * Chat/Timeline tab toggle, and coral send button. Matches aicofounder.com
  * design with text input on top and controls row below.
  */
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, files?: FileList) => void;
   disabled?: boolean;
   placeholder?: string;
+  /** Currently active tab - controlled by parent */
+  activeTab: 'chat' | 'timeline';
+  /** Callback when tab changes */
+  onTabChange: (tab: 'chat' | 'timeline') => void;
 }
 
 export function ChatInput({
   onSendMessage,
   disabled = false,
   placeholder = 'Type a message...',
+  activeTab,
+  onTabChange,
 }: ChatInputProps) {
   const [inputValue, setInputValue] = useState('');
-  const [activeTab, setActiveTab] = useState<'chat' | 'canvas'>('chat');
+  const [files, setFiles] = useState<FileList | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus input on mount and when not disabled
   useEffect(() => {
@@ -40,10 +47,14 @@ export function ChatInput({
 
   const handleSend = useCallback(() => {
     if (inputValue.trim() && !disabled) {
-      onSendMessage(inputValue.trim());
+      onSendMessage(inputValue.trim(), files);
       setInputValue('');
+      setFiles(undefined);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
-  }, [inputValue, disabled, onSendMessage]);
+  }, [inputValue, disabled, onSendMessage, files]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -80,16 +91,39 @@ export function ChatInput({
 
         {/* Bottom row: attachment, tabs, send */}
         <div className="flex items-center gap-3">
-          {/* Attachment button - rounded square (squircle) background */}
+          {/* Hidden file input for attachments */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf,.txt,.csv"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                setFiles(e.target.files);
+              }
+            }}
+          />
+          {/* Attachment button */}
           <button
             type="button"
-            className="w-10 h-10 flex items-center justify-center cursor-pointer text-[#666] hover:text-primary transition-all bg-[#f0f0f0] rounded-[16px]"
+            className={`w-10 h-10 flex items-center justify-center cursor-pointer transition-all rounded-[16px] ${
+              files && files.length > 0
+                ? 'text-primary bg-primary/10'
+                : 'text-[#666] hover:text-primary bg-[#f0f0f0]'
+            }`}
             aria-label="Attach file"
+            onClick={() => fileInputRef.current?.click()}
           >
             <MaterialIcon name="attach_file" size="sm" />
+            {files && files.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                {files.length}
+              </span>
+            )}
           </button>
 
-          {/* Chat/Canvas tabs - gray pill with animated white slider */}
+          {/* Chat/Timeline tabs - gray pill with animated white slider */}
           <div className="flex-1 flex rounded-full bg-[#e8e8e8] p-1 relative">
             {/* Animated slider background */}
             <div
@@ -105,20 +139,20 @@ export function ChatInput({
                   ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
-              onClick={() => setActiveTab('chat')}
+              onClick={() => onTabChange('chat')}
             >
               Chat
             </button>
             <button
               type="button"
               className={`flex-1 py-2 px-4 rounded-full text-[14px] font-medium cursor-pointer transition-colors duration-200 relative z-10 ${
-                activeTab === 'canvas'
+                activeTab === 'timeline'
                   ? 'text-primary'
                   : 'bg-transparent text-[#666] hover:text-primary/70'
               }`}
-              onClick={() => setActiveTab('canvas')}
+              onClick={() => onTabChange('timeline')}
             >
-              Canvas
+              Timeline
             </button>
           </div>
 
