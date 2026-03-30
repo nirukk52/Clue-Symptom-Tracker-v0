@@ -127,7 +127,7 @@ OPENAI_API_KEY=sk-...
 
 ## Summary: Environment Variables for Next.js Migration
 
-Create a `.env.local` file in `web-landing-next/`:
+Create a `.env.local` file in `web-app/`:
 
 ```env
 # Supabase (public - safe for client-side)

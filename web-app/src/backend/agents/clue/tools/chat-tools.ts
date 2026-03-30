@@ -35,6 +35,7 @@ function getUid() {
 /**
  * Extracts and logs structured symptom data from a user's message.
  * Writes to symptom_logs and timeline_entries.
+ * Includes 5-minute deduplication to prevent duplicate logs when severity is added.
  */
 const logSymptom = tool({
   description:
@@ -46,8 +47,56 @@ const logSymptom = tool({
   }),
   execute: async ({ symptomName, severity, notes }) => {
     const uid = getUid();
-
     const supabase = getSupabase();
+
+    // Check for recent duplicate (same symptom within 5 minutes) to prevent double-logging
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: recentLog } = await supabase
+      .from('symptom_logs')
+      .select('id, severity')
+      .eq('user_id', uid)
+      .ilike('symptom_name', symptomName)
+      .gte('logged_at', fiveMinAgo)
+      .order('logged_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recentLog) {
+      // Recent log exists - update with severity if provided and not already set
+      if (severity !== undefined && recentLog.severity === null) {
+        await supabase
+          .from('symptom_logs')
+          .update({ severity, notes: notes ?? undefined })
+          .eq('id', recentLog.id);
+
+        // Also update timeline entry
+        await supabase
+          .from('timeline_entries')
+          .update({ severity, description: notes ?? undefined })
+          .eq('user_id', uid)
+          .ilike('title', symptomName)
+          .gte('logged_at', fiveMinAgo);
+
+        return {
+          success: true,
+          message: `Updated ${symptomName} to ${severity}/10.`,
+          logId: recentLog.id,
+          updated: true,
+        };
+      }
+
+      // Already logged with same or no severity change needed
+      return {
+        success: true,
+        message: recentLog.severity !== null 
+          ? `${symptomName} already logged at ${recentLog.severity}/10.`
+          : `${symptomName} already logged.`,
+        logId: recentLog.id,
+        skipped: true,
+      };
+    }
+
+    // No recent duplicate - create new entry
     const { data: symptomLog, error: logError } = await supabase
       .from('symptom_logs')
       .insert({

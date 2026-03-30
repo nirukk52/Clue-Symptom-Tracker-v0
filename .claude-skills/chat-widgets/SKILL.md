@@ -493,9 +493,9 @@ When `flareMode=true`:
 
 ---
 
-## Web Implementation (web-landing-next)
+## Web Implementation (web-app)
 
-The following components are implemented in `web-landing-next/src/components/widgets/`:
+The following components are implemented in `web-app/src/components/widgets/`:
 
 ### ConditionPicker
 
@@ -514,7 +514,7 @@ import { ConditionPicker } from '@/components/widgets';
 />;
 ```
 
-**Condition mappings:** `web-landing-next/src/content/conditions.ts`
+**Condition mappings:** `web-app/src/content/conditions.ts`
 
 ### GradientSlider
 
@@ -562,7 +562,7 @@ import { ChipSelector } from '@/components/widgets';
 
 ### Q3Step
 
-**File:** `web-landing-next/src/components/modal/Q3Step.tsx`
+**File:** `web-app/src/components/modal/Q3Step.tsx`
 
 Combines ConditionPicker + main widget into a single Q3 step. Automatically selects the appropriate widget based on Q2 pain point.
 
@@ -581,7 +581,7 @@ import { Q3Step } from '@/components/modal/Q3Step';
 
 ### CSS Classes
 
-Styles are in `web-landing-next/src/app/globals.css`:
+Styles are in `web-app/src/app/globals.css`:
 
 ```css
 .condition-picker-container

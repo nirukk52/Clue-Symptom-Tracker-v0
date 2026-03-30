@@ -8,8 +8,9 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
  * DoctorSummaryPanel - Generates and displays doctor-friendly health reports
  *
  * Why this exists: Spoonies consistently report that sharing tracked data with
- * doctors is a major pain point. This panel lets them generate structured
- * summaries that clinicians can scan quickly, bridging the patient-doctor gap.
+ * doctors is a major pain point. Promoted from a desktop-only right-panel to a
+ * full-width standalone view accessible on all screen sizes. Lets users generate
+ * structured summaries that clinicians can scan quickly.
  */
 
 type DateRange = '14d' | '30d' | '90d';
@@ -92,7 +93,7 @@ export function DoctorSummaryPanel() {
   }, [report]);
 
   return (
-    <div className="hidden lg:flex flex-col flex-1 bg-white border-l border-primary/6 overflow-hidden">
+    <div className="flex flex-col flex-1 bg-white overflow-hidden">
       {/* Header */}
       <div className="px-6 py-5 border-b border-primary/6">
         <div className="flex items-center gap-2 mb-1">

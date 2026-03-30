@@ -8,7 +8,7 @@ The Onboarding Agent answers **two critical questions**:
 
 | Question                        | Asked By              | When                         | Output                                 |
 | ------------------------------- | --------------------- | ---------------------------- | -------------------------------------- |
-| "Why should this user sign up?" | `web-landing-next`    | Pre-conversion (modal)       | WatchListPreview component             |
+| "Why should this user sign up?" | `web-app`    | Pre-conversion (modal)       | WatchListPreview component             |
 | "Why did this user sign up?"    | `Clue Agent` (mobile) | Post-conversion (first open) | Conversion context for personalization |
 
 ```
@@ -31,7 +31,7 @@ captured    created       saved         copy + UI        context stored       "W
 │                                                                             │
 │  ┌───────────────────────────────────────────────────────────────────────┐ │
 │  │                        ONBOARDING AGENT                                │ │
-│  │              Location: web-landing-next/src/backend/agents/onboarding  │ │
+│  │              Location: web-app/src/backend/agents/onboarding  │ │
 │  ├───────────────────────────────────────────────────────────────────────┤ │
 │  │                                                                        │ │
 │  │   ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────┐   │ │
@@ -66,7 +66,7 @@ captured    created       saved         copy + UI        context stored       "W
 ## Folder Structure
 
 ```
-web-landing-next/src/backend/
+web-app/src/backend/
 ├── agents/
 │   └── onboarding/
 │       ├── CLAUDE.md              # Agent documentation
@@ -478,7 +478,7 @@ NEXT_PUBLIC_USE_STREAM_UI=false  # Future
 
 ## API Reference
 
-### Interface 1: Pre-Conversion (web-landing-next → Agent)
+### Interface 1: Pre-Conversion (web-app → Agent)
 
 **Question:** "Why should this user sign up?"
 
@@ -592,7 +592,7 @@ describe('WatchList Preview Generation', () => {
 
 The existing `summary-generation-agent/` folder will be:
 
-1. **Moved** to `web-landing-next/src/backend/agents/onboarding/`
+1. **Moved** to `web-app/src/backend/agents/onboarding/`
 2. **Restructured** into the new folder layout
 3. **Extended** with:
    - Copy generator (Gemini)

@@ -11,12 +11,15 @@ import type { Insight, InsightStatus } from './types';
  * InsightsPanel - AI-generated insights and suggestions panel
  *
  * Why this exists: Displays AI-generated health insights derived from chat
- * conversations and symptom tracking. Users can validate, correct, or delete
- * insights. Fetches real data from Supabase insights table.
+ * conversations and symptom tracking. Rendered as the right-panel "canvas" on
+ * the Insights nav tab — visible on desktop alongside the chat column, and
+ * accessible via the Canvas sub-tab pill on mobile. Users can validate, correct,
+ * or delete insights. Fetches data via API to ensure proper user_id filtering.
  */
 
 interface InsightsPanelProps {
   insights?: Insight[];
+  userId?: string;
   onValidate?: (id: string) => void;
   onCorrect?: (id: string, correction: string) => void;
   onDelete?: (id: string) => void;
@@ -24,44 +27,58 @@ interface InsightsPanelProps {
 
 export function InsightsPanel({
   insights: initialInsights,
+  userId,
   onValidate,
   onCorrect,
   onDelete,
 }: InsightsPanelProps) {
   const [localInsights, setLocalInsights] = useState<Insight[]>(initialInsights || []);
   const [isLoading, setIsLoading] = useState(!initialInsights);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(userId || null);
 
-  /** Fetch insights from Supabase on mount */
+  // Get user ID from Supabase session if not provided
+  useEffect(() => {
+    if (!userId) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user?.id) {
+          setCurrentUserId(session.user.id);
+        }
+      });
+    }
+  }, [userId]);
+
+  /** Fetch insights via API with proper user_id filtering */
   const fetchInsights = useCallback(async () => {
+    if (!currentUserId) return;
+    
     setIsLoading(true);
     try {
-      const { data } = await supabase
-        .from('insights')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const res = await fetch(`/api/insights?userId=${currentUserId}`);
+      const data = await res.json();
 
-      if (data && data.length > 0) {
+      if (data.insights && data.insights.length > 0) {
         setLocalInsights(
-          data.map((row: Record<string, unknown>) => ({
+          data.insights.map((row: Record<string, unknown>) => ({
             id: row.id as string,
             content: row.content as string,
             status: (row.status as InsightStatus) || 'pending',
           }))
         );
+      } else {
+        setLocalInsights([]);
       }
     } catch {
       // Keep current state on error
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
-    if (!initialInsights) {
+    if (!initialInsights && currentUserId) {
       fetchInsights();
     }
-  }, [initialInsights, fetchInsights]);
+  }, [initialInsights, currentUserId, fetchInsights]);
 
   const handleValidate = (id: string) => {
     setLocalInsights((prev) =>
@@ -95,9 +112,22 @@ export function InsightsPanel({
     );
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (!currentUserId) return;
+    
     setLocalInsights((prev) => prev.filter((insight) => insight.id !== id));
-    supabase.from('insights').update({ status: 'dismissed' }).eq('id', id).then(() => {});
+    
+    // Use API for dismiss action
+    try {
+      await fetch('/api/insights', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ insightId: id, userId: currentUserId, status: 'dismissed' }),
+      });
+    } catch (e) {
+      console.error('Failed to dismiss insight:', e);
+    }
+    
     onDelete?.(id);
   };
 
@@ -110,7 +140,7 @@ export function InsightsPanel({
   };
 
   return (
-    <div className="hidden lg:flex flex-1 flex-col bg-[#f5f3f0] relative overflow-hidden">
+    <div className="flex flex-1 flex-col bg-[#f5f3f0] relative overflow-hidden">
       {/* Subtle dotted grid background */}
       <div
         className="absolute inset-0 pointer-events-none"

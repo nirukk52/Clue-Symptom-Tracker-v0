@@ -93,11 +93,51 @@ The user is experiencing a flare or has very low energy.
 - Only call log_symptom or log_mood. Skip insights and summaries.`;
 
 /**
- * Builds the complete system prompt with optional memory context and flare mode.
+ * Graph context modifier -- appended when we have graph state.
+ * Why this exists: Helps Clue understand what's known and unknown about the user,
+ * enabling more targeted questions and contextual responses.
+ */
+export const GRAPH_CONTEXT_HEADER = `
+
+## Your Knowledge Graph
+The following summarizes what you know and what you still need to learn about this user:
+
+`;
+
+/**
+ * Instruction for handling answered questions from the graph.
+ */
+export const GRAPH_INTERACTION_RULES = `
+
+When the user answers a question that was shown in their health graph:
+1. Acknowledge what you learned briefly.
+2. Update your understanding based on their answer.
+3. If this completes a pattern, share the insight (call generate_insights if appropriate).
+4. Don't repeat the same question unless they gave an ambiguous answer.`;
+
+/**
+ * Next question instruction — appended when we have a deterministically-chosen
+ * follow-up question that should be asked.
+ */
+export const NEXT_QUESTION_INSTRUCTION = `
+
+## Next Question to Ask
+You MUST naturally work this question into your response:
+"{nextQuestion}"
+
+Do not skip this question. Ask it conversationally at the end of your response.
+If the user seems very tired or in pain, make it brief: "Quick check: {nextQuestion}"
+`;
+
+/**
+ * Builds the complete system prompt with optional memory context, graph state,
+ * flare mode, and next question to ask.
  */
 export function buildSystemPrompt(options?: {
   memories?: string;
+  graphSummary?: string;
   isFlareMode?: boolean;
+  nextQuestion?: string;
 }): string {
   let prompt = CLUE_SYSTEM_PROMPT;
 
@@ -105,8 +145,18 @@ export function buildSystemPrompt(options?: {
     prompt += `\n\n## What You Remember About This User\n${options.memories}`;
   }
 
+  if (options?.graphSummary) {
+    prompt += GRAPH_CONTEXT_HEADER + options.graphSummary + GRAPH_INTERACTION_RULES;
+  }
+
   if (options?.isFlareMode) {
     prompt += FLARE_MODE_MODIFIER;
+  }
+
+  // Inject next question AFTER flare mode check — flare mode takes precedence
+  // (in flare mode, we don't ask follow-up questions)
+  if (options?.nextQuestion && !options?.isFlareMode) {
+    prompt += NEXT_QUESTION_INSTRUCTION.replace('{nextQuestion}', options.nextQuestion).replace('{nextQuestion}', options.nextQuestion);
   }
 
   return prompt;

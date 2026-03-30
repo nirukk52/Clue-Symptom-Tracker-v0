@@ -18,7 +18,7 @@ export interface ConditionOption {
 
 /**
  * Conditions mapped by Q1 domain
- * Source: web-landing-next/src/content/illness.md
+ * Source: web-app/src/content/illness.md
  */
 export const CONDITIONS_BY_DOMAIN: Record<string, ConditionOption[]> = {
   fatigue: [

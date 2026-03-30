@@ -1,69 +1,260 @@
-# CLAUDE.md - Project Intelligence for Clue Symptom Tracker
+# CLAUDE.md — Chronic Life / Clue
 
-> This file provides context for AI assistants working on this codebase.
-> Read this first before making changes.
-
-## Project Overview
-
-Clue is a **prediction-first symptom tracker** for people with chronic conditions (endometriosis, PCOS, long COVID, fibromyalgia, etc.).
-
-## onboarding (Screen 1–4) is now JSON-driven + UI folder cleanup
-
-How to A/B test now
-Swap catalog.json and/or modal_onboarding.v1.json (keep IDs stable), and the UI will follow without code changes.
-
-Every user interaction should be written to *supabase*
-
-**Core Documents**:
-
-- Product vision: [`context/Product-Spec.md`](./context/Product-Spec.md)
-- Agent architecture: [`context/Agent-Architecture-Technical.md`](./context/Agent-Architecture-Technical.md)
-- Constitution (SSOT): [`.specify/memory/constitution.md`](./.specify/memory/constitution.md)
-- Design system: [`.claude-skills/frontend-design/SKILL.md`](./.claude-skills/frontend-design/SKILL.md)
-- **Marketing validation:** [`web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md`](./web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md)
-
+> AI agent guide for this codebase. Read before touching anything.
+> You are connected to Supabase MCP use to debug.
 
 ---
 
-## Technical Stack (Decided)
+## Identity
 
-### Core Framework
-
-| Layer      | Technology                                                  | Notes                                 |
-| ---------- | ----------------------------------------------------------- | ------------------------------------- |
-| Framework  | **Expo SDK 52** + **Expo Router v4**                        | File-based routing                    |
-| Language   | **TypeScript (strict mode)**                                | Additional rules for agent/data layer |
-| Styling    | **NativeWind v4** (Tailwind for RN)                         | Custom components, no UI libraries    |
-| State      | **Zustand** (app state) + **PowerSync** (data queries)      | Separate concerns                     |
-| Animations | **Moti** (wraps Reanimated)                                 | Gentle transitions                    |
-| Storage    | **MMKV** (fast KV) + **PowerSync SQLite** (structured data) | Local-first                           |
-
-### Data Layer
-
-| Component  | Technology                                | Notes                                         |
-| ---------- | ----------------------------------------- | --------------------------------------------- |
-| Local DB   | **PowerSync SQLite**                      | Offline-first, reactive queries               |
-| ORM        | **Raw SQL → Drizzle ORM** (migrate later) | Start simple, add type-safety as it grows     |
-| Cloud Sync | **PowerSync + Supabase**                  | Background sync, no loading UI                |
-| Auth       | **Supabase Auth**                         | Anonymous auth for onboarding → convert later |
-
-### Agent Pipeline
-
-| Component     | Approach              | Notes                                  |
-| ------------- | --------------------- | -------------------------------------- |
-| Execution     | **Client-side (90%)** | Local-first, evidence-grounded         |
-| Chat UI       | **Vercel AI SDK**     | For message generation + summarization |
-| First Message | **Template-based**    | Deterministic, no LLM call             |
-| Core Pipeline | **Deterministic**     | Named queries, golden fixtures         |
+| Name | Role |
+|------|------|
+| **Chronic Life** | App name (brand, product) |
+| **Clue** | AI chat agent inside the app |
 
 ---
 
-## Files to Read First
+## One-line product summary
 
-1. [`web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md`](./web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md) - **Validated product direction** (read this to understand what users want)
-2. [`.specify/memory/constitution.md`](./.specify/memory/constitution.md) - Architectural decisions
-3. [`specs/1-onboarding-flow/spec.md`](./specs/1-onboarding-flow/spec.md) - Current feature spec
-4. [`.claude-skills/frontend-design/SKILL.md`](./.claude-skills/frontend-design/SKILL.md) - Design system
-5. [`context/Agent-Architecture-Technical.md`](./context/Agent-Architecture-Technical.md) - Agent pipeline
+Chronic Life is a **prediction-first symptom tracker** for multi-condition chronic illness patients.
+The north-star promise: *"Stop being blindsided by flares."* — give users a 24-48 h heads-up before a crash.
 
-Just go through this doc
+---
+
+## Repo layout
+
+```
+/
+├── web-app/            ← Next.js 16 web app (primary codebase)
+│   ├── src/
+│   │   ├── app/        ← Next.js App Router (pages, API routes)
+│   │   ├── backend/    ← AI agents, lib/db, lib/ai, lib/memory
+│   │   │   └── agents/
+│   │   │       ├── clue/        ← Main Clue agent (router → sub-agents)
+│   │   │       └── onboarding/  ← Pre/post conversion agent
+│   │   ├── components/ ← React UI (clue-chat, widgets, modal)
+│   │   ├── content/    ← Static data (conditions, questions, pages)
+│   │   ├── hooks/      ← Custom React hooks
+│   │   ├── lib/        ← Supabase client, tracking, onboarding utils
+│   │   └── types/      ← Shared TypeScript types
+│   ├── docs/           ← Architecture docs
+│   └── vercel.json
+├── context/            ← Research docs, archived web landing, keys reference
+└── .cursor/plans/      ← AI-generated implementation plans
+```
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| Framework | **Next.js 16** (App Router, Turbopack) |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS |
+| AI SDK | **Vercel AI SDK v6** (`ai`, `@ai-sdk/react`) |
+| LLM — routing | OpenAI `gpt-4o-mini` |
+| LLM — copy/empathy | Google `gemini-1.5-flash` |
+| LLM — embeddings | OpenAI `text-embedding-3-small` |
+| Database | **Supabase** (Postgres + pgvector) |
+| Auth | Supabase Auth (Google OAuth) |
+| Vector search | pgvector (widget RAG) |
+| Package manager | npm (lockfile present) |
+| Runtime | Node.js (Vercel deployment) |
+
+---
+
+## Agent architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FRONTEND (React)                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────────────┐          ┌──────────────────────────────────┐    │
+│   │     ClueChat        │          │         ChatCanvas               │    │
+│   │  ┌───────────────┐  │          │  ┌────────────────────────────┐  │    │
+│   │  │ ChatMessages  │  │  ←────→  │  │  GraphCanvas (Reagraph)    │  │    │
+│   │  │ ChatInput     │  │  refresh │  │  • Symptom nodes (red)     │  │    │
+│   │  │ useChat hook  │  │  trigger │  │  • Factor nodes (teal)     │  │    │
+│   │  └───────────────┘  │          │  │  • Clue nodes (gold)       │  │    │
+│   └──────────┬──────────┘          │  │  • Unknown nodes (gray)    │  │    │
+│              │                      │  │    ↳ tap → sends question │  │    │
+│              │ sendMessage          │  └────────────────────────────┘  │    │
+│              ▼                      │              ▲                    │    │
+└──────────────┼──────────────────────┼──────────────┼────────────────────┘
+               │                      │              │
+               │ POST /api/chat       │ GET /api/graph
+               ▼                      │              │
+┌─────────────────────────────────────┼──────────────┼────────────────────────┐
+│                         BACKEND (Next.js API)       │                        │
+├─────────────────────────────────────────────────────┼────────────────────────┤
+│                                                     │                        │
+│   ┌─────────────────────────────────────────────────┼──────────────────┐    │
+│   │                    /api/chat (route.ts)         │                  │    │
+│   │  ┌────────────────────────────────────────────┐ │                  │    │
+│   │  │  1. getRelevantMemories(userId, query)     │ │                  │    │
+│   │  │  2. getGraphSummary(userId)                │ │                  │    │
+│   │  │  3. buildSystemPrompt(memories, graph)     │ │                  │    │
+│   │  │  4. streamText(gpt-5.4, tools)             │ │                  │    │
+│   │  └────────────────────────────────────────────┘ │                  │    │
+│   │                      │                          │                  │    │
+│   │                      │ onFinish callback        │                  │    │
+│   │                      ▼                          │                  │    │
+│   │  ┌────────────────────────────────────────────┐ │                  │    │
+│   │  │         GRAPH UPDATE PIPELINE              │ │                  │    │
+│   │  │  ┌──────────────────────────────────────┐  │ │                  │    │
+│   │  │  │ 1. storeMemory() → extractAtomicFacts│  │ │                  │    │
+│   │  │  │ 2. extractEntities() → LLM extraction│  │ │                  │    │
+│   │  │  │ 3. upsertGraphNodes() → Supabase     │  │ │                  │    │
+│   │  │  │ 4. updateClues() → LLM insights      │  │ │                  │    │
+│   │  │  │ 5. pickNextQuestions() → unknowns    │  │ │                  │    │
+│   │  │  └──────────────────────────────────────┘  │ │                  │    │
+│   │  └────────────────────────────────────────────┘ │                  │    │
+│   └─────────────────────────────────────────────────┘                  │    │
+│                                                                        │    │
+│   ┌────────────────────────────────────────────────────────────────────┘    │
+│   │  /api/graph (route.ts)                                                  │
+│   │  • getUserGraph(userId) → nodes + edges                                 │
+│   │  • enrichNodesWithLogs() → severity, timing from log tables             │
+│   └─────────────────────────────────────────────────────────────────────────┘
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DATA LAYER (Supabase)                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  KNOWLEDGE GRAPH                                                    │   │
+│   │  ┌───────────────────┐    ┌───────────────────┐                    │   │
+│   │  │   graph_nodes     │    │   graph_edges     │                    │   │
+│   │  │  • id, user_id    │    │  • source_node_id │                    │   │
+│   │  │  • type (enum)    │◄──►│  • target_node_id │                    │   │
+│   │  │  • name, sub_label│    │  • relationship   │                    │   │
+│   │  │  • confidence     │    │  • weight, p_value│                    │   │
+│   │  │  • question_text  │    └───────────────────┘                    │   │
+│   │  └───────────────────┘                                             │   │
+│   │                                                                     │   │
+│   │  Node types: symptom | factor | medication | condition | clue | unknown │
+│   │  Edge types: SUPPORTED_BY | TRIGGERS | CORRELATES_WITH | NEEDS_INFO │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐           │
+│   │ symptom_logs    │  │ medication_logs │  │ mood_logs       │           │
+│   └─────────────────┘  └─────────────────┘  └─────────────────┘           │
+│                                                                             │
+│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐           │
+│   │ chat_messages   │  │ timeline_entries│  │ insights        │           │
+│   └─────────────────┘  └─────────────────┘  └─────────────────┘           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         EXTERNAL SERVICES                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐           │
+│   │  mem0           │  │  OpenAI         │  │  Google         │           │
+│   │  (user memory)  │  │  gpt-4o-mini    │  │  gemini-flash   │           │
+│   │                 │  │  gpt-5.4        │  │  (copy/empathy) │           │
+│   └─────────────────┘  └─────────────────┘  └─────────────────┘           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+Key files:
+- `web-app/src/app/api/chat/route.ts` — streaming chat endpoint + graph pipeline trigger
+- `web-app/src/app/api/graph/route.ts` — graph data endpoint for ChatCanvas
+- `web-app/src/backend/lib/graph/` — knowledge graph module
+  - `index.ts` — CRUD operations for nodes/edges
+  - `pipeline.ts` — orchestrates extract → upsert → clues → questions
+  - `extract-entities.ts` — LLM entity extraction
+  - `update-clues.ts` — LLM insight generation
+  - `pick-next-question.ts` — LLM question prioritization
+- `web-app/src/backend/lib/memory/index.ts` — mem0 + atomic fact extraction
+- `web-app/src/backend/lib/ai/providers.ts` — model config
+- `web-app/src/components/clue-chat/ChatCanvas.tsx` — Reagraph visualization
+
+---
+
+## Running the app
+
+```bash
+cd web-app
+npm install
+npm run dev        # → http://localhost:3000
+npm run build      # production build check
+```
+
+Requires `web-app/.env.local` — see `context/web-landing-old-archived/KEYS-REFERENCE.md`.
+
+---
+
+## Code rules (enforce always)
+
+1. **Max 600 lines per class/file.** Split when approaching limit.
+2. **Every class, enum, and function must have a JSDoc comment** explaining *why* it exists in the codebase — not what it does line-by-line.
+3. **No obvious/narration comments** (`// import the module`, `// return result`). Only non-obvious intent, trade-offs, or constraints.
+4. **Do only what is asked.** No bonus features, no unrequested refactors.
+5. **Test user-facing behaviour** — no petty unit tests on internals.
+6. **Golden folder rule:** if a folder 3 levels deep from root has >4 files, extract into sub-folders.
+7. **Skills first:** before starting any task, check `.claude-skills/` for a relevant skill; use it; update it after.
+8. **Skills are created only via** `.claude/skills/skill-creator`.
+
+---
+
+## AI SDK patterns used in this codebase
+
+- **`streamText`** + `toUIMessageStreamResponse()` for all chat endpoints.
+- **`convertToModelMessages(messages)`** to convert `UIMessage[]` before passing to model.
+- **`useChat`** with `DefaultChatTransport` on the client.
+- **`tool()`** helper for all tool definitions (typed `inputSchema` + `execute`).
+- **`stopWhen: stepCountIs(N)`** for multi-step agentic calls (not deprecated `maxSteps`).
+- Tool parts accessed via `message.parts` (not `message.content`).
+- `UIMessage` format stored in Supabase; loaded back via `loadChat`.
+
+---
+
+## Database tables (Supabase)
+
+| Table | Purpose |
+|-------|---------|
+| `chat_conversations` | One row per conversation session |
+| `chat_messages` | All messages (role + content JSON) |
+| `symptom_logs` | Structured symptom entries from intake |
+| `medication_logs` | Medication tracking entries |
+| `mood_logs` | Daily mood ratings |
+| `timeline_entries` | Chronological health events |
+| `insights` | Generated pattern insights |
+| `graph_nodes` | Knowledge graph nodes (symptom, factor, medication, condition, clue, unknown) |
+| `graph_edges` | Knowledge graph relationships (SUPPORTED_BY, TRIGGERS, CORRELATES_WITH, etc.) |
+| `widget_embeddings` | pgvector embeddings for 30 UI widgets |
+| `user_conversion_context` | Why this user signed up + promise made |
+| `ai_generations` | Copy/generation audit log |
+
+---
+
+## Key domain concepts
+
+| Concept | Meaning |
+|---------|---------|
+| **Flare** | A symptom spike / crash episode |
+| **8 Characteristics** | Clinical structure for symptom description (location, duration, frequency, progression, context, associated symptoms, quality, severity) |
+| **Baseline** | User's personal "normal" — deviations trigger alerts |
+| **Lag effect** | Symptom that appears 24-48 h after a trigger |
+| **Top suspects** | Ranked trigger variables (sleep, stress, food …) |
+| **Flare mode** | Simplified logging UX when energy is lowest |
+| **Doctor pack** | Appointment-ready export (talking points + PDF) |
+| **Spoon theory** | Chronic illness energy budgeting metaphor (core user vocabulary) |
+
+---
+
+## What NOT to do
+
+- Do not remove or bypass the Supabase auth gate in `ClueChat.tsx`.
+- Do not change model providers without updating `web-app/src/backend/lib/ai/providers.ts`.
+- Do not skip `convertToModelMessages()` when passing messages to `streamText`.
+- Do not use `maxSteps` — use `stopWhen: stepCountIs(N)` instead (AI SDK v6).
+- Do not create files unless absolutely necessary — prefer editing existing ones.
+- Do not push to production (`main`) without a passing `npm run build`.

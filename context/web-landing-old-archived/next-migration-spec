@@ -1,7 +1,7 @@
 Next.js Migration Spec for web-landing/
 Project Structure
 
-web-landing-next/
+web-app/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx              # Root layout (fonts, GTM, metadata)

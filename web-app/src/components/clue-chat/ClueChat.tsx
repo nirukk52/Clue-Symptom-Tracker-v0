@@ -16,15 +16,19 @@ import { DoctorSummaryPanel } from './DoctorSummaryPanel';
 import { FlareModePanel } from './FlareModePanel';
 import { InsightsPanel } from './InsightsPanel';
 import { QuickEntryPanel } from './QuickEntryPanel';
+import { TimelineView } from './TimelineView';
 import type { ChatInteractiveComponent, ChatMessage, ChatUser, NavItem } from './types';
 
 /**
  * ClueChat - Full-page chat experience for Chronic Life symptom tracker
  *
- * Why this exists: This is the core product interface. Matches aicofounder.com
- * design with mobile-first chat and desktop two-panel layout (chat + canvas).
- * Users interact with an AI assistant to track symptoms and manage conditions.
- * Supports Chat/Timeline toggle to switch between conversation and timeline view.
+ * Why this exists: Core product interface. Rearchitected so every feature is
+ * accessible on both mobile and desktop:
+ * - Chat and Insights nav tabs: two-sub-tab layout (Chat | Canvas). On desktop
+ *   both panels are visible side-by-side; on mobile the pill switches between them.
+ *   Chat and Insights share the same canvas panel.
+ * - Timeline and Doctor Summary: full-width standalone views on all screen sizes.
+ * - Quick Entry and Flare Mode: modal pop-ups triggered by FAB buttons.
  */
 
 /**
@@ -42,8 +46,7 @@ interface AskSeverityResult {
 /**
  * Extracts an interactive component config from ask_severity tool invocations.
  * Why this exists: Tool-based detection is deterministic and doesn't depend on
- * prompt phrasing or regex matching. When the AI calls ask_severity, we extract
- * the structured result to render the severity slider.
+ * prompt phrasing or regex matching.
  */
 function extractSeverityToolResult(
   parts: UIMessage['parts']
@@ -51,13 +54,11 @@ function extractSeverityToolResult(
   if (!parts) return undefined;
 
   for (const part of parts) {
-    // AI SDK v6: tool parts have state 'output-available' or 'done' when result is ready
     if (
       part.type.startsWith('tool-') &&
       'state' in part &&
       (part.state === 'output-available' || part.state === 'done')
     ) {
-      // Cast to access output property which contains the tool result
       const toolPart = part as { output?: unknown };
       const output = toolPart.output as AskSeverityResult | undefined;
       if (output?.interactive && output.type === 'severity-slider' && output.symptom) {
@@ -86,9 +87,15 @@ export function ClueChat({
   user = { initials: 'ME' },
 }: ClueChatProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeNavId, setActiveNavId] = useState<string | undefined>();
-  const [activeTab, setActiveTab] = useState<'chat' | 'timeline'>('chat');
+  // Default to 'chat' nav tab
+  const [activeNavId, setActiveNavId] = useState<string>('chat');
+  // Sub-tab within chat/insights tabs — 'chat' column or 'canvas' column (mobile only)
+  const [activeSubTab, setActiveSubTab] = useState<'chat' | 'canvas'>('chat');
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  // Modal visibility state for pop-up panels
+  const [showQuickEntry, setShowQuickEntry] = useState(false);
+  const [showFlareMode, setShowFlareMode] = useState(false);
 
   // Auth gate: track user message count
   const userMessageCount = useRef(0);
@@ -97,7 +104,7 @@ export function ClueChat({
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<ChatUser | null>(null);
 
-  // Conversation persistence -- stored in localStorage to survive refresh
+  // Conversation persistence — stored in localStorage to survive refresh
   const conversationId = useRef<string | null>(null);
 
   // Interactive components state (severity sliders, quick-log, etc.)
@@ -105,10 +112,19 @@ export function ClueChat({
     Record<string, { interactive?: ChatInteractiveComponent; completed?: boolean }>
   >({});
 
-  // Transport for AI SDK v6 with conversation ID support
+  // Graph refresh trigger - increment to force graph refetch
+  const [graphRefreshTrigger, setGraphRefreshTrigger] = useState(0);
+
+  // Ref to track Supabase user ID for API calls (survives re-renders)
+  const supabaseUserId = useRef<string | null>(null);
+
+  // Transport for AI SDK v6 with conversation ID and user ID support
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/chat',
-    body: () => ({ conversationId: conversationId.current }),
+    body: () => ({
+      conversationId: conversationId.current,
+      userId: supabaseUserId.current,
+    }),
   }), []);
 
   // Initial messages for the chat
@@ -130,7 +146,6 @@ export function ClueChat({
     transport,
     messages: initialMessages,
     onFinish: ({ message }) => {
-      // Check if the assistant called the ask_severity tool
       const interactive = extractSeverityToolResult(message.parts);
       if (interactive) {
         setInteractiveState((prev) => ({
@@ -138,6 +153,8 @@ export function ClueChat({
           [message.id]: { interactive },
         }));
       }
+      // Trigger graph refresh after each message to show updated nodes/edges
+      setGraphRefreshTrigger((prev) => prev + 1);
     },
   });
 
@@ -161,19 +178,19 @@ export function ClueChat({
   });
 
   /**
-   * Check session on mount - determines if user is logged in and syncs conversation
+   * Check session on mount — determines if user is logged in and syncs conversation
    * Why: Handles OAuth redirect return and ongoing session persistence
    */
   useEffect(() => {
     async function checkSessionAndSync() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (session?.user) {
+          supabaseUserId.current = session.user.id;
           setIsLoggedIn(true);
           setShowAuthGate(false);
-          
-          // Extract user info from Google session (Google uses 'picture', Supabase may use 'avatar_url')
+
           const meta = session.user.user_metadata;
           const initials = (meta?.full_name || meta?.name || '')
             .split(' ')
@@ -186,15 +203,13 @@ export function ClueChat({
             avatarUrl: meta?.avatar_url || meta?.picture,
             email: session.user.email ?? undefined,
           });
-          
-          // Check if returning from OAuth (user email stored in sessionStorage)
+
           const oauthEmail = sessionStorage.getItem('oauth_user_email');
           if (oauthEmail) {
             sessionStorage.removeItem('oauth_user_email');
             sessionStorage.removeItem('pending_chat_redirect');
             sessionStorage.removeItem('pending_chat_return_url');
-            
-            // Sync existing conversation to the logged-in user
+
             const storedConvId = localStorage.getItem('clue_conversation_id');
             if (storedConvId) {
               await supabase
@@ -211,14 +226,13 @@ export function ClueChat({
 
     checkSessionAndSync();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
+          supabaseUserId.current = session.user.id;
           setIsLoggedIn(true);
           setShowAuthGate(false);
-          
-          // Extract user info from Google session (Google uses 'picture', Supabase may use 'avatar_url')
+
           const meta = session.user.user_metadata;
           const initials = (meta?.full_name || meta?.name || '')
             .split(' ')
@@ -234,17 +248,16 @@ export function ClueChat({
         } else if (event === 'SIGNED_OUT') {
           setIsLoggedIn(false);
           setLoggedInUser(null);
+          supabaseUserId.current = null;
         }
       }
     );
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   /**
-   * Handle Google Sign In - triggers OAuth flow directly from auth gate
+   * Handle Google Sign In — triggers OAuth flow directly from auth gate
    * Why: Users should be able to sign in without opening the sidebar
    */
   const handleGoogleSignIn = useCallback(async () => {
@@ -271,46 +284,61 @@ export function ClueChat({
     }
   }, []);
 
-  /** Load previous conversation from Supabase on mount */
+  /**
+   * Load previous conversation from Supabase
+   * For authenticated users: query via API to find their conversation
+   * For anonymous users: fallback to localStorage conversation ID
+   */
   useEffect(() => {
     async function loadConversation() {
       try {
-        // Check localStorage for existing conversation
-        const storedConvId = localStorage.getItem('clue_conversation_id');
-        if (!storedConvId) {
+        let convIdToLoad: string | null = null;
+
+        // For authenticated users, fetch conversation via API
+        if (supabaseUserId.current) {
+          try {
+            const res = await fetch(`/api/conversations?userId=${supabaseUserId.current}`);
+            const data = await res.json();
+            if (data.conversationId) {
+              convIdToLoad = data.conversationId as string;
+              conversationId.current = convIdToLoad;
+              localStorage.setItem('clue_conversation_id', convIdToLoad);
+            }
+          } catch (e) {
+            console.error('Failed to fetch conversation:', e);
+          }
+        }
+
+        // Fallback to localStorage for anonymous users
+        if (!convIdToLoad) {
+          const storedConvId = localStorage.getItem('clue_conversation_id');
+          if (storedConvId) {
+            convIdToLoad = storedConvId;
+            conversationId.current = storedConvId;
+          }
+        }
+
+        if (!convIdToLoad) {
           setIsLoadingHistory(false);
           return;
         }
 
-        conversationId.current = storedConvId;
-
+        // Load chat messages (read-only, can stay as direct Supabase call)
         const { supabase } = await import('@/lib/supabase');
         const { data: chatMessages } = await supabase
           .from('chat_messages')
           .select('id, role, content, created_at')
-          .eq('conversation_id', storedConvId)
+          .eq('conversation_id', convIdToLoad)
           .order('created_at', { ascending: true });
 
         if (chatMessages && chatMessages.length > 0) {
-          // Convert to AI SDK UIMessage format
           const loadedMessages: UIMessage[] = chatMessages.map((m) => ({
             id: m.id,
             role: m.role as 'user' | 'assistant',
             parts: [{ type: 'text' as const, text: m.content }],
           }));
 
-          // Prepend the greeting, then loaded messages
-          const allMessages: UIMessage[] = [
-            {
-              id: 'initial',
-              role: 'assistant',
-              parts: [{ type: 'text', text: initialMessage }],
-            },
-            ...loadedMessages,
-          ];
-          setAiMessages(allMessages);
-
-          // Update user message count for auth gate
+          setAiMessages(loadedMessages);
           userMessageCount.current = loadedMessages.filter((m) => m.role === 'user').length;
         }
       } catch (error) {
@@ -321,19 +349,27 @@ export function ClueChat({
     }
 
     loadConversation();
-  }, [initialMessage, setAiMessages]);
+  }, [initialMessage, setAiMessages, isLoggedIn]);
 
-  const handleMenuClick = useCallback(() => {
-    setSidebarOpen(true);
-  }, []);
-
-  const handleCloseSidebar = useCallback(() => {
-    setSidebarOpen(false);
-  }, []);
+  const handleMenuClick = useCallback(() => { setSidebarOpen(true); }, []);
+  const handleCloseSidebar = useCallback(() => { setSidebarOpen(false); }, []);
 
   const handleNavClick = useCallback((navItem: NavItem) => {
+    // Quick Entry and Flare Mode open as modals — they don't change the active view
+    if (navItem.id === 'quick-entry') {
+      setShowQuickEntry(true);
+      setSidebarOpen(false);
+      return;
+    }
+    if (navItem.id === 'flare-mode') {
+      setShowFlareMode(true);
+      setSidebarOpen(false);
+      return;
+    }
     setActiveNavId(navItem.id);
     setSidebarOpen(false);
+    // Reset sub-tab to 'chat' when switching nav items
+    setActiveSubTab('chat');
   }, []);
 
   /**
@@ -342,41 +378,38 @@ export function ClueChat({
    */
   const handleSendMessage = useCallback(
     async (content: string, files?: FileList) => {
-      // Auth gate check
       userMessageCount.current++;
       if (!isLoggedIn && userMessageCount.current >= 3 && !showAuthGate) {
         setShowAuthGate(true);
       }
 
-      // Create a conversation on the first user message
-      if (!conversationId.current) {
+      // Create conversation via API if not already created
+      if (!conversationId.current && supabaseUserId.current) {
         try {
-          const { supabase } = await import('@/lib/supabase');
-          const { data: conv } = await supabase
-            .from('chat_conversations')
-            .insert({})
-            .select('id')
-            .single();
-          if (conv?.id) {
-            conversationId.current = conv.id;
-            localStorage.setItem('clue_conversation_id', conv.id);
+          const res = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: supabaseUserId.current }),
+          });
+          const data = await res.json();
+          if (data.conversationId) {
+            conversationId.current = data.conversationId;
+            localStorage.setItem('clue_conversation_id', data.conversationId);
+          } else if (data.error) {
+            console.error('Failed to create conversation:', data.error);
           }
         } catch (e) {
           console.error('Failed to create conversation:', e);
         }
       }
 
-      // Use AI SDK v6 sendMessage with text + optional files
       await sendMessage({ text: content, files: files || undefined });
     },
     [sendMessage, isLoggedIn, showAuthGate]
   );
 
-  // Dismiss auth gate on sidebar login
   useEffect(() => {
-    if (isLoggedIn) {
-      setShowAuthGate(false);
-    }
+    if (isLoggedIn) { setShowAuthGate(false); }
   }, [isLoggedIn]);
 
   /**
@@ -385,43 +418,86 @@ export function ClueChat({
    */
   const handleSeveritySubmit = useCallback(
     async (messageId: string, severity: number) => {
-      // Mark the interactive component as completed in our state
       setInteractiveState((prev) => ({
         ...prev,
         [messageId]: { ...prev[messageId], completed: true },
       }));
 
-      // Find the symptom from the interactive state
       const state = interactiveState[messageId];
-      const symptom = state?.interactive?.type === 'severity-slider' 
-        ? state.interactive.symptom 
+      const symptom = state?.interactive?.type === 'severity-slider'
+        ? state.interactive.symptom
         : 'symptom';
 
-      // Send the severity as a user message to continue the conversation
-      const severityLabel =
-        severity <= 3 ? 'mild' : severity <= 6 ? 'moderate' : 'severe';
-      await handleSendMessage(
-        `${severity}/10 - ${severityLabel} ${symptom}`
-      );
+      const severityLabel = severity <= 3 ? 'mild' : severity <= 6 ? 'moderate' : 'severe';
+      await handleSendMessage(`${severity}/10 - ${severityLabel} ${symptom}`);
     },
     [interactiveState, handleSendMessage]
   );
 
-  /** Renders the right panel based on active sidebar nav */
-  function renderRightPanel() {
-    switch (activeNavId) {
-      case 'insights':
-        return <InsightsPanel />;
-      case 'doctor-pack':
-        return <DoctorSummaryPanel />;
-      case 'quick-entry':
-        return <QuickEntryPanel />;
-      case 'flare-mode':
-        return <FlareModePanel />;
-      default:
-        return <ChatCanvas />;
+  /**
+   * Handle question from graph unknown node tap
+   * Why: Sends the question into the chat and switches to chat view on mobile
+   */
+  const handleAskQuestion = useCallback(
+    async (question: string) => {
+      // Switch to chat sub-tab on mobile so user sees the question being answered
+      setActiveSubTab('chat');
+      // Send the question as a user message
+      await handleSendMessage(question);
+    },
+    [handleSendMessage]
+  );
+
+  /**
+   * Determines whether the current nav tab uses the split chat+canvas layout.
+   * Why: Only 'chat' and 'insights' tabs show the two-panel layout.
+   * 'timeline' and 'doctor-pack' are full-width standalone views.
+   */
+  const isSplitLayout = activeNavId === 'chat' || activeNavId === 'insights';
+
+  /**
+   * Renders the right-side canvas panel content based on the active nav tab.
+   * Why: Chat tab shows the knowledge graph; Insights tab shows the
+   * InsightsPanel. Both share the same canvas slot.
+   */
+  function renderCanvas() {
+    if (activeNavId === 'insights') {
+      return <InsightsPanel />;
     }
+    return (
+      <ChatCanvas
+        userId={supabaseUserId.current ?? undefined}
+        onAskQuestion={handleAskQuestion}
+        refreshTrigger={graphRefreshTrigger}
+      />
+    );
   }
+
+  /**
+   * Renders the full-width view for non-split nav tabs (Timeline, Doctor Summary).
+   * Why: These views need the full viewport width to be useful on all screen sizes.
+   */
+  function renderFullWidthView() {
+    if (activeNavId === 'timeline') {
+      return (
+        <div className="flex flex-1 flex-col min-h-screen min-h-svh w-full overflow-hidden">
+          <ChatHeader onMenuClick={handleMenuClick} />
+          <TimelineView userId={supabaseUserId.current ?? undefined} />
+        </div>
+      );
+    }
+    if (activeNavId === 'doctor-pack') {
+      return (
+        <div className="flex flex-1 flex-col min-h-screen min-h-svh w-full overflow-hidden">
+          <ChatHeader onMenuClick={handleMenuClick} />
+          <DoctorSummaryPanel />
+        </div>
+      );
+    }
+    return null;
+  }
+
+  const activeUser = loggedInUser ?? user;
 
   return (
     <div className="relative flex min-h-screen min-h-svh bg-bg-cream">
@@ -443,11 +519,7 @@ export function ClueChat({
             >
               {isAuthLoading ? (
                 <>
-                  <MaterialIcon
-                    name="progress_activity"
-                    size="sm"
-                    className="animate-spin"
-                  />
+                  <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
                   Signing in...
                 </>
               ) : (
@@ -458,36 +530,79 @@ export function ClueChat({
         </div>
       )}
 
+      {/* Quick Entry modal */}
+      <QuickEntryPanel isOpen={showQuickEntry} onClose={() => setShowQuickEntry(false)} />
+
+      {/* Flare Mode modal */}
+      <FlareModePanel isOpen={showFlareMode} onClose={() => setShowFlareMode(false)} />
+
       {/* Sidebar */}
       <ChatSidebar
         isOpen={sidebarOpen}
         onClose={handleCloseSidebar}
-        user={loggedInUser ?? user}
+        user={activeUser}
         activeNavId={activeNavId}
         onNavClick={handleNavClick}
         isLoggedIn={isLoggedIn}
       />
 
-      {/* Main chat area */}
-      <div className="flex flex-1 flex-col min-h-screen min-h-svh w-full lg:max-w-[420px] lg:flex-none lg:border-r lg:border-primary/6">
-        <ChatHeader onMenuClick={handleMenuClick} />
-        <ChatMessages 
-          messages={messages} 
-          user={user} 
-          isTyping={isTyping || isLoadingHistory} 
-          activeTab={activeTab}
-          onSeveritySubmit={handleSeveritySubmit}
-        />
-        <ChatInput
-          onSendMessage={handleSendMessage}
-          disabled={isTyping}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-      </div>
+      {/* Full-width views: Timeline and Doctor Summary */}
+      {!isSplitLayout && renderFullWidthView()}
 
-      {/* Right panel - contextual based on nav */}
-      {renderRightPanel()}
+      {/* Split layout: Chat and Insights tabs */}
+      {isSplitLayout && (
+        <>
+          {/* Mobile: single column with swappable content area + fixed pill at bottom */}
+          <div className="flex flex-col min-h-screen min-h-svh w-full lg:hidden">
+            <ChatHeader onMenuClick={handleMenuClick} />
+            {/* Content area: either chat messages or canvas */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {activeSubTab === 'chat' ? (
+                <ChatMessages
+                  messages={messages}
+                  user={activeUser}
+                  isTyping={isTyping || isLoadingHistory}
+                  onSeveritySubmit={handleSeveritySubmit}
+                />
+              ) : (
+                renderCanvas()
+              )}
+            </div>
+            {/* Input area with pill — always at bottom */}
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              disabled={isTyping}
+              activeSubTab={activeSubTab}
+              onSubTabChange={setActiveSubTab}
+              showSubTabPill={true}
+            />
+          </div>
+
+          {/* Desktop: two-column layout (chat left, canvas right) */}
+          <div className="hidden lg:flex flex-col min-h-screen min-h-svh w-full lg:max-w-[420px] lg:flex-none lg:border-r lg:border-primary/6">
+            <ChatHeader onMenuClick={handleMenuClick} />
+            <ChatMessages
+              messages={messages}
+              user={activeUser}
+              isTyping={isTyping || isLoadingHistory}
+              onSeveritySubmit={handleSeveritySubmit}
+            />
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              disabled={isTyping}
+              activeSubTab={activeSubTab}
+              onSubTabChange={setActiveSubTab}
+              showSubTabPill={true}
+            />
+          </div>
+
+          {/* Desktop: canvas panel — always visible */}
+          <div className="hidden lg:flex flex-1">
+            {renderCanvas()}
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

@@ -1,84 +1,22 @@
-# Clue — Symptom & Mood Tracker
+# Chronic Life — Symptom Tracker
 
-> **Predict your next flare before it hits.** A symptom tracker that learns your body's patterns and gives you a heads up — so you can prepare, not just react.
+> **Predict your next flare before it hits.** A symptom tracker that learns your body’s patterns and gives you a heads up — so you can prepare, not just react.
 
-# Name of the app is Chronic Life and name of the chat agent is Clue
+**App name:** Chronic Life · **AI chat agent:** Clue
 
 ## Low-effort, non-judgmental, flexible symptom tracking that works on bad days and doesn’t create guilt
 
 ---
 
-## 🎯 Validated Product Direction (Jan 2026)
+## Getting Started
 
-### What We Learned
+```bash
+cd web-app && npm install
+npm run dev       # → http://localhost:3000
+npm run build     # production build check
+```
 
-After running "The Clarity Experiment" ($100 Reddit campaign testing 3 pain points), **Pattern Discovery / Prediction** won decisively:
-
-| Ad Group                             | Clicks    | CPC   |
-| :----------------------------------- | :-------- | :---- |
-| **predict_flares**                   | **59**    | $0.05 |
-| find_triggers                        | 13        | $0.05 |
-| Others (exhaustion, doctor mistrust) | < 10 each | —     |
-
-**Prediction beat trigger-finding by 4.5x.** Users want to know what's coming, not just what happened.
-
-### Current Test: Prediction Depth Test
-
-We're now testing _which type_ of prediction resonates most:
-
-| Ad Group          | Theme          | Core Promise                            |
-| :---------------- | :------------- | :-------------------------------------- |
-| **The Forecast**  | Time-Based     | "I'll know **WHEN** it's coming"        |
-| **The Culprit**   | Variable-Based | "I'll know **WHICH** trigger caused it" |
-| **The Preventer** | Action-Based   | "I'll know **WHAT TO DO** to stop it"   |
-
-**Campaign Docs:** [`web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md`](./web-landing/v2/PREDICTION-CAMPAIGN-MASTER.md)
-
----
-
-## 1. Product Promise
-
-Clue is a **prediction-first symptom tracker** that learns your body's lag effects and warning signs.
-
-### Core Value Proposition
-
-> **"Stop being blindsided by flares."**
->
-> Log symptoms in 20 seconds. The app finds patterns you can't see. Get warned 24-48 hours before a crash.
-
-### Five Pillars
-
-| Pillar      | Description                                              | Status               |
-| :---------- | :------------------------------------------------------- | :------------------- |
-| **Predict** | See flares coming 24-48h early based on your patterns    | 🎯 **PRIMARY FOCUS** |
-| **Capture** | Fast check-ins + flare logging when things spike         | ✅ Active            |
-| **Recall**  | Calendar history you can trust when brain fog hits       | ✅ Active            |
-| **Connect** | "How does X impact Y?" patterns that stay understandable | ✅ Active            |
-| **Trust**   | Doctors take your data seriously (structured exports)    | ✅ Active            |
-
-### ~~Deprecated~~ Five Pillars (Original)
-
-<details>
-<summary>Original pillars before validation (click to expand)</summary>
-
-| Pillar      | Description                                                                   |
-| ----------- | ----------------------------------------------------------------------------- |
-| **Capture** | Fast check-ins + flare logging when things spike                              |
-| **Recall**  | Calendar history you can trust when brain fog hits                            |
-| **Connect** | "How does X impact Y?" patterns that stay understandable                      |
-| **Act**     | Gentle next steps, experiments, and "what to try today"                       |
-| **Trust**   | Doctors take your data seriously because Clue structures it the way they need |
-
-_Note: "Act" was replaced by "Predict" after campaign validation showed users want foresight over guidance._
-
-</details>
-
-#### Doctor Trust Details
-
-- Graphical trends over relevant windows (2–4 weeks)
-- Temporal patterns (onset, cycles, lag effects)
-- Symptom summaries that cover what clinicians ask for (the "8 characteristics" structure)
-- Provider-ready PDFs and appointment-focused talking points
+> Requires `web-app/.env.local` — see `context/web-landing-old-archived/KEYS-REFERENCE.md` for required keys.
 
 ---
 
@@ -167,164 +105,6 @@ _Note: "Act" was replaced by "Predict" after campaign validation showed users wa
 _Note: Original loop focused on "capture → recall → doctor export". New loop prioritizes prediction as the core value moment._
 
 </details>
-
----
-
-## 4. Onboarding Flow
-
-### Screen 1A — "What are you managing?"
-
-**Goal:** Acknowledge reality—users manage multiple conditions.
-
-**UI:** Bottom sheet picker with common chronic clusters + search
-
-**Condition Examples:**
-
-- IBS, migraine, long COVID, fibromyalgia
-- Endometriosis, anxiety/depression, autoimmune
-- Diabetes, chronic pain, insomnia, fatigue
-- POTS, skin conditions
-
-**Output:** Creates initial tracking templates and vocabulary (symptom lists, factors, meds)
-
----
-
-### Screen 1B — "What matters most right now?"
-
-**Goal:** Reduce overwhelm and create a first win. Pick **1 priority**.
-
-| Priority Options           |
-| -------------------------- |
-| Fatigue and energy crashes |
-| Pain and inflammation      |
-| Mood and anxiety           |
-| IBS and gut symptoms       |
-| Sleep and recovery         |
-| Headaches/migraines        |
-| Brain fog/focus            |
-
-**Output:** Sets the "first month focus" and default charts
-
----
-
-### Screen 1C — Impact Question
-
-**Header:** _"How does my [Feature] impact [Outcome]?"_
-
-| Feature Dropdown | Outcome Dropdown |
-| ---------------- | ---------------- |
-| Medications      | Mood             |
-| Sleep            | IBS              |
-| Food             | Pain             |
-| Stress           | Fatigue          |
-| Exercise         | Anxiety          |
-| Cycle            | Sleep quality    |
-| Work             | Headache         |
-| Weather          | Skin             |
-| Hydration        | Focus            |
-| Supplements      |                  |
-
-**Output:** Becomes the pinned question in chat + the first analytics card
-
----
-
-### Screen 2 — "Intent"
-
-Users pick the mindset they're in:
-
-#### 🔍 Awareness — "Something is wrong"
-
-> - "Why am I so exhausted again?"
-> - "My pain is back with a vengeance."
-> - "Everything hurts and no one sees it."
-> - "I can't think straight; my brain is mush."
-> - "This flare came out of nowhere."
-
-#### 📝 Tracking — "I need history"
-
-> - "I need to log this flare, but I'm so tired."
-> - "When did this start last time?"
-> - "Did I take my meds on time yesterday?"
-> - "I've had five flares this month; I'm losing count."
-> - "I wish I could remember what triggered this."
-
-#### 🔎 Insight — "What's causing this?"
-
-> - "Is stress making this worse?"
-> - "Could it be the weather or the food I ate?"
-> - "Every time I skip lunch, my fatigue spikes."
-> - "Maybe it's that new medicine."
-> - "I'm trying to connect the dots, but it's overwhelming."
-
-#### ⚡ Action — "What do I do next?"
-
-> - "Should I call my doctor or wait it out?"
-> - "How can I prevent this from happening again?"
-> - "What can I try to feel better today?"
-> - "I need to show my doctor what's been happening."
-> - "I want to prepare for my appointment."
-
-**Output:**
-
-- Sets the tone of the app's first week (agent asks fewer/more questions)
-- Preconfigures default quick-entry widgets and chat prompts
-
----
-
-### Screen 3 — First Check-in Widgets
-
-2–3 lightweight, adaptive widgets based on Screen 1B + Screen 2:
-
-| Widget                 | Description                                                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------ |
-| **Baseline slider**    | Today overall rating for priority outcome                                                        |
-| **Flare toggle**       | "Is this a flare?" yes/no → If yes: start time + 1–2 symptom chips                               |
-| **Top suspects chips** | 3–7 chips relevant to chosen Feature (missed meds, poor sleep, stress spike, food trigger, etc.) |
-
----
-
-### Screen 4 — First Value (Instant Commitment)
-
-Show three things:
-
-1. **"Baseline captured"** — Clear confirmation
-2. **Calendar preview** — What their history will look like once they log
-3. **Promise card** (mock insight):
-   - _"After 3 days, I'll start spotting patterns between [Feature] and [Outcome]."_
-   - _"After 2 weeks, you'll get a doctor-ready 2–4 week trend view."_
-
-> This creates psychological buy-in before the data exists.
-
----
-
-## 5. Main App Navigation
-
-### Tab 1 — Chat (Primary)
-
-Chat is the front door. It should feel like **texting**—while quietly building **doctor-grade structure**.
-
-**Key Behaviors:**
-
-- **Pinned question:** How does my [Feature] impact [Outcome]?
-- **Side drawer:** Saved questions + suggested ones
-- **Bottom-sheet pickers** for chips (symptoms, factors, meds)—never heavy forms
-
-#### Chat Intelligence: The "8 Characteristics" Structure
-
-When users describe symptoms, Clue extracts and summarizes the doctor-usable structure and gently prompts for what's missing—without feeling like a checklist.
-
-| Characteristic          | What It Captures                   |
-| ----------------------- | ---------------------------------- |
-| **Location**            | Where exactly                      |
-| **Duration**            | How long                           |
-| **Frequency**           | How often                          |
-| **Progression**         | Worse/better/same                  |
-| **Context**             | What was happening when it started |
-| **Associated symptoms** | Related symptoms                   |
-| **Quality**             | What it feels like                 |
-| **Quantity**            | Severity 1–10                      |
-| **Aggravating factors** | What makes it worse                |
-| **Alleviating factors** | What helps                         |
 
 #### Example Chat Flow
 
@@ -463,19 +243,6 @@ When user indicates an appointment (or it's upcoming):
 | **Threshold alerts**             | Deviation detection             |
 | **Lag effects**                  | Yesterday sleep → today outcome |
 | **Provider paragraphs + graphs** | Export-ready summaries          |
-
----
-
-## 9. MVP Scope
-
-### Must Ship ✓
-
-- [ ] Expanded onboarding (1A, 1B, 1C, 2, first value screen)
-- [ ] Chat with 8-characteristics extraction + gentle missing-info prompts
-- [ ] Flare Mode (manual + simple automatic triggers, timestamps, compare to past)
-- [ ] History calendar
-- [ ] Analytics with Doctor View toggle
-- [ ] Appointment Prep Mode (basic) + PDF export
 
 ---
 

@@ -1,19 +1,12 @@
-import type { Metadata } from 'next';
-
-import { LandingPage } from '@/components/LandingPage';
-import { spoonSaverContent } from '@/content/pages/spoon-saver';
+import { redirect } from 'next/navigation';
 
 /**
- * Home Landing Page
- * basically same as spoon-saver page
- * Why this exists: Main landing page for general chronic illness audience.
+ * Root Page
+ *
+ * Why this exists: Redirects to the main Clue chat interface.
+ * Landing pages have been removed as part of architecture cleanup.
  */
 
-export const metadata: Metadata = {
-  title: spoonSaverContent.meta.title,
-  description: spoonSaverContent.meta.description,
-};
-
-export default function SpoonSaverPage() {
-  return <LandingPage content={spoonSaverContent} />;
+export default function RootPage() {
+  redirect('/chat');
 }

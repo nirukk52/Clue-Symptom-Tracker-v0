@@ -2,27 +2,17 @@
 -- Why: Creates all tables needed for the AI chat agent to persist
 -- symptom logs, medications, moods, timeline, insights, and doctor summaries.
 
--- Conversations table for chat persistence
-CREATE TABLE IF NOT EXISTS conversations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT,
-  title TEXT DEFAULT 'New Conversation',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Add user_id and updated_at columns to existing chat_conversations table
+-- (chat_conversations was created by 002_create_chat_conversations.sql in the archived migrations)
+ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS user_id TEXT;
+ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
-CREATE INDEX IF NOT EXISTS conversations_user_id_idx ON conversations (user_id);
+CREATE INDEX IF NOT EXISTS chat_conversations_user_id_idx ON chat_conversations (user_id);
+CREATE INDEX IF NOT EXISTS chat_conversations_updated_at_idx ON chat_conversations (updated_at DESC);
 
--- Chat messages
-CREATE TABLE IF NOT EXISTS chat_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
-  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system', 'tool')),
-  content TEXT NOT NULL,
-  metadata_json JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
+-- Chat messages - ensure foreign key references chat_conversations (not conversations)
+-- Note: chat_messages table was created in the archived migration with correct FK
+-- This just ensures the indexes exist
 CREATE INDEX IF NOT EXISTS chat_messages_conversation_idx ON chat_messages (conversation_id, created_at);
 
 -- Symptom logs from chat extraction

@@ -2,8 +2,15 @@
  * Chat API Route
  *
  * Why this exists: Main entry point for the Clue AI chat. Uses Vercel AI SDK
- * streamText with OpenAI via AI Gateway (gpt-5.4) and tool calling. Integrates mem0 for user memory
- * and Supabase-backed tools for symptom logging, insights, and more.
+ * streamText with OpenAI via AI Gateway (gpt-5.4) and tool calling. Integrates mem0 for user memory,
+ * Supabase-backed tools for symptom logging, and the knowledge graph pipeline.
+ *
+ * Pipeline architecture:
+ * 1. PRE-RESPONSE: extractEntities → upsertNodes → scoreConditions → pickNextQuestion
+ *    - Runs BEFORE streamText so the LLM can include the next question in its reply
+ *    - scoreConditions and pickNextQuestion are deterministic (no LLM)
+ * 2. POST-RESPONSE: updateClues (LLM) → storeMemory → persistMessages
+ *    - Runs in onFinish callback, non-blocking
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -20,6 +27,8 @@ import {
   getRelevantMemories,
   storeMemory,
 } from '@/backend/lib/memory';
+import { runPreResponsePipeline, runPostResponsePipeline, type PrePipelineResult } from '@/backend/lib/graph/pipeline';
+import { getGraphSummary } from '@/backend/lib/graph';
 
 function getSupabase() {
   return createClient(
@@ -59,13 +68,32 @@ export async function POST(req: Request) {
     .map((p) => p.text)
     .join(' ') || '';
 
-  const memories = await getRelevantMemories(uid, lastMessageText);
+  // Step 1: Fetch memories, graph state, and run pre-pipeline in parallel
+  // Pre-pipeline extracts entities + scores conditions + picks next question BEFORE response
+  const chatMessages = [{ role: 'user' as const, content: lastMessageText }];
 
+  const [memories, graphSummary, preResult] = await Promise.all([
+    getRelevantMemories(uid, lastMessageText),
+    uid !== 'anonymous' ? getGraphSummary(uid) : '',
+    uid !== 'anonymous' && lastMessageText
+      ? runPreResponsePipeline({ userId: uid, messages: chatMessages })
+      : Promise.resolve(null as PrePipelineResult | null),
+  ]);
+
+  // Step 2: Build system prompt with next question injected
+  const nextQuestion = preResult?.nextQuestion?.question || undefined;
   const systemPrompt = buildSystemPrompt({
     memories: memories || undefined,
+    graphSummary: graphSummary || undefined,
     isFlareMode,
+    nextQuestion,
   });
 
+  if (nextQuestion) {
+    console.log('[chat/route] Injecting next question into prompt:', nextQuestion);
+  }
+
+  // Step 3: Stream the response
   const result = streamText({
     model: 'openai/gpt-5.4',
     system: systemPrompt,
@@ -73,12 +101,22 @@ export async function POST(req: Request) {
     stopWhen: stepCountIs(5),
     tools: chatTools,
     onFinish: async ({ text }) => {
-      // Store memories from this exchange (fire-and-forget)
+      const fullChatMessages = [
+        { role: 'user' as const, content: lastMessageText },
+        { role: 'assistant' as const, content: text || '' },
+      ];
+
+      // Store memories (fire-and-forget)
       if (lastMessageText && text) {
-        storeMemory(uid, [
-          { role: 'user', content: lastMessageText },
-          { role: 'assistant', content: text },
-        ]).catch(() => {});
+        storeMemory(uid, fullChatMessages).catch(() => {});
+      }
+
+      // Run post-response pipeline (fire-and-forget)
+      // This generates clue nodes and persists the next question node
+      if (uid !== 'anonymous' && preResult) {
+        runPostResponsePipeline({ userId: uid }, preResult).catch((err) => {
+          console.error('[chat/route] Post-pipeline failed:', err);
+        });
       }
 
       // Persist messages to database
