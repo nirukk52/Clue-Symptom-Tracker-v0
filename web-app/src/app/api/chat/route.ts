@@ -11,6 +11,11 @@
  *    - scoreConditions and pickNextQuestion are deterministic (no LLM)
  * 2. POST-RESPONSE: updateClues (LLM) → storeMemory → persistMessages
  *    - Runs in onFinish callback, non-blocking
+ *
+ * Conversational pacing:
+ * - If ask_severity tool is called, we defer the next question to the following turn
+ * - This prevents "Rate your headache + How did you sleep?" in the same response
+ * - pending_next_question is stored in user_preferences and used on the next turn
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -52,14 +57,15 @@ export async function POST(req: Request) {
   setActiveUserId(uid);
   const supabase = getSupabase();
 
-  // Check if user is in flare mode
+  // Check if user is in flare mode AND if there's a pending question from previous turn
   const { data: prefs } = await supabase
     .from('user_preferences')
-    .select('flare_mode')
+    .select('flare_mode, pending_next_question')
     .eq('user_id', uid)
     .single();
 
   const isFlareMode = prefs?.flare_mode ?? false;
+  const pendingQuestion = prefs?.pending_next_question as string | null;
 
   // Extract the last user message text from parts
   const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
@@ -80,17 +86,22 @@ export async function POST(req: Request) {
       : Promise.resolve(null as PrePipelineResult | null),
   ]);
 
-  // Step 2: Build system prompt with next question injected
-  const nextQuestion = preResult?.nextQuestion?.question || undefined;
+  // Step 2: Determine which question to inject
+  // Priority: pending question from previous turn > newly picked question
+  // But only inject if we're not in flare mode
+  const newQuestion = preResult?.nextQuestion?.question || undefined;
+  const questionToInject = isFlareMode ? undefined : (pendingQuestion || newQuestion);
+  
+  // Build system prompt — only inject question if we have one and no pending severity
   const systemPrompt = buildSystemPrompt({
     memories: memories || undefined,
     graphSummary: graphSummary || undefined,
     isFlareMode,
-    nextQuestion,
+    nextQuestion: questionToInject,
   });
 
-  if (nextQuestion) {
-    console.log('[chat/route] Injecting next question into prompt:', nextQuestion);
+  if (questionToInject) {
+    console.log('[chat/route] Injecting question into prompt:', questionToInject, pendingQuestion ? '(from pending)' : '(new)');
   }
 
   // Step 3: Stream the response
@@ -100,11 +111,36 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: chatTools,
-    onFinish: async ({ text }) => {
+    onFinish: async ({ text, toolCalls }) => {
       const fullChatMessages = [
         { role: 'user' as const, content: lastMessageText },
         { role: 'assistant' as const, content: text || '' },
       ];
+
+      // Check if ask_severity was called in this response
+      const askedSeverity = toolCalls?.some(tc => tc.toolName === 'ask_severity') ?? false;
+
+      // Manage pending_next_question based on whether ask_severity was called
+      if (uid !== 'anonymous') {
+        if (askedSeverity && newQuestion) {
+          // Severity slider shown — defer the new question to next turn
+          console.log('[chat/route] ask_severity called — deferring question to next turn:', newQuestion);
+          await supabase
+            .from('user_preferences')
+            .upsert({
+              user_id: uid,
+              pending_next_question: newQuestion,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+        } else if (pendingQuestion) {
+          // Used the pending question (or no severity asked) — clear it
+          console.log('[chat/route] Clearing pending question');
+          await supabase
+            .from('user_preferences')
+            .update({ pending_next_question: null, updated_at: new Date().toISOString() })
+            .eq('user_id', uid);
+        }
+      }
 
       // Store memories (fire-and-forget)
       if (lastMessageText && text) {

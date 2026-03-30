@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
-import { SeveritySlider } from './SeveritySlider';
+import { RatingSlider, RATING_LABEL_PRESETS } from './SeveritySlider';
 import type { ChatMessage, ChatUser } from './types';
 
 /**
@@ -83,13 +83,15 @@ export function ChatMessages({ messages, user, isTyping, onSeveritySubmit }: Cha
             <div className="max-w-[90%] text-primary text-[15px] font-normal leading-[1.65] pr-6">
               {message.content}
             </div>
-            {message.interactive?.type === 'severity-slider' && onSeveritySubmit && (
-              <SeveritySlider
-                symptom={message.interactive.symptom}
+            {/* Support both legacy severity-slider and new rating-slider types */}
+            {(message.interactive?.type === 'severity-slider' || message.interactive?.type === 'rating-slider') && onSeveritySubmit && (
+              <RatingSlider
+                metric={message.interactive.metric || message.interactive.symptom}
                 prompt={message.interactive.prompt}
                 initialValue={message.interactive.initialValue ?? 5}
                 disabled={message.interactiveCompleted}
-                onSubmit={(severity) => onSeveritySubmit(message.id, severity)}
+                labels={message.interactive.labels as keyof typeof RATING_LABEL_PRESETS || 'severity'}
+                onSubmit={(value) => onSeveritySubmit(message.id, value)}
               />
             )}
           </div>

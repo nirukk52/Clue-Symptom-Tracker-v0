@@ -108,11 +108,21 @@ export async function runPreResponsePipeline(input: PrePipelineInput): Promise<P
     // Step 2: Upsert entity nodes to DB
     let nodesCreated = 0;
     for (const entity of entities) {
+      // Parse data from JSON string if present
+      let parsedData: Record<string, unknown> | undefined;
+      if (entity.data) {
+        try {
+          parsedData = JSON.parse(entity.data);
+        } catch {
+          parsedData = undefined;
+        }
+      }
+      
       const nodeId = await upsertGraphNode(userId, {
         type: entity.type,
         name: entity.name,
         subLabel: entity.subLabel,
-        data: entity.data,
+        data: parsedData,
       });
       if (nodeId) {
         nodesCreated++;

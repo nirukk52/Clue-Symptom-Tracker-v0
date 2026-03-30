@@ -32,21 +32,27 @@ import type { ChatInteractiveComponent, ChatMessage, ChatUser, NavItem } from '.
  */
 
 /**
- * Structured result from the ask_severity tool.
+ * Structured result from the ask_severity tool (now generalized as rating-slider).
  * Why this exists: Type-safe access to the tool's return value.
  */
-interface AskSeverityResult {
+interface AskRatingResult {
   interactive?: boolean;
   type?: string;
+  /** New generalized metric name */
+  metric?: string;
+  /** Legacy symptom field for backwards compatibility */
   symptom?: string;
   prompt?: string;
   initialValue?: number;
+  /** Label preset name (severity, energy, mood, etc.) */
+  labels?: string;
 }
 
 /**
  * Extracts an interactive component config from ask_severity tool invocations.
  * Why this exists: Tool-based detection is deterministic and doesn't depend on
- * prompt phrasing or regex matching.
+ * prompt phrasing or regex matching. Supports both legacy severity-slider and
+ * new rating-slider types.
  */
 function extractSeverityToolResult(
   parts: UIMessage['parts']
@@ -60,13 +66,17 @@ function extractSeverityToolResult(
       (part.state === 'output-available' || part.state === 'done')
     ) {
       const toolPart = part as { output?: unknown };
-      const output = toolPart.output as AskSeverityResult | undefined;
-      if (output?.interactive && output.type === 'severity-slider' && output.symptom) {
+      const output = toolPart.output as AskRatingResult | undefined;
+      // Support both legacy severity-slider and new rating-slider types
+      if (output?.interactive && (output.type === 'severity-slider' || output.type === 'rating-slider')) {
+        const metric = output.metric || output.symptom || 'symptom';
         return {
-          type: 'severity-slider',
-          symptom: output.symptom,
+          type: output.type as 'severity-slider' | 'rating-slider',
+          metric,
+          symptom: metric, // Backwards compat
           prompt: output.prompt,
           initialValue: output.initialValue ?? 5,
+          labels: output.labels,
         };
       }
     }
@@ -185,9 +195,11 @@ export function ClueChat({
     async function checkSessionAndSync() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('[ClueChat] Session check:', session?.user?.id ?? 'no session');
 
         if (session?.user) {
           supabaseUserId.current = session.user.id;
+          console.log('[ClueChat] Set supabaseUserId.current to:', session.user.id);
           setIsLoggedIn(true);
           setShowAuthGate(false);
 
@@ -249,6 +261,9 @@ export function ClueChat({
           setIsLoggedIn(false);
           setLoggedInUser(null);
           supabaseUserId.current = null;
+          // Clear stale conversation ID to prevent FK errors on next login
+          localStorage.removeItem('clue_conversation_id');
+          conversationId.current = null;
         }
       }
     );
@@ -309,12 +324,26 @@ export function ClueChat({
           }
         }
 
-        // Fallback to localStorage for anonymous users
+        // Fallback to localStorage for anonymous users — but verify it exists first
         if (!convIdToLoad) {
           const storedConvId = localStorage.getItem('clue_conversation_id');
           if (storedConvId) {
-            convIdToLoad = storedConvId;
-            conversationId.current = storedConvId;
+            // Verify the conversation still exists in the database
+            const { supabase: sb } = await import('@/lib/supabase');
+            const { data: convExists } = await sb
+              .from('chat_conversations')
+              .select('id')
+              .eq('id', storedConvId)
+              .maybeSingle();
+            
+            if (convExists) {
+              convIdToLoad = storedConvId;
+              conversationId.current = storedConvId;
+            } else {
+              // Stale ID — clear it
+              console.log('[ClueChat] Cleared stale conversation ID from localStorage');
+              localStorage.removeItem('clue_conversation_id');
+            }
           }
         }
 
@@ -384,7 +413,9 @@ export function ClueChat({
       }
 
       // Create conversation via API if not already created
+      // Note: supabaseUserId.current is set by checkSessionAndSync effect on mount
       if (!conversationId.current && supabaseUserId.current) {
+        console.log('[ClueChat] Creating conversation for user:', supabaseUserId.current);
         try {
           const res = await fetch('/api/conversations', {
             method: 'POST',
@@ -395,12 +426,15 @@ export function ClueChat({
           if (data.conversationId) {
             conversationId.current = data.conversationId;
             localStorage.setItem('clue_conversation_id', data.conversationId);
+            console.log('[ClueChat] Created conversation:', data.conversationId);
           } else if (data.error) {
-            console.error('Failed to create conversation:', data.error);
+            console.error('[ClueChat] Failed to create conversation:', data.error);
           }
         } catch (e) {
-          console.error('Failed to create conversation:', e);
+          console.error('[ClueChat] Failed to create conversation:', e);
         }
+      } else if (!conversationId.current && !supabaseUserId.current) {
+        console.log('[ClueChat] Skipping conversation creation - no userId (anonymous user)');
       }
 
       await sendMessage({ text: content, files: files || undefined });

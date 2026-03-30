@@ -201,6 +201,7 @@ Requires `web-app/.env.local` — see `context/web-landing-old-archived/KEYS-REF
 6. **Golden folder rule:** if a folder 3 levels deep from root has >4 files, extract into sub-folders.
 7. **Skills first:** before starting any task, check `.claude-skills/` for a relevant skill; use it; update it after.
 8. **Skills are created only via** `.claude/skills/skill-creator`.
+9. **One file per tool** — Clue chat tools live in `web-app/src/backend/agents/clue/tools/definitions/`, one tool per file. Never add tools to an existing file.
 
 ---
 

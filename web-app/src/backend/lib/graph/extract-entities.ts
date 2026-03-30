@@ -23,7 +23,8 @@ export interface ExtractedEntity {
   type: GraphNodeType;
   name: string;
   subLabel?: string;
-  data?: Record<string, unknown>;
+  /** JSON string of structured data, parsed by consumers */
+  data?: string | null;
 }
 
 // =============================================================================
@@ -36,7 +37,7 @@ const EntitySchema = z.object({
   ),
   name: z.string().describe('Canonical name for the entity (e.g., "Headache", "Sleep", "Ibuprofen")'),
   subLabel: z.string().nullable().describe('Additional context (e.g., "Severity 7/10", "4 hours"), or null if none'),
-  data: z.record(z.string(), z.unknown()).nullable().describe('Structured data about the entity, or null if none'),
+  data: z.string().nullable().describe('JSON string of structured data (e.g., {"severity": 7}), or null if none'),
 });
 
 const EntitiesSchema = z.object({
@@ -135,7 +136,7 @@ export function factsToEntities(facts: AtomicFact[]): ExtractedEntity[] {
       entities.push({
         type: fact.category as GraphNodeType,
         name: capitalize(entityName),
-        data: { sourceFact: fact.fact },
+        data: JSON.stringify({ sourceFact: fact.fact }),
       });
     }
   }

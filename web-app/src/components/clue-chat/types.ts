@@ -12,7 +12,17 @@
  * These are triggered by tool calls (e.g. ask_severity) rather than regex detection.
  */
 export type ChatInteractiveComponent =
-  | { type: 'severity-slider'; symptom: string; prompt?: string; initialValue?: number }
+  | { 
+      type: 'severity-slider' | 'rating-slider';
+      /** The metric being rated (generalized name) */
+      metric?: string;
+      /** Legacy field for backwards compatibility */
+      symptom: string;
+      prompt?: string;
+      initialValue?: number;
+      /** Label preset for the slider (severity, energy, mood, stress, pain, sleep) */
+      labels?: string;
+    }
   | { type: 'quick-log'; options: string[] };
 
 export interface ChatMessage {
