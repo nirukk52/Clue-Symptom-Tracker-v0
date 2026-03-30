@@ -72,11 +72,11 @@ NEXT_PUBLIC_REDDIT_PIXEL_ID=a2_i1xf5fcreuso
 
 | Key             | Value                                                                     | Usage                      |
 | --------------- | ------------------------------------------------------------------------- | -------------------------- |
-| `client_id`     | `57139079584-grq71jj08i1o84etbfek2s64tqt71fja.apps.googleusercontent.com` | Google OAuth Client ID     |
-| `client_secret` | `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`                                     | Google OAuth Client Secret |
+| `client_id`     | `<redacted-google-oauth-client-id>` | Google OAuth Client ID     |
+| `client_secret` | `<redacted-google-oauth-client-secret>`                                     | Google OAuth Client Secret |
 | `project_id`    | `gen-lang-client-0399129918`                                              | Google Cloud Project ID    |
 
-**Source file:** `client_secret_57139079584-grq71jj08i1o84etbfek2s64tqt71fja.apps.googleusercontent.com.json`
+**Source file:** `client_secret_<redacted-google-oauth-client-id>.json`
 
 **Configured redirect URIs:**
 
