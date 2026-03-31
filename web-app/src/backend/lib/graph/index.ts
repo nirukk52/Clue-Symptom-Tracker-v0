@@ -302,6 +302,30 @@ export async function updateNodeStatus(
 }
 
 /**
+ * Deletes a graph node by ID.
+ * Used to remove resolved Unknown nodes when slots are filled.
+ */
+export async function deleteGraphNode(
+  userId: string,
+  nodeId: string
+): Promise<boolean> {
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from('graph_nodes')
+    .delete()
+    .eq('id', nodeId)
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('[graph] deleteGraphNode failed:', error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Gets the top N unknown nodes (questions) ordered by priority.
  */
 export async function getTopUnknownNodes(

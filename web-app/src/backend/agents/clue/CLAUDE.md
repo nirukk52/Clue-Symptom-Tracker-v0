@@ -108,17 +108,26 @@ When `flare_mode` is true:
 
 ---
 
-## Graph Pipeline Integration
+## Graph Pipeline v2 Integration (OpenMed + Rasa + HealthKG)
 
-The chat route integrates with the knowledge graph pipeline:
+The chat route integrates with the knowledge graph pipeline v2:
 
 **Pre-response (before LLM):**
-- `extractEntities` → `upsertNodes` → `scoreConditions` → `pickNextQuestion`
-- Next question is injected into system prompt
+1. `extractBiomedicalEntities(OpenMed)` → symptoms, medications, conditions
+2. `extractFactors(LLM)` → sleep, stress, energy, mood (normalized to numbers)
+3. `sendMessage(Rasa)` → update dialogue slots
+4. `syncSlotsToSupabase()` → create/update graph nodes
+5. `scoreConditions(HealthKG)` → rank possible conditions
+6. `pickNextQuestion(info-gain)` → best follow-up question
 
-**Post-response (in onFinish):**
-- `updateClues` → generates insight nodes
-- Runs fire-and-forget to avoid blocking response
+**Post-response (in onFinish, fire-and-forget):**
+1. `updateClues(LLM)` → generate insight nodes
+2. `deleteResolvedUnknowns()` → when slots fill pending questions
+3. `storeMemory(Mem0)` → long-term user memory
+
+**Memory architecture:**
+- Rasa: Short-term dialogue state (current form slots)
+- Mem0: Long-term user memory (history across sessions)
 
 ---
 

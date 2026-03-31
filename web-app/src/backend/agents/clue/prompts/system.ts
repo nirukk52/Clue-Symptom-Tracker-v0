@@ -117,7 +117,7 @@ When the user answers a question that was shown in their health graph:
 
 /**
  * Next question instruction — appended when we have a deterministically-chosen
- * follow-up question that should be asked.
+ * follow-up question that should be asked (from HealthKG info-gain).
  */
 export const NEXT_QUESTION_INSTRUCTION = `
 
@@ -130,14 +130,24 @@ If the user seems very tired or in pain, make it brief: "Quick check: {nextQuest
 `;
 
 /**
+ * Rasa form context — appended when Rasa has an active form collecting slots.
+ * This helps Clue understand what information is being gathered.
+ */
+export const RASA_CONTEXT_HEADER = `
+
+## Active Dialogue Context
+`;
+
+/**
  * Builds the complete system prompt with optional memory context, graph state,
- * flare mode, and next question to ask.
+ * flare mode, Rasa dialogue context, and next question to ask.
  */
 export function buildSystemPrompt(options?: {
   memories?: string;
   graphSummary?: string;
   isFlareMode?: boolean;
   nextQuestion?: string;
+  rasaContext?: string;
 }): string {
   let prompt = CLUE_SYSTEM_PROMPT;
 
@@ -149,13 +159,19 @@ export function buildSystemPrompt(options?: {
     prompt += GRAPH_CONTEXT_HEADER + options.graphSummary + GRAPH_INTERACTION_RULES;
   }
 
+  // Add Rasa dialogue context if form is active
+  if (options?.rasaContext) {
+    prompt += RASA_CONTEXT_HEADER + options.rasaContext;
+  }
+
   if (options?.isFlareMode) {
     prompt += FLARE_MODE_MODIFIER;
   }
 
   // Inject next question AFTER flare mode check — flare mode takes precedence
   // (in flare mode, we don't ask follow-up questions)
-  if (options?.nextQuestion && !options?.isFlareMode) {
+  // Also skip if Rasa has an active form (form questions take precedence)
+  if (options?.nextQuestion && !options?.isFlareMode && !options?.rasaContext) {
     prompt += NEXT_QUESTION_INSTRUCTION.replace('{nextQuestion}', options.nextQuestion).replace('{nextQuestion}', options.nextQuestion);
   }
 

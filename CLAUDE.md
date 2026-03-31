@@ -59,6 +59,9 @@ The north-star promise: *"Stop being blindsided by flares."* — give users a 24
 | Database | **Supabase** (Postgres + pgvector) |
 | Auth | Supabase Auth (Google OAuth) |
 | Vector search | pgvector (widget RAG) |
+| Biomedical NER | **OpenMed** (Docker service) |
+| Dialogue State | **Rasa** (Docker service + Redis) |
+| Long-term Memory | **Mem0** (cloud API) |
 | Package manager | npm (lockfile present) |
 | Runtime | Node.js (Vercel deployment) |
 
@@ -163,9 +166,23 @@ The north-star promise: *"Stop being blindsided by flares."* — give users a 24
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Memory Architecture (Mem0 vs Rasa)
+
+| System | Scope | Purpose | Example |
+|--------|-------|---------|---------|
+| **Mem0** | Long-term, across sessions | User history, conditions, preferences | "User has history of migraines" |
+| **Rasa** | Short-term, within conversation | Slot filling, dialogue state | "User just said stress is 4/10, need sleep quality next" |
+
+Both are needed. Mem0 provides context; Rasa manages the current form.
+
 Key files:
-- `web-app/src/app/api/chat/route.ts` — streaming chat endpoint + graph pipeline trigger
+- `web-app/src/app/api/chat/route.ts` — streaming chat endpoint + pipeline v2 trigger
+- `web-app/src/backend/lib/graph/pipeline-v2.ts` — OpenMed + Rasa + HealthKG orchestration
+- `web-app/src/backend/lib/openmed/` — OpenMed client + factor extractor
+- `web-app/src/backend/lib/rasa/` — Rasa dialogue state client
 - `web-app/src/app/api/graph/route.ts` — graph data endpoint for ChatCanvas
+- `rasa/` — Rasa project (domain.yml, stories, rules)
+- `docker-compose.yml` — OpenMed + Rasa + Redis services
 - `web-app/src/backend/lib/graph/` — knowledge graph module
   - `index.ts` — CRUD operations for nodes/edges
   - `pipeline.ts` — orchestrates extract → upsert → clues → questions

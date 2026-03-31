@@ -1,0 +1,28 @@
+# Rasa Endpoints Configuration
+#
+# Why this exists: Configures tracker store (Redis) for state persistence
+# and action server connection (if we add custom actions later).
+
+# Tracker Store: Redis for conversation state persistence
+# This ensures dialogue state survives container restarts.
+tracker_store:
+  type: redis
+  url: ${REDIS_URL}
+  db: 0
+  password: null
+  record_exp: 86400  # Expire conversations after 24 hours
+
+# Action Server (for custom Python actions)
+# Disabled for now — all logic is in Next.js
+# action_endpoint:
+#   url: "http://localhost:5055/webhook"
+
+# Event Broker (for external event streaming)
+# Disabled — we don't need event streaming
+# event_broker:
+#   type: pika
+#   url: localhost
+#   username: guest
+#   password: guest
+#   queues:
+#     - rasa_events

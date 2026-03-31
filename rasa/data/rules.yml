@@ -1,0 +1,52 @@
+# Rasa Rules (Deterministic Conversation Logic)
+#
+# Why this exists: Rules define hard logic that should always apply.
+# Forms use rules to ensure proper activation and deactivation.
+# Activation is triggered externally by the Next.js pipeline (not by greet),
+# so only submit/fallback rules are needed here.
+
+version: "3.1"
+
+rules:
+  # ==========================================================================
+  # FORM RULES: Activate and complete forms
+  # ==========================================================================
+
+  # Activate symptom detail form when user reports a symptom
+  - rule: Activate symptom detail form
+    steps:
+      - intent: log_symptom
+      - action: symptom_detail_form
+      - active_loop: symptom_detail_form
+
+  # Submit symptom detail form when all slots filled
+  - rule: Submit symptom detail form
+    condition:
+      - active_loop: symptom_detail_form
+    steps:
+      - action: symptom_detail_form
+      - active_loop: null
+      - action: utter_form_complete
+
+  # ==========================================================================
+  # DAILY CHECKIN FORM
+  # ==========================================================================
+
+  # Submit daily checkin form when all slots filled
+  - rule: Submit daily checkin form
+    condition:
+      - active_loop: daily_checkin_form
+    steps:
+      - action: daily_checkin_form
+      - active_loop: null
+      - action: utter_form_complete
+
+  # ==========================================================================
+  # FALLBACK
+  # ==========================================================================
+
+  # Default fallback when Rasa is uncertain
+  - rule: Ask rephrase on low confidence
+    steps:
+      - intent: nlu_fallback
+      - action: utter_default

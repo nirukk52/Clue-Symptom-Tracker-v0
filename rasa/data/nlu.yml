@@ -1,0 +1,96 @@
+# Rasa NLU Training Data
+#
+# Why this exists: Provides minimal training examples for Rasa's intent classifier.
+# We don't rely heavily on this — OpenMed + LLM handle the real NLU.
+# This just helps Rasa route messages to the right form.
+
+version: "3.1"
+
+nlu:
+  # ==========================================================================
+  # GREET
+  # ==========================================================================
+  - intent: greet
+    examples: |
+      - hi
+      - hello
+      - hey
+      - good morning
+      - good afternoon
+      - hi there
+      - hey there
+
+  # ==========================================================================
+  # LOG_SYMPTOM
+  # ==========================================================================
+  - intent: log_symptom
+    examples: |
+      - I have a headache
+      - my head hurts
+      - I'm having migraines
+      - feeling nauseous
+      - I feel sick
+      - I'm in pain
+      - my back hurts
+      - I have fatigue
+      - I'm exhausted
+      - feeling dizzy
+      - I have brain fog
+
+  # ==========================================================================
+  # PROVIDE_VALUE
+  # ==========================================================================
+  - intent: provide_value
+    examples: |
+      - [7](severity)
+      - [8](severity) out of 10
+      - about [6](severity)
+      - [5](sleep_hours) hours
+      - slept [4](sleep_hours) hours
+      - [3](stress_level)
+      - stress is [7](stress_level)
+      - energy is [4](energy_level)
+      - mood is [6](mood_rating)
+      - [2](severity)/10
+      - a [9](severity)
+
+  # ==========================================================================
+  # AFFIRM
+  # ==========================================================================
+  - intent: affirm
+    examples: |
+      - yes
+      - yeah
+      - yep
+      - correct
+      - that's right
+      - sure
+      - absolutely
+      - definitely
+
+  # ==========================================================================
+  # DENY
+  # ==========================================================================
+  - intent: deny
+    examples: |
+      - no
+      - nope
+      - not really
+      - I don't think so
+      - no thanks
+      - nah
+
+  # ==========================================================================
+  # INFORM (general information)
+  # ==========================================================================
+  - intent: inform
+    examples: |
+      - I slept terribly
+      - didn't sleep well
+      - very stressed
+      - feeling good today
+      - not great
+      - pretty bad
+      - I'm okay
+      - could be better
+      - same as usual

@@ -3,19 +3,21 @@
  *
  * Why this exists: Main entry point for the Clue AI chat. Uses Vercel AI SDK
  * streamText with OpenAI via AI Gateway (gpt-5.4) and tool calling. Integrates mem0 for user memory,
- * Supabase-backed tools for symptom logging, and the knowledge graph pipeline.
+ * Supabase-backed tools for symptom logging, and the knowledge graph pipeline v2.
  *
- * Pipeline architecture:
- * 1. PRE-RESPONSE: extractEntities → upsertNodes → scoreConditions → pickNextQuestion
- *    - Runs BEFORE streamText so the LLM can include the next question in its reply
- *    - scoreConditions and pickNextQuestion are deterministic (no LLM)
- * 2. POST-RESPONSE: updateClues (LLM) → storeMemory → persistMessages
- *    - Runs in onFinish callback, non-blocking
+ * Pipeline v2 architecture (OpenMed + Rasa + HealthKG):
+ * 1. PRE-RESPONSE: Extract entities (OpenMed + LLM factors) → Update Rasa slots →
+ *    Sync to Supabase → Score conditions (HealthKG) → Pick next question (info-gain)
+ * 2. POST-RESPONSE: Update clues (LLM) → Delete resolved Unknown nodes → Store memory
+ *
+ * Key changes from v1:
+ * - OpenMed handles biomedical NER (symptoms, meds, conditions) instead of LLM
+ * - Rasa handles short-term dialogue state (slots) — Mem0 handles long-term memory
+ * - Unknown nodes are deleted when corresponding slots fill (not marked as resolved)
  *
  * Conversational pacing:
  * - If ask_severity tool is called, we defer the next question to the following turn
- * - This prevents "Rate your headache + How did you sleep?" in the same response
- * - pending_next_question is stored in user_preferences and used on the next turn
+ * - If Rasa has an active form, we let it complete before HealthKG picks the next question
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -32,8 +34,14 @@ import {
   getRelevantMemories,
   storeMemory,
 } from '@/backend/lib/memory';
-import { runPreResponsePipeline, runPostResponsePipeline, type PrePipelineResult } from '@/backend/lib/graph/pipeline';
+import {
+  runPreResponsePipelineV2,
+  runPostResponsePipelineV2,
+  type PrePipelineV2Result,
+} from '@/backend/lib/graph/pipeline-v2';
 import { getGraphSummary } from '@/backend/lib/graph';
+import { isOpenMedHealthy } from '@/backend/lib/openmed';
+import { isRasaHealthy } from '@/backend/lib/rasa';
 
 function getSupabase() {
   return createClient(
@@ -57,6 +65,12 @@ export async function POST(req: Request) {
   setActiveUserId(uid);
   const supabase = getSupabase();
 
+  // Check service health (non-blocking, just for logging)
+  Promise.all([isOpenMedHealthy(), isRasaHealthy()]).then(([openmed, rasa]) => {
+    if (!openmed) console.warn('[chat/route] OpenMed service unavailable');
+    if (!rasa) console.warn('[chat/route] Rasa service unavailable');
+  });
+
   // Check if user is in flare mode AND if there's a pending question from previous turn
   const { data: prefs } = await supabase
     .from('user_preferences')
@@ -74,34 +88,45 @@ export async function POST(req: Request) {
     .map((p) => p.text)
     .join(' ') || '';
 
-  // Step 1: Fetch memories, graph state, and run pre-pipeline in parallel
-  // Pre-pipeline extracts entities + scores conditions + picks next question BEFORE response
-  const chatMessages = [{ role: 'user' as const, content: lastMessageText }];
-
+  // Step 1: Fetch memories, graph state, and run pre-pipeline v2 in parallel
+  // Pre-pipeline v2: OpenMed + LLM factors → Rasa slots → Supabase → HealthKG question
   const [memories, graphSummary, preResult] = await Promise.all([
     getRelevantMemories(uid, lastMessageText),
     uid !== 'anonymous' ? getGraphSummary(uid) : '',
     uid !== 'anonymous' && lastMessageText
-      ? runPreResponsePipeline({ userId: uid, messages: chatMessages })
-      : Promise.resolve(null as PrePipelineResult | null),
+      ? runPreResponsePipelineV2({ userId: uid, message: lastMessageText })
+      : Promise.resolve(null as PrePipelineV2Result | null),
   ]);
 
   // Step 2: Determine which question to inject
-  // Priority: pending question from previous turn > newly picked question
+  // Priority: Rasa active form > pending question > newly picked question (HealthKG)
   // But only inject if we're not in flare mode
+  const rasaActiveForm = preResult?.activeForm;
   const newQuestion = preResult?.nextQuestion?.question || undefined;
-  const questionToInject = isFlareMode ? undefined : (pendingQuestion || newQuestion);
   
-  // Build system prompt — only inject question if we have one and no pending severity
+  // If Rasa has an active form, don't inject HealthKG question (let form complete first)
+  const questionToInject = isFlareMode
+    ? undefined
+    : rasaActiveForm
+      ? undefined  // Rasa form is active, skip injection
+      : (pendingQuestion || newQuestion);
+  
+  // Build system prompt with Rasa context
   const systemPrompt = buildSystemPrompt({
     memories: memories || undefined,
     graphSummary: graphSummary || undefined,
     isFlareMode,
     nextQuestion: questionToInject,
+    // Include Rasa form context if active
+    rasaContext: rasaActiveForm
+      ? `Active form: ${rasaActiveForm}. Continue collecting required information.`
+      : undefined,
   });
 
   if (questionToInject) {
-    console.log('[chat/route] Injecting question into prompt:', questionToInject, pendingQuestion ? '(from pending)' : '(new)');
+    console.log('[chat/route] Injecting question into prompt:', questionToInject, pendingQuestion ? '(from pending)' : '(new from HealthKG)');
+  } else if (rasaActiveForm) {
+    console.log('[chat/route] Rasa form active:', rasaActiveForm, '- skipping HealthKG question');
   }
 
   // Step 3: Stream the response
@@ -142,16 +167,16 @@ export async function POST(req: Request) {
         }
       }
 
-      // Store memories (fire-and-forget)
+      // Store memories (fire-and-forget) — Mem0 for long-term memory
       if (lastMessageText && text) {
         storeMemory(uid, fullChatMessages).catch(() => {});
       }
 
-      // Run post-response pipeline (fire-and-forget)
-      // This generates clue nodes and persists the next question node
+      // Run post-response pipeline v2 (fire-and-forget)
+      // This generates clue nodes and deletes resolved Unknown nodes
       if (uid !== 'anonymous' && preResult) {
-        runPostResponsePipeline({ userId: uid }, preResult).catch((err) => {
-          console.error('[chat/route] Post-pipeline failed:', err);
+        runPostResponsePipelineV2({ userId: uid, message: lastMessageText }, preResult).catch((err) => {
+          console.error('[chat/route] Post-pipeline v2 failed:', err);
         });
       }
 

@@ -159,3 +159,12 @@ storybook-static/
 # Bundle analyzer
 .bundle-analyzer/
 bundle-stats.json
+
+# ===========================
+# Rasa
+# ===========================
+rasa/models/
+rasa/.rasa/
+rasa/results/
+rasa/.venv/
+*.tar.gz
