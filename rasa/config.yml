@@ -1,43 +1,17 @@
-# Rasa Pipeline Configuration for Clue Symptom Tracker
+# Rasa Pro CALM Config for Clue Symptom Tracker
 #
-# Why this exists: Configures the NLU pipeline and dialogue policies.
-# We use a minimal pipeline because:
-# 1. OpenMed handles biomedical entity extraction
-# 2. LLM handles intent classification and value normalization
-# 3. Rasa just needs to track slots and manage form state
-#
-# This is essentially "Rasa as a state machine" — not as an NLU engine.
+# Why this exists: Minimal CALM config for slot tracking.
+# Next.js handles all NLU (OpenMed + LLM) and response generation.
+# Rasa tracks controlled slots set via API.
 
 recipe: default.v1
-
+assistant_id: clue-symptom-tracker
 language: en
 
-# =============================================================================
-# NLU PIPELINE
-# =============================================================================
-# Minimal pipeline — just enough for Rasa to function.
-# Real NLU happens in OpenMed + LLM before messages reach Rasa.
-
+# Minimal pipeline — just tokenization for flows to work
 pipeline:
-- name: WhitespaceTokenizer
-- name: CountVectorsFeaturizer
-- name: DIETClassifier
-  epochs: 20
-  constrain_similarities: true
-- name: EntitySynonymMapper
-- name: FallbackClassifier
-  threshold: 0.3
+  - name: WhitespaceTokenizer
 
-# =============================================================================
-# DIALOGUE POLICIES
-# =============================================================================
-# Skip TED (slow to train, ~3-5 min). RulePolicy handles all form behaviour.
-# Memoization covers explicit conversation patterns.
-
+# CALM requires FlowPolicy for flows
 policies:
-- name: MemoizationPolicy
-- name: RulePolicy
-  core_fallback_threshold: 0.3
-  core_fallback_action_name: action_default_fallback
-  enable_fallback_prediction: true
-assistant_id: 20260330-230718-kind-lemon
+  - name: FlowPolicy

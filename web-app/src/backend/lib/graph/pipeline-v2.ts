@@ -13,11 +13,49 @@
  */
 
 import { upsertGraphNode, getUserGraph, deleteGraphNode, getNodesByType } from './index';
-import { extractBiomedicalEntities, extractFactorsAsRasaEntities } from '../openmed';
-import { sendMessage, getFilledSlots, type FilledSlots, type RasaEntity } from '../rasa';
+import {
+  extractBiomedicalEntities,
+  extractFactorsAsRasaEntities,
+  isOpenMedHealthy,
+  type NormalizedEntity,
+} from '../openmed';
+import {
+  sendMessage,
+  getFilledSlots,
+  isRasaHealthy,
+  type FilledSlots,
+  type RasaEntity,
+} from '../rasa';
+import {
+  buildFallbackValidatedClinicalEvents,
+  buildValidatedClinicalEvents,
+  projectValidatedEventsToGraph,
+} from '../intake/events';
+import {
+  getActiveProblemThread,
+  resolveActiveQuestionAnswer,
+  resolveProblemThreads,
+  selectActiveIntakeQuestion,
+} from '../intake/questionnaire';
+import { getIntakeState, saveIntakeState } from '../intake/state';
+import type { ActiveIntakeQuestion, ValidatedClinicalEvent } from '../intake/types';
 import { scoreConditions, type ScoredCondition } from './health-kg';
 import { pickNextQuestion, type QuestionResult } from './info-gain';
 import { updateClues } from './update-clues';
+
+// Cache service health to avoid repeated checks within same request
+let _openMedHealthy: boolean | null = null;
+let _rasaHealthy: boolean | null = null;
+
+async function checkServices(): Promise<{ openmed: boolean; rasa: boolean }> {
+  if (_openMedHealthy === null || _rasaHealthy === null) {
+    [_openMedHealthy, _rasaHealthy] = await Promise.all([
+      isOpenMedHealthy(),
+      isRasaHealthy(),
+    ]);
+  }
+  return { openmed: _openMedHealthy, rasa: _rasaHealthy };
+}
 
 // =============================================================================
 // TYPES
@@ -30,7 +68,10 @@ export interface PrePipelineV2Result {
   slotsUpdated: string[];
   topConditions: ScoredCondition[];
   nextQuestion: QuestionResult | null;
-  activeForm: string | null;
+  intakeQuestion: ActiveIntakeQuestion | null;
+  activeFlow: string | null;
+  activeProblemThreadId: string | null;
+  validatedEvents: ValidatedClinicalEvent[];
   errors: string[];
 }
 
@@ -51,10 +92,15 @@ export interface PipelineV2Input {
 // =============================================================================
 
 /**
- * Runs BEFORE streamText. Extracts entities using OpenMed + LLM, updates Rasa
- * slots, syncs to Supabase, scores conditions, and picks next question.
+ * Runs BEFORE streamText. Extracts entities using OpenMed + LLM, optionally
+ * updates Rasa slots (if available), syncs to Supabase, scores conditions,
+ * and picks next question.
  *
- * Latency: ~300-500ms (OpenMed + factor LLM in parallel, then Rasa)
+ * Graceful degradation:
+ * - If OpenMed is down: Skip biomedical extraction, rely on LLM factors only
+ * - If Rasa is down: Skip dialogue state, create nodes directly from extractions
+ *
+ * Latency: ~300-500ms (OpenMed + factor LLM in parallel, then Rasa if available)
  */
 export async function runPreResponsePipelineV2(
   input: PipelineV2Input
@@ -66,122 +112,120 @@ export async function runPreResponsePipelineV2(
     slotsUpdated: [],
     topConditions: [],
     nextQuestion: null,
-    activeForm: null,
+    intakeQuestion: null,
+    activeFlow: null,
+    activeProblemThreadId: null,
+    validatedEvents: [],
     errors: [],
   };
 
   const { userId, message } = input;
 
   try {
+    // Check service availability
+    const services = await checkServices();
+    console.log(`[pipeline-v2] Services: OpenMed=${services.openmed}, Rasa=${services.rasa}`);
+    const intakeState = await getIntakeState(userId);
+
     // Step 1: Extract entities in parallel (OpenMed + LLM factors)
-    const [biomedicalEntities, factorEntities] = await Promise.all([
-      extractBiomedicalEntities(message),
-      extractFactorsAsRasaEntities(message),
-    ]);
+    // Gracefully handle OpenMed being down
+    let biomedicalEntities: NormalizedEntity[] = [];
+    let factorEntities: RasaEntity[] = [];
+
+    const extractionPromises: Promise<void>[] = [];
+
+    if (services.openmed) {
+      extractionPromises.push(
+        extractBiomedicalEntities(message).then((e) => {
+          biomedicalEntities = e;
+        })
+      );
+    } else {
+      console.log('[pipeline-v2] OpenMed unavailable, skipping biomedical extraction');
+    }
+
+    // Always extract factors via LLM
+    extractionPromises.push(
+      extractFactorsAsRasaEntities(message).then((e) => {
+        factorEntities = e;
+      })
+    );
+
+    await Promise.all(extractionPromises);
 
     result.entitiesExtracted = biomedicalEntities.length + factorEntities.length;
     console.log(
       `[pipeline-v2] Extracted ${biomedicalEntities.length} biomedical + ${factorEntities.length} factor entities`
     );
 
-    // Step 2: Convert to Rasa entities and update slots
-    const rasaEntities: RasaEntity[] = [
-      ...biomedicalEntities.map((e) => ({
-        entity: e.type === 'symptom' ? 'symptom_name' : 
-                e.type === 'medication' ? 'medication_name' : 'condition_name',
-        value: e.name,
-        confidence: e.confidence,
-      })),
-      ...factorEntities,
-    ];
+    const threadResolution = resolveProblemThreads({
+      existingThreads: intakeState.problemThreads,
+      activeProblemThreadId: intakeState.activeProblemThreadId,
+      biomedicalEntities,
+      message,
+    });
+    const activeProblemThread = getActiveProblemThread(
+      threadResolution.problemThreads,
+      threadResolution.activeProblemThreadId
+    );
+    result.activeProblemThreadId = threadResolution.activeProblemThreadId;
 
-    // Send to Rasa with pre-extracted entities
-    await sendMessage(userId, message, rasaEntities);
+    // Step 2: Update Rasa slots (if Rasa is available)
+    let filledSlots: FilledSlots = {};
+    let previousSlots: FilledSlots = {};
+    const activeQuestionAnswer = resolveActiveQuestionAnswer(intakeState.activeQuestion, message);
 
-    // Get updated slot state
-    const filledSlots = await getFilledSlots(userId);
-    result.activeForm = filledSlots.activeForm ?? null;
-
-    // Track which slots were updated this turn
-    result.slotsUpdated = getUpdatedSlotNames(filledSlots);
-    console.log(`[pipeline-v2] Slots updated: ${result.slotsUpdated.join(', ') || 'none'}`);
-
-    // Step 3: Sync filled slots to Supabase graph nodes
-    let nodesCreated = 0;
-
-    // Sync symptom
-    if (filledSlots.currentSymptom) {
-      const nodeId = await upsertGraphNode(userId, {
-        type: 'symptom',
-        name: filledSlots.currentSymptom,
-        subLabel: filledSlots.symptomSeverity
-          ? `Severity ${filledSlots.symptomSeverity}/10`
-          : undefined,
-        data: filledSlots.symptomSeverity
-          ? { severity: filledSlots.symptomSeverity }
-          : undefined,
-      });
-      if (nodeId) nodesCreated++;
+    if (activeQuestionAnswer) {
+      factorEntities = factorEntities.filter(
+        (entity) => entity.entity !== activeQuestionAnswer.rasaEntity.entity
+      );
+      factorEntities.push(activeQuestionAnswer.rasaEntity);
+      console.log(
+        `[pipeline-v2] Resolved active intake answer: ${activeQuestionAnswer.rasaEntity.entity}=${activeQuestionAnswer.rasaEntity.value}`
+      );
     }
 
-    // Sync factors
-    if (filledSlots.sleepQuality !== undefined) {
-      const nodeId = await upsertGraphNode(userId, {
-        type: 'factor',
-        name: 'Sleep',
-        subLabel: `${filledSlots.sleepQuality} hours`,
-        data: { hours: filledSlots.sleepQuality },
-      });
-      if (nodeId) nodesCreated++;
+    if (services.rasa) {
+      previousSlots = await getFilledSlots(userId);
+      const rasaEntities: RasaEntity[] = [
+        ...biomedicalEntities.map((e) => ({
+          entity: e.type === 'symptom' ? 'symptom_name' : 
+                  e.type === 'medication' ? 'medication_name' : 'condition_name',
+          value: e.name,
+          confidence: e.confidence,
+        })),
+        ...factorEntities,
+      ];
+
+      await sendMessage(userId, message, rasaEntities);
+      filledSlots = await getFilledSlots(userId);
+      filledSlots = backfillMissingClinicalSlots(
+        filledSlots,
+        biomedicalEntities,
+        activeProblemThread
+      );
+      result.activeFlow = filledSlots.activeForm ?? null;
+      result.slotsUpdated = getChangedSlotNames(previousSlots, filledSlots);
+      console.log(`[pipeline-v2] Rasa slots changed this turn: ${result.slotsUpdated.join(', ') || 'none'}`);
+    } else {
+      console.log('[pipeline-v2] Rasa unavailable, creating nodes directly from extractions');
     }
 
-    if (filledSlots.stressLevel !== undefined) {
-      const nodeId = await upsertGraphNode(userId, {
-        type: 'factor',
-        name: 'Stress',
-        subLabel: `${filledSlots.stressLevel}/10`,
-        data: { level: filledSlots.stressLevel },
-      });
-      if (nodeId) nodesCreated++;
-    }
+    // Step 3: Convert validated state changes into events before graph projection.
+    const validatedEvents = services.rasa
+      ? buildValidatedClinicalEvents({
+          previousSlots,
+          currentSlots: filledSlots,
+          activeProblemThread,
+        })
+      : buildFallbackValidatedClinicalEvents({
+          biomedicalEntities,
+          factorEntities,
+          activeProblemThread,
+        });
+    result.validatedEvents = validatedEvents;
 
-    if (filledSlots.energyLevel !== undefined) {
-      const nodeId = await upsertGraphNode(userId, {
-        type: 'factor',
-        name: 'Energy',
-        subLabel: `${filledSlots.energyLevel}/10`,
-        data: { level: filledSlots.energyLevel },
-      });
-      if (nodeId) nodesCreated++;
-    }
-
-    if (filledSlots.moodRating !== undefined) {
-      const nodeId = await upsertGraphNode(userId, {
-        type: 'factor',
-        name: 'Mood',
-        subLabel: `${filledSlots.moodRating}/10`,
-        data: { rating: filledSlots.moodRating },
-      });
-      if (nodeId) nodesCreated++;
-    }
-
-    // Sync medication
-    if (filledSlots.currentMedication) {
-      const nodeId = await upsertGraphNode(userId, {
-        type: 'medication',
-        name: filledSlots.currentMedication,
-      });
-      if (nodeId) nodesCreated++;
-    }
-
-    // Sync condition
-    if (filledSlots.currentCondition) {
-      const nodeId = await upsertGraphNode(userId, {
-        type: 'condition',
-        name: filledSlots.currentCondition,
-      });
-      if (nodeId) nodesCreated++;
-    }
+    const nodesCreated = await projectValidatedEventsToGraph(userId, validatedEvents);
 
     result.nodesCreated = nodesCreated;
     console.log(`[pipeline-v2] Created/updated ${nodesCreated} graph nodes`);
@@ -199,28 +243,47 @@ export async function runPreResponsePipelineV2(
       );
     }
 
-    // Step 5: Pick next question using info-gain (HealthKG)
-    // Only if Rasa form is complete (no active form) or form doesn't have a question
-    if (!filledSlots.activeForm) {
-      const knownFactors = graphData.nodes
-        .filter((n) => n.type === 'factor')
-        .map((n) => n.label);
-      const recentQuestions = graphData.nodes
-        .filter((n) => n.type === 'unknown')
-        .map((n) => n.questionText || '')
-        .filter(Boolean);
+    // Step 5: Dynamic intake owns structured questions. Only ask exploratory
+    // info-gain questions after intake yields control.
+    result.intakeQuestion = selectActiveIntakeQuestion({
+      intakeState: {
+        ...intakeState,
+        activeProblemThreadId: threadResolution.activeProblemThreadId,
+        problemThreads: threadResolution.problemThreads,
+        activeQuestion: intakeState.activeQuestion,
+      },
+      filledSlots,
+      activeProblemThread,
+    });
 
-      result.nextQuestion = pickNextQuestion({
-        knownSymptoms: symptoms,
-        knownFactors,
-        recentQuestions,
-      });
+    await saveIntakeState(userId, {
+      activeProblemThreadId: threadResolution.activeProblemThreadId,
+      problemThreads: threadResolution.problemThreads,
+      activeQuestion: result.intakeQuestion,
+    });
 
-      if (result.nextQuestion) {
-        console.log(`[pipeline-v2] Next question: ${result.nextQuestion.question}`);
-      }
-    } else {
-      console.log(`[pipeline-v2] Form active (${filledSlots.activeForm}), skipping question selection`);
+    if (result.intakeQuestion) {
+      console.log(`[pipeline-v2] Active intake question: ${result.intakeQuestion.id}`);
+      result.success = true;
+      return result;
+    }
+
+    const knownFactors = graphData.nodes
+      .filter((n) => n.type === 'factor')
+      .map((n) => n.label);
+    const recentQuestions = graphData.nodes
+      .filter((n) => n.type === 'unknown')
+      .map((n) => n.questionText || '')
+      .filter(Boolean);
+
+    result.nextQuestion = pickNextQuestion({
+      knownSymptoms: symptoms,
+      knownFactors,
+      recentQuestions,
+    });
+
+    if (result.nextQuestion) {
+      console.log(`[pipeline-v2] Next question: ${result.nextQuestion.question}`);
     }
 
     result.success = true;
@@ -262,13 +325,12 @@ export async function runPostResponsePipelineV2(
       console.log('[pipeline-v2] Updated clues');
     }
 
-    // Step 2: Resolve (delete) Unknown nodes that have been answered
-    // If a slot was filled, check if there's a matching Unknown node
-    if (preResult?.slotsUpdated && preResult.slotsUpdated.length > 0) {
+    // Step 2: Resolve exploratory Unknown nodes from validated symptom events.
+    if (preResult?.validatedEvents && preResult.validatedEvents.length > 0) {
       const unknownNodes = await getNodesByType(userId, 'unknown');
       
       for (const unknown of unknownNodes) {
-        const shouldResolve = shouldResolveUnknown(unknown, preResult.slotsUpdated);
+        const shouldResolve = shouldResolveUnknown(unknown, preResult.validatedEvents);
         if (shouldResolve) {
           await deleteGraphNode(userId, unknown.id);
           result.unknownsResolved++;
@@ -278,7 +340,7 @@ export async function runPostResponsePipelineV2(
     }
 
     // Step 3: Create new Unknown node for next question (if we have one)
-    if (preResult?.nextQuestion && !preResult.activeForm) {
+    if (preResult?.nextQuestion) {
       await upsertGraphNode(userId, {
         type: 'unknown',
         name: truncate(preResult.nextQuestion.question, 50),
@@ -307,51 +369,82 @@ export async function runPostResponsePipelineV2(
 // =============================================================================
 
 /**
- * Gets the names of slots that have values (were updated).
+ * Returns only slot names that changed in the current turn.
+ * This prevents resolving Unknown nodes for stale slot values from prior turns.
  */
-function getUpdatedSlotNames(slots: FilledSlots): string[] {
-  const updated: string[] = [];
-  
-  if (slots.currentSymptom) updated.push('current_symptom');
-  if (slots.symptomSeverity !== undefined) updated.push('symptom_severity');
-  if (slots.sleepQuality !== undefined) updated.push('sleep_quality');
-  if (slots.stressLevel !== undefined) updated.push('stress_level');
-  if (slots.energyLevel !== undefined) updated.push('energy_level');
-  if (slots.moodRating !== undefined) updated.push('mood_rating');
-  if (slots.currentMedication) updated.push('current_medication');
-  if (slots.currentCondition) updated.push('current_condition');
-  
-  return updated;
+function getChangedSlotNames(previous: FilledSlots, current: FilledSlots): string[] {
+  const changed: string[] = [];
+  const slotMapping: Array<{ key: keyof FilledSlots; name: string }> = [
+    { key: 'currentSymptom', name: 'current_symptom' },
+    { key: 'symptomSeverity', name: 'symptom_severity' },
+    { key: 'sleepQuality', name: 'sleep_quality' },
+    { key: 'stressLevel', name: 'stress_level' },
+    { key: 'energyLevel', name: 'energy_level' },
+    { key: 'moodRating', name: 'mood_rating' },
+    { key: 'currentMedication', name: 'current_medication' },
+    { key: 'currentCondition', name: 'current_condition' },
+  ];
+
+  for (const { key, name } of slotMapping) {
+    const before = previous[key];
+    const after = current[key];
+    const bothUnset = before == null && after == null;
+    if (!bothUnset && before !== after) {
+      changed.push(name);
+    }
+  }
+
+  return changed;
 }
 
 /**
- * Determines if an Unknown node should be resolved based on filled slots.
+ * Backfills key clinical slots from extracted entities when a fresh Rasa session
+ * does not retain the pre-seeded values for the current turn.
+ */
+function backfillMissingClinicalSlots(
+  currentSlots: FilledSlots,
+  biomedicalEntities: NormalizedEntity[],
+  activeProblemThread: { symptomName?: string; conditionName?: string } | null
+): FilledSlots {
+  const symptomEntity = biomedicalEntities.find((entity) => entity.type === 'symptom');
+  const medicationEntity = biomedicalEntities.find((entity) => entity.type === 'medication');
+  const conditionEntity = biomedicalEntities.find((entity) => entity.type === 'condition');
+
+  return {
+    ...currentSlots,
+    currentSymptom:
+      currentSlots.currentSymptom ??
+      symptomEntity?.name ??
+      activeProblemThread?.symptomName,
+    currentMedication: currentSlots.currentMedication ?? medicationEntity?.name,
+    currentCondition:
+      currentSlots.currentCondition ??
+      conditionEntity?.name ??
+      activeProblemThread?.conditionName,
+  };
+}
+
+/**
+ * Determines if an exploratory Unknown node should be resolved.
+ * Why this exists: Unknown nodes now represent exploratory follow-up questions,
+ * so they should only resolve when a validated symptom event answers them.
  */
 function shouldResolveUnknown(
   unknown: { label: string; questionText?: string | null },
-  filledSlots: string[]
+  validatedEvents: ValidatedClinicalEvent[]
 ): boolean {
   const questionLower = (unknown.questionText || unknown.label).toLowerCase();
-  
-  // Map slots to question keywords
-  const slotKeywords: Record<string, string[]> = {
-    sleep_quality: ['sleep', 'slept', 'hours'],
-    stress_level: ['stress', 'stressed'],
-    energy_level: ['energy', 'energetic', 'tired'],
-    mood_rating: ['mood', 'feeling'],
-    symptom_severity: ['severity', 'scale', '1-10', 'rate'],
-    current_symptom: ['symptom', 'pain', 'hurts'],
-  };
-  
-  for (const slot of filledSlots) {
-    const keywords = slotKeywords[slot] || [];
-    for (const keyword of keywords) {
-      if (questionLower.includes(keyword)) {
-        return true;
-      }
+
+  for (const event of validatedEvents) {
+    if (event.type !== 'symptom_reported' && event.type !== 'symptom_severity_recorded') {
+      continue;
+    }
+
+    if (questionLower.includes(event.symptomName.toLowerCase())) {
+      return true;
     }
   }
-  
+
   return false;
 }
 

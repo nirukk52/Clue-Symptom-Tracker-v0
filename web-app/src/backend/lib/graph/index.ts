@@ -425,13 +425,6 @@ export async function getGraphSummary(userId: string): Promise<string> {
     typeCounts.set(node.type, count + 1);
   }
 
-  // Get top unknown questions
-  const unknowns = await getTopUnknownNodes(userId, 3);
-  const unknownQuestions = unknowns
-    .filter((u) => u.questionText)
-    .map((u) => `- ${u.questionText}`)
-    .join('\n');
-
   // Get recent clues
   const clues = await getCluesWithEvidence(userId);
   const recentClues = clues
@@ -450,10 +443,6 @@ export async function getGraphSummary(userId: string): Promise<string> {
 
   if (recentClues) {
     parts.push(`Recent insights:\n${recentClues}`);
-  }
-
-  if (unknownQuestions) {
-    parts.push(`Questions to explore:\n${unknownQuestions}`);
   }
 
   return parts.join('\n\n');

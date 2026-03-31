@@ -16,8 +16,8 @@
  * - Unknown nodes are deleted when corresponding slots fill (not marked as resolved)
  *
  * Conversational pacing:
- * - If ask_severity tool is called, we defer the next question to the following turn
- * - If Rasa has an active form, we let it complete before HealthKG picks the next question
+ * - Structured intake owns exactly one active question at a time
+ * - Exploratory HealthKG questions only run after structured intake yields control
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -71,15 +71,14 @@ export async function POST(req: Request) {
     if (!rasa) console.warn('[chat/route] Rasa service unavailable');
   });
 
-  // Check if user is in flare mode AND if there's a pending question from previous turn
+  // Check if user is in flare mode
   const { data: prefs } = await supabase
     .from('user_preferences')
-    .select('flare_mode, pending_next_question')
+    .select('flare_mode')
     .eq('user_id', uid)
     .single();
 
   const isFlareMode = prefs?.flare_mode ?? false;
-  const pendingQuestion = prefs?.pending_next_question as string | null;
 
   // Extract the last user message text from parts
   const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
@@ -98,35 +97,27 @@ export async function POST(req: Request) {
       : Promise.resolve(null as PrePipelineV2Result | null),
   ]);
 
-  // Step 2: Determine which question to inject
-  // Priority: Rasa active form > pending question > newly picked question (HealthKG)
-  // But only inject if we're not in flare mode
-  const rasaActiveForm = preResult?.activeForm;
-  const newQuestion = preResult?.nextQuestion?.question || undefined;
-  
-  // If Rasa has an active form, don't inject HealthKG question (let form complete first)
-  const questionToInject = isFlareMode
-    ? undefined
-    : rasaActiveForm
-      ? undefined  // Rasa form is active, skip injection
-      : (pendingQuestion || newQuestion);
-  
-  // Build system prompt with Rasa context
+  // Build system prompt
   const systemPrompt = buildSystemPrompt({
     memories: memories || undefined,
     graphSummary: graphSummary || undefined,
     isFlareMode,
-    nextQuestion: questionToInject,
-    // Include Rasa form context if active
-    rasaContext: rasaActiveForm
-      ? `Active form: ${rasaActiveForm}. Continue collecting required information.`
+    intakeQuestion: preResult?.intakeQuestion
+      ? {
+          prompt: preResult.intakeQuestion.prompt,
+          inputType: preResult.intakeQuestion.inputType,
+          metric: preResult.intakeQuestion.metric,
+          labelPreset: preResult.intakeQuestion.labelPreset,
+        }
       : undefined,
+    exploratoryQuestion: preResult?.intakeQuestion ? undefined : preResult?.nextQuestion?.question,
+    rasaContext: undefined,
   });
 
-  if (questionToInject) {
-    console.log('[chat/route] Injecting question into prompt:', questionToInject, pendingQuestion ? '(from pending)' : '(new from HealthKG)');
-  } else if (rasaActiveForm) {
-    console.log('[chat/route] Rasa form active:', rasaActiveForm, '- skipping HealthKG question');
+  if (preResult?.intakeQuestion) {
+    console.log('[chat/route] Injecting structured intake directive:', preResult.intakeQuestion.id);
+  } else if (preResult?.nextQuestion) {
+    console.log('[chat/route] Injecting exploratory question:', preResult.nextQuestion.question);
   }
 
   // Step 3: Stream the response
@@ -136,36 +127,11 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: chatTools,
-    onFinish: async ({ text, toolCalls }) => {
+    onFinish: async ({ text }) => {
       const fullChatMessages = [
         { role: 'user' as const, content: lastMessageText },
         { role: 'assistant' as const, content: text || '' },
       ];
-
-      // Check if ask_severity was called in this response
-      const askedSeverity = toolCalls?.some(tc => tc.toolName === 'ask_severity') ?? false;
-
-      // Manage pending_next_question based on whether ask_severity was called
-      if (uid !== 'anonymous') {
-        if (askedSeverity && newQuestion) {
-          // Severity slider shown — defer the new question to next turn
-          console.log('[chat/route] ask_severity called — deferring question to next turn:', newQuestion);
-          await supabase
-            .from('user_preferences')
-            .upsert({
-              user_id: uid,
-              pending_next_question: newQuestion,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'user_id' });
-        } else if (pendingQuestion) {
-          // Used the pending question (or no severity asked) — clear it
-          console.log('[chat/route] Clearing pending question');
-          await supabase
-            .from('user_preferences')
-            .update({ pending_next_question: null, updated_at: new Date().toISOString() })
-            .eq('user_id', uid);
-        }
-      }
 
       // Store memories (fire-and-forget) — Mem0 for long-term memory
       if (lastMessageText && text) {

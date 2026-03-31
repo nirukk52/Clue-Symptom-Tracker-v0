@@ -10,7 +10,7 @@ export {
   getFilledSlots,
   setSlot,
   resetSlots,
-  getActiveForm,
+  getActiveFlow,
   getMissingSlots,
   isRasaHealthy,
   type RasaWebhookResponse,

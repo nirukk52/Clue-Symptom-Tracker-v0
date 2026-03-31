@@ -28,6 +28,7 @@ export interface RasaWebhookResponse {
 
 /**
  * Rasa tracker (conversation state).
+ * Works with both CALM (flows) and traditional Rasa (forms).
  */
 export interface RasaTracker {
   sender_id: string;
@@ -45,6 +46,7 @@ export interface RasaTracker {
   active_loop?: {
     name: string;
   } | null;
+  stack?: Array<{ flow_id?: string; step_id?: string }>;
   latest_action_name?: string;
 }
 
@@ -257,40 +259,43 @@ export async function resetSlots(senderId: string): Promise<boolean> {
 }
 
 /**
- * Gets the active form name, if any.
+ * Gets the active flow name, if any.
+ * In CALM, flows replace traditional forms.
  */
-export async function getActiveForm(senderId: string): Promise<string | null> {
+export async function getActiveFlow(senderId: string): Promise<string | null> {
   const tracker = await getTracker(senderId);
+  // CALM uses stack for active flows, fallback to active_loop for DM1
+  if (tracker?.stack && tracker.stack.length > 0) {
+    return tracker.stack[tracker.stack.length - 1]?.flow_id ?? null;
+  }
   return tracker?.active_loop?.name ?? null;
 }
 
 /**
- * Checks which required slots are still missing for the active form.
+ * Checks which slots are still missing (null/undefined).
+ * Works with CALM flows — returns unfilled controlled slots.
  */
 export async function getMissingSlots(senderId: string): Promise<string[]> {
   const tracker = await getTracker(senderId);
-  if (!tracker || !tracker.active_loop) {
+  if (!tracker) {
     return [];
   }
 
-  // Form slot requirements (matches domain.yml)
-  const formSlots: Record<string, string[]> = {
-    daily_checkin_form: ['sleep_quality', 'stress_level', 'energy_level'],
-    symptom_detail_form: ['current_symptom', 'symptom_severity'],
-    full_intake_form: [
-      'current_symptom',
-      'symptom_severity',
-      'sleep_quality',
-      'stress_level',
-      'energy_level',
-      'mood_rating',
-    ],
-  };
+  // Our controlled slots from domain.yml
+  const trackedSlots = [
+    'current_symptom',
+    'symptom_severity',
+    'sleep_quality',
+    'stress_level',
+    'energy_level',
+    'mood_rating',
+    'current_medication',
+    'current_condition',
+  ];
 
-  const requiredSlots = formSlots[tracker.active_loop.name] || [];
   const missing: string[] = [];
 
-  for (const slot of requiredSlots) {
+  for (const slot of trackedSlots) {
     const value = tracker.slots[slot];
     if (value === null || value === undefined) {
       missing.push(slot);

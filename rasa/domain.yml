@@ -1,214 +1,65 @@
-# Rasa Domain Configuration for Clue Symptom Tracker
+# Rasa Pro CALM Domain for Clue Symptom Tracker
 #
-# Why this exists: Defines slots (variables to fill), forms (collection flows),
-# intents (user intentions), and responses for the symptom intake dialogue.
+# Why this exists: Defines controlled slots for dialogue state tracking.
+# All slots use "controlled" mapping — Next.js sets them via API, not Rasa NLU/LLM.
 #
 # Architecture:
-# - Rasa handles SHORT-TERM dialogue state (current form slots)
-# - Mem0 handles LONG-TERM memory (user history across sessions)
-# - HealthKG handles CLINICAL question selection (info-gain based)
+# - OpenMed extracts biomedical entities (symptoms, meds, conditions)
+# - LLM extracts factors (sleep, stress, energy, mood)
+# - Next.js sets slots via POST /conversations/{id}/tracker/events
+# - Rasa just tracks state — no NLU, no LLM, no response generation
 
 version: "3.1"
-
-# =============================================================================
-# INTENTS
-# =============================================================================
-# Minimal intents — we rely on LLM for interpretation, Rasa for slot tracking.
-# These are just for Rasa's internal routing, not primary classification.
-
-intents:
-  - greet
-  - log_symptom
-  - provide_value        # User provides a value (number, rating, etc.)
-  - affirm               # Yes/confirm
-  - deny                 # No/decline
-  - inform               # General information
-
-# =============================================================================
-# ENTITIES
-# =============================================================================
-# Entities are extracted by OpenMed/LLM and passed to Rasa pre-filled.
-# Rasa doesn't do entity extraction — it just receives structured data.
-
-entities:
-  - symptom_name         # "headache", "fatigue", "nausea"
-  - medication_name      # "ibuprofen", "vitamin D"
-  - condition_name       # "fibromyalgia", "IBS"
-  - severity             # 1-10 numeric
-  - sleep_hours          # numeric hours
-  - stress_level         # 1-10 numeric
-  - energy_level         # 1-10 numeric
-  - mood_rating          # 1-10 numeric
-
-# =============================================================================
-# SLOTS
-# =============================================================================
-# Slots are the variables Rasa tracks during a conversation.
-# When a slot fills, we create/update a graph node in Supabase.
 
 slots:
   # Current symptom being discussed
   current_symptom:
     type: text
-    influence_conversation: true
     mappings:
-      - type: from_entity
-        entity: symptom_name
+      - type: controlled
 
   # Severity of the current symptom (1-10)
   symptom_severity:
     type: float
-    min_value: 1
-    max_value: 10
-    influence_conversation: true
     mappings:
-      - type: from_entity
-        entity: severity
+      - type: controlled
 
-  # Sleep quality/hours from last night
+  # Sleep quality/hours from last night (0-24)
   sleep_quality:
     type: float
-    min_value: 0
-    max_value: 24
-    influence_conversation: true
     mappings:
-      - type: from_entity
-        entity: sleep_hours
+      - type: controlled
 
   # Current stress level (1-10)
   stress_level:
     type: float
-    min_value: 1
-    max_value: 10
-    influence_conversation: true
     mappings:
-      - type: from_entity
-        entity: stress_level
+      - type: controlled
 
   # Current energy level (1-10)
   energy_level:
     type: float
-    min_value: 1
-    max_value: 10
-    influence_conversation: true
     mappings:
-      - type: from_entity
-        entity: energy_level
+      - type: controlled
 
-  # Current mood (1-10)
+  # Current mood rating (1-10)
   mood_rating:
     type: float
-    min_value: 1
-    max_value: 10
-    influence_conversation: true
     mappings:
-      - type: from_entity
-        entity: mood_rating
+      - type: controlled
 
-  # Medication being discussed
+  # Current medication being discussed
   current_medication:
     type: text
-    influence_conversation: false
     mappings:
-      - type: from_entity
-        entity: medication_name
+      - type: controlled
 
-  # Condition being discussed
+  # Current condition being discussed
   current_condition:
     type: text
-    influence_conversation: false
     mappings:
-      - type: from_entity
-        entity: condition_name
-
-  # Flag: is the intake form complete?
-  intake_complete:
-    type: bool
-    initial_value: false
-    influence_conversation: true
-    mappings:
-      - type: custom
-
-# =============================================================================
-# FORMS
-# =============================================================================
-# Forms define required slots that must be collected.
-# When all slots are filled, form completes and we trigger HealthKG question.
-
-forms:
-  # Basic daily check-in form
-  daily_checkin_form:
-    required_slots:
-      - sleep_quality
-      - stress_level
-      - energy_level
-
-  # Symptom detail form (when user reports a symptom)
-  symptom_detail_form:
-    required_slots:
-      - current_symptom
-      - symptom_severity
-
-  # Full intake form (new user or comprehensive check)
-  full_intake_form:
-    required_slots:
-      - current_symptom
-      - symptom_severity
-      - sleep_quality
-      - stress_level
-      - energy_level
-      - mood_rating
-
-# =============================================================================
-# RESPONSES
-# =============================================================================
-# Minimal responses — the LLM generates most replies.
-# These are fallbacks for Rasa's internal use.
-
-responses:
-  utter_greet:
-    - text: "Hi there! How are you feeling today?"
-
-  utter_ask_current_symptom:
-    - text: "What symptom is bothering you?"
-
-  utter_ask_symptom_severity:
-    - text: "On a scale of 1-10, how severe is it?"
-
-  utter_ask_sleep_quality:
-    - text: "How many hours did you sleep last night?"
-
-  utter_ask_stress_level:
-    - text: "How would you rate your stress today? (1-10)"
-
-  utter_ask_energy_level:
-    - text: "How's your energy level? (1-10)"
-
-  utter_ask_mood_rating:
-    - text: "How would you rate your mood? (1-10)"
-
-  utter_form_complete:
-    - text: "Got it, I've recorded that."
-
-  utter_default:
-    - text: "I understand. Tell me more about how you're feeling."
-
-# =============================================================================
-# ACTIONS
-# =============================================================================
-# Custom actions would go here if we need Python-side logic.
-# For now, we handle all logic in Next.js after getting Rasa's slot state.
-
-actions:
-  - action_listen
-  - action_restart
-
-# =============================================================================
-# SESSION CONFIG
-# =============================================================================
-# Session expires after 60 minutes of inactivity.
-# State is persisted to Redis so it survives restarts.
+      - type: controlled
 
 session_config:
   session_expiration_time: 60
-  carry_over_slots_to_new_session: true
+  carry_over_slots_to_new_session: false

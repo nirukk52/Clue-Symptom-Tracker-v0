@@ -1,17 +1,19 @@
 # Docker Compose for Clue OSS Stack
 #
-# Why this exists: Runs OpenMed (biomedical NER) + Rasa (dialogue state) + Redis
-# (Rasa state persistence) as local services for development.
+# Why this exists: Runs OpenMed (biomedical NER) + Redis (Rasa state persistence)
+# as local Docker services for development.
+#
+# NOTE: Rasa Pro runs natively in Python venv (see rasa/README.md) — Docker images
+# crash on Apple Silicon due to CPU instruction incompatibility.
 #
 # Usage:
-#   docker-compose up -d        # Start all services
-#   docker-compose logs -f rasa # Tail Rasa logs
-#   docker-compose down         # Stop all services
+#   docker-compose up -d          # Start OpenMed + Redis
+#   docker-compose logs -f openmed # Tail OpenMed logs
+#   docker-compose down           # Stop all services
 #
 # Services:
-#   - openmed:8080  → Biomedical entity extraction (symptoms, meds, conditions)
-#   - rasa:5005     → Dialogue state management + slot filling
-#   - redis:6379    → Rasa tracker store (conversation state persistence)
+#   - openmed:8080 → Biomedical entity extraction (symptoms, meds, conditions)
+#   - redis:6380 (host) → Rasa tracker store (conversation state persistence)
 
 services:
   # OpenMed: Pretrained biomedical NER models
@@ -33,36 +35,12 @@ services:
       start_period: 180s  # Models download on first use (~434MB)
     restart: unless-stopped
 
-  # Rasa: Dialogue state management and form filling
-  # Docs: https://rasa.com/docs/rasa/
-  rasa:
-    build:
-      context: ./rasa
-      dockerfile: Dockerfile
-    ports:
-      - '5005:5005'
-    volumes:
-      - ./rasa:/app
-      # Persist trained model so restarts don't retrain
-      - rasa_models:/app/models
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:5005/']
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 300s  # Training takes ~3-5 min on first run
-    restart: unless-stopped
-
-  # Redis: Tracker store for Rasa conversation state
-  # Persists dialogue state across restarts
-  # Uses port 6380 to avoid conflict with other Redis instances
+  # Redis: Tracker store for Rasa Pro conversation state
+  # Persists dialogue state (slots) across server restarts
   redis:
     image: redis:7-alpine
     ports:
+      # Host 6380 avoids conflict when another Redis already uses 6379
       - '6380:6379'
     volumes:
       - redis_data:/data
@@ -78,6 +56,4 @@ volumes:
   redis_data:
     driver: local
   openmed_cache:
-    driver: local
-  rasa_models:
     driver: local

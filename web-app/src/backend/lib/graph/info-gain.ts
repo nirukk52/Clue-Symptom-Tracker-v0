@@ -15,7 +15,7 @@
  * Zero LLM calls — pure computation.
  */
 
-import { scoreConditions, getMissingSymptoms, getAllSymptoms } from './health-kg';
+import { scoreConditions, getMissingSymptoms } from './health-kg';
 
 // =============================================================================
 // TYPES
@@ -168,14 +168,14 @@ function computeInfoGain(
  * @returns Best question to ask, or null if no good candidates
  */
 export function pickNextQuestion(input: InfoGainInput): QuestionResult | null {
-  const { knownSymptoms, recentQuestions = [] } = input;
+  const { knownSymptoms, knownFactors, recentQuestions = [] } = input;
 
   // Step 1: Score conditions based on known symptoms
   const topConditions = scoreConditions(knownSymptoms, 5);
 
   if (topConditions.length === 0) {
     // No conditions matched — fall back to baseline questions
-    return pickBaselineQuestion(knownSymptoms, recentQuestions);
+    return pickBaselineQuestion(knownSymptoms, knownFactors, recentQuestions);
   }
 
   // Build condition probability map
@@ -277,24 +277,23 @@ export function pickNextQuestion(input: InfoGainInput): QuestionResult | null {
  */
 function pickBaselineQuestion(
   knownSymptoms: string[],
+  knownFactors: string[],
   recentQuestions: string[]
 ): QuestionResult | null {
+  // Keep baseline questions aligned with slot-backed factors to avoid yes/no loops.
   const baselineFactors = [
-    { factor: 'sleep', question: 'How did you sleep last night?', priority: 8 },
+    { factor: 'sleep', question: 'How many hours did you sleep last night?', priority: 8 },
     { factor: 'stress', question: 'How would you rate your stress level today? (1-10)', priority: 7 },
-    { factor: 'pain', question: 'Are you experiencing any pain today?', priority: 9 },
-    { factor: 'fatigue', question: 'How is your energy level today?', priority: 7 },
-    { factor: 'headache', question: 'Have you been having any headaches?', priority: 6 },
-    { factor: 'nausea', question: 'Have you felt nauseous at all?', priority: 6 },
-    { factor: 'dizziness', question: 'Have you experienced any dizziness?', priority: 6 },
+    { factor: 'energy', question: 'How would you rate your energy level today? (1-10)', priority: 7 },
+    { factor: 'mood', question: 'How would you rate your mood today? (1-10)', priority: 6 },
   ];
 
-  const knownLower = new Set(knownSymptoms.map(s => s.toLowerCase()));
+  const knownLower = new Set([...knownSymptoms, ...knownFactors].map(s => s.toLowerCase()));
   const recentLower = new Set(recentQuestions.map(q => q.toLowerCase()));
 
   for (const { factor, question, priority } of baselineFactors) {
     // Skip if we already know this
-    if (knownLower.has(factor)) continue;
+    if (isKnownFactor(factor, knownLower)) continue;
 
     // Skip if we asked recently
     let askedRecently = false;
@@ -315,6 +314,29 @@ function pickBaselineQuestion(
   }
 
   return null;
+}
+
+/**
+ * Matches baseline factor labels to current graph vocabulary.
+ * This exists so baseline prompts do not repeat when equivalent factors already exist.
+ */
+function isKnownFactor(factor: string, knownLower: Set<string>): boolean {
+  const aliases: Record<string, string[]> = {
+    sleep: ['sleep'],
+    stress: ['stress'],
+    energy: ['energy', 'fatigue', 'tired'],
+    mood: ['mood', 'feeling'],
+  };
+
+  const candidateTerms = aliases[factor] ?? [factor];
+  for (const known of knownLower) {
+    for (const term of candidateTerms) {
+      if (known === term || known.includes(term)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**
