@@ -35,6 +35,10 @@ export const metadata: Metadata = {
   description:
     '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.',
   metadataBase: new URL('https://chroniclife.app'),
+  icons: {
+    icon: '/brand/clue-agent-mark.svg',
+    apple: '/brand/clue-agent-mark.svg',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',

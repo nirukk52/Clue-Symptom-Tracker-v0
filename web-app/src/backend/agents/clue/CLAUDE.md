@@ -7,7 +7,7 @@
 Clue is the **conversational agent** that:
 
 1. Logs symptoms, medications, and moods via tool calls
-2. Retrieves user history and generates insights
+2. Retrieves user history and graph context before responding
 3. Creates doctor-ready summary reports
 4. Adapts behavior based on flare mode
 
@@ -19,11 +19,11 @@ Clue is the **conversational agent** that:
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                        /api/chat/route.ts                                     │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│  1. Extract user message                                                      │
-│  2. Fetch memories (mem0) + graph summary + run pre-pipeline                 │
-│  3. Build system prompt with context                                          │
-│  4. streamText (OpenAI gpt-5.4) with chatTools                               │
-│  5. onFinish: store memory, run post-pipeline, persist messages              │
+│  1. Chat Agent: extract entities + load memories/graph/clue                  │
+│  2. Build system prompt with chat context                                     │
+│  3. streamText (OpenAI gpt-5.4) with chatTools                                │
+│  4. Persist full UIMessage chat history on stream finish                      │
+│  5. Store memory, then run Graph Agent → Insight Agent                        │
 └──────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -34,7 +34,6 @@ Clue is the **conversational agent** that:
 │  log_medication  → medication_logs + timeline_entries                         │
 │  log_mood        → mood_logs + timeline_entries                               │
 │  get_timeline    → reads timeline_entries                                     │
-│  generate_insights → analyzes logs, writes to insights                        │
 │  generate_doctor_summary → aggregates all data into report                   │
 │  toggle_flare_mode → updates user_preferences                                │
 │  ask_severity    → returns interactive slider config                          │
@@ -58,7 +57,6 @@ clue/
 │       ├── log-medication.ts
 │       ├── log-mood.ts
 │       ├── get-timeline.ts
-│       ├── generate-insights.ts
 │       ├── generate-doctor-summary.ts
 │       ├── ask-severity.ts
 │       └── toggle-flare-mode.ts
@@ -80,14 +78,13 @@ clue/
 
 | Tool | Writes To | Purpose |
 |------|-----------|---------|
-| `log_symptom` | `symptom_logs`, `timeline_entries` | Log symptom with optional severity |
+| `log_symptom` | `symptom_logs`, `timeline_entries` | Log symptom; auto-returns severity slider when missing |
 | `log_medication` | `medication_logs`, `timeline_entries` | Log med intake/skip |
 | `log_mood` | `mood_logs`, `timeline_entries` | Log mood 1-10 |
 | `get_timeline` | — (read only) | Fetch entries for date range |
-| `generate_insights` | `insights` | Analyze data for patterns |
 | `generate_doctor_summary` | `doctor_summaries` | Create report for provider |
 | `toggle_flare_mode` | `user_preferences` | Switch energy state |
-| `ask_severity` | — (returns UI config) | Request interactive slider |
+| `ask_severity` | — (returns UI config) | Request interactive slider for non-symptom ratings |
 
 ---
 
@@ -108,26 +105,24 @@ When `flare_mode` is true:
 
 ---
 
-## Graph Pipeline v2 Integration (OpenMed + Rasa + HealthKG)
+## Three-Agent Handoff
 
-The chat route integrates with the knowledge graph pipeline v2:
+The chat route now hands work off across three focused stages:
 
-**Pre-response (before LLM):**
-1. `extractBiomedicalEntities(OpenMed)` → symptoms, medications, conditions
-2. `extractFactors(LLM)` → sleep, stress, energy, mood (normalized to numbers)
-3. `sendMessage(Rasa)` → update dialogue slots
-4. `syncSlotsToSupabase()` → create/update graph nodes
-5. `scoreConditions(HealthKG)` → rank possible conditions
-6. `pickNextQuestion(info-gain)` → best follow-up question
+**Pre-response:**
+1. Chat Agent extracts entities and loads memories, graph summary, and latest clue
+2. The route streams the visible reply with tool calls
 
-**Post-response (in onFinish, fire-and-forget):**
-1. `updateClues(LLM)` → generate insight nodes
-2. `deleteResolvedUnknowns()` → when slots fill pending questions
-3. `storeMemory(Mem0)` → long-term user memory
+**Post-response:**
+1. Persist the latest user message and assistant response as serialized `UIMessage` JSON
+2. `storeMemory(Mem0)` saves the text exchange
+3. Graph Agent reconciles logs and chat history into the knowledge graph
+4. Insight Agent scores conditions and stores the next-turn clue
 
-**Memory architecture:**
-- Rasa: Short-term dialogue state (current form slots)
-- Mem0: Long-term user memory (history across sessions)
+**State ownership:**
+- Chat Agent owns the live conversation and logging context
+- Graph Agent is the only writer to `graph_nodes` and `graph_edges`
+- Insight Agent is the only writer for next-turn clue generation
 
 ---
 

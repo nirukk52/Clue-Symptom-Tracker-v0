@@ -60,7 +60,7 @@ The north-star promise: *"Stop being blindsided by flares."* — give users a 24
 | Auth | Supabase Auth (Google OAuth) |
 | Vector search | pgvector (widget RAG) |
 | Biomedical NER | **OpenMed** (Docker service) |
-| Dialogue State | **Rasa** (Docker service + Redis) |
+| Graph Orchestration | **LangGraph** (Chat Agent, Graph Agent, Insight Agent) |
 | Long-term Memory | **Mem0** (cloud API) |
 | Package manager | npm (lockfile present) |
 | Runtime | Node.js (Vercel deployment) |
@@ -166,29 +166,27 @@ The north-star promise: *"Stop being blindsided by flares."* — give users a 24
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Memory Architecture (Mem0 vs Rasa)
+### Memory And Orchestration
 
 | System | Scope | Purpose | Example |
 |--------|-------|---------|---------|
 | **Mem0** | Long-term, across sessions | User history, conditions, preferences | "User has history of migraines" |
-| **Rasa** | Short-term, within conversation | Slot filling, dialogue state | "User just said stress is 4/10, need sleep quality next" |
+| **Three-agent LangGraph** | Per turn + post-turn reconciliation | Build reply context, reconcile logs into the graph, store next-turn clue | "User mentioned headache, Graph Agent reconciled it, Insight Agent stored the next best question" |
 
-Both are needed. Mem0 provides context; Rasa manages the current form.
+Mem0 provides long-term context. The three-agent LangGraph flow handles turn-time context assembly and post-turn graph/insight work.
 
 Key files:
-- `web-app/src/app/api/chat/route.ts` — streaming chat endpoint + pipeline v2 trigger
-- `web-app/src/backend/lib/graph/pipeline-v2.ts` — OpenMed + Rasa + HealthKG orchestration
+- `web-app/src/app/api/chat/route.ts` — streaming chat endpoint + post-turn agent handoff
+- `web-app/src/backend/langgraph/agents/chat/` — pre-LLM chat context assembly
+- `web-app/src/backend/langgraph/agents/graph-reconciler/` — single writer for graph reconciliation
+- `web-app/src/backend/langgraph/agents/insight/` — condition scoring + next-turn clue generation
 - `web-app/src/backend/lib/openmed/` — OpenMed client + factor extractor
-- `web-app/src/backend/lib/rasa/` — Rasa dialogue state client
 - `web-app/src/app/api/graph/route.ts` — graph data endpoint for ChatCanvas
-- `rasa/` — Rasa project (domain.yml, stories, rules)
-- `docker-compose.yml` — OpenMed + Rasa + Redis services
+- `docker-compose.yml` — local support services such as OpenMed
 - `web-app/src/backend/lib/graph/` — knowledge graph module
   - `index.ts` — CRUD operations for nodes/edges
-  - `pipeline.ts` — orchestrates extract → upsert → clues → questions
-  - `extract-entities.ts` — LLM entity extraction
-  - `update-clues.ts` — LLM insight generation
-  - `pick-next-question.ts` — LLM question prioritization
+- `health-kg.ts` — deterministic condition scoring inputs
+- `info-gain.ts` — next-question ranking logic
 - `web-app/src/backend/lib/memory/index.ts` — mem0 + atomic fact extraction
 - `web-app/src/backend/lib/ai/providers.ts` — model config
 - `web-app/src/components/clue-chat/ChatCanvas.tsx` — Reagraph visualization

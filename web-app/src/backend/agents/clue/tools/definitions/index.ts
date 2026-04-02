@@ -9,7 +9,6 @@ export { logSymptom } from './log-symptom';
 export { logMedication } from './log-medication';
 export { logMood } from './log-mood';
 export { getTimeline } from './get-timeline';
-export { generateInsights } from './generate-insights';
 export { generateDoctorSummary } from './generate-doctor-summary';
 export { askSeverity } from './ask-severity';
 export { toggleFlareMode } from './toggle-flare-mode';

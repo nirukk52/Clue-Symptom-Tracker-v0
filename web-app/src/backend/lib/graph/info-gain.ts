@@ -205,7 +205,7 @@ export function pickNextQuestion(input: InfoGainInput): QuestionResult | null {
   }
 
   if (candidateSymptoms.size === 0) {
-    return null;
+    return pickBaselineQuestion(knownSymptoms, knownFactors, recentQuestions);
   }
 
   // Step 3: Score each candidate symptom

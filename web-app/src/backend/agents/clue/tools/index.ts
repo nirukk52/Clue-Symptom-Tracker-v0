@@ -41,9 +41,9 @@ export const supabaseWrite = tool({
     mutationId: z.string().describe('Predefined mutation identifier'),
     payload: z.record(z.string(), z.unknown()).describe('Data to write'),
   }),
-  execute: async ({ mutationId, payload: _payload }) => {
+  execute: async ({ mutationId, payload }) => {
     // TODO: Implement mutation registry lookup and execution
-    return { mutationId, success: false, insertedId: null };
+    return { mutationId, payload, success: false, insertedId: null };
   },
 });
 

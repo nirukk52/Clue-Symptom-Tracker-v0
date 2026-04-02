@@ -1,53 +1,141 @@
 /**
- * Chat API Route
+ * Chat API Route (Three-Agent Architecture)
  *
- * Why this exists: Main entry point for the Clue AI chat. Uses Vercel AI SDK
- * streamText with OpenAI via AI Gateway (gpt-5.4) and tool calling. Integrates mem0 for user memory,
- * Supabase-backed tools for symptom logging, and the knowledge graph pipeline v2.
+ * Why this exists: Main entry point for the Clue AI chat. The route now uses a
+ * focused pre-LLM Chat Agent for prompt construction, then runs the Graph
+ * Reconciler and Insight Agent after streaming completes.
  *
- * Pipeline v2 architecture (OpenMed + Rasa + HealthKG):
- * 1. PRE-RESPONSE: Extract entities (OpenMed + LLM factors) → Update Rasa slots →
- *    Sync to Supabase → Score conditions (HealthKG) → Pick next question (info-gain)
- * 2. POST-RESPONSE: Update clues (LLM) → Delete resolved Unknown nodes → Store memory
- *
- * Key changes from v1:
- * - OpenMed handles biomedical NER (symptoms, meds, conditions) instead of LLM
- * - Rasa handles short-term dialogue state (slots) — Mem0 handles long-term memory
- * - Unknown nodes are deleted when corresponding slots fill (not marked as resolved)
- *
- * Conversational pacing:
- * - Structured intake owns exactly one active question at a time
- * - Exploratory HealthKG questions only run after structured intake yields control
+ * Runtime flow:
+ * 1. PRE-LLM: executeChatAgent builds the system prompt from memories, graph
+ *    summary, extracted entities, and the latest stored clue.
+ * 2. STREAMING: streamText handles the user-visible response and tool calls.
+ * 3. POST-LLM: persist chat history, store long-term memory, run Graph
+ *    Reconciler, then run Insight Agent if graph reconciliation succeeded.
  */
 
-import { createClient } from '@supabase/supabase-js';
 import {
+  generateId,
   type UIMessage,
   convertToModelMessages,
   stepCountIs,
   streamText,
 } from 'ai';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { buildSystemPrompt } from '@/backend/agents/clue/prompts/system';
-import { chatTools, setActiveUserId } from '@/backend/agents/clue/tools/chat-tools';
+import { chatTools } from '@/backend/agents/clue/tools/chat-tools';
 import {
-  getRelevantMemories,
-  storeMemory,
-} from '@/backend/lib/memory';
-import {
-  runPreResponsePipelineV2,
-  runPostResponsePipelineV2,
-  type PrePipelineV2Result,
-} from '@/backend/lib/graph/pipeline-v2';
-import { getGraphSummary } from '@/backend/lib/graph';
-import { isOpenMedHealthy } from '@/backend/lib/openmed';
-import { isRasaHealthy } from '@/backend/lib/rasa';
+  executeChatAgent,
+  executeGraphReconciler,
+  executeInsightAgent,
+} from '@/backend/langgraph';
+import { storeMemory } from '@/backend/lib/memory';
+import { extractTextFromUIMessage, serializeUIMessage } from '@/lib/chat-ui-messages';
 
-function getSupabase() {
+/**
+ * Creates a privileged Supabase client for route-level persistence.
+ * Why this exists: The post-stream handoff persists chat messages and launches
+ * background agents using server-side service role access.
+ */
+function getSupabase(): SupabaseClient {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+}
+
+/**
+ * Checks whether a string is a UUID.
+ * Why this exists: `chat_messages.conversation_id` expects a UUID, so route-
+ * level smoke tests or malformed clients should fail soft rather than breaking
+ * the entire post-turn handoff.
+ */
+function isUuid(value: string | undefined): value is string {
+  if (!value) {
+    return false;
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+/**
+ * Returns the newest user-authored UI message in the request payload.
+ * Why this exists: Persistence and memory storage should keep the exact
+ * user-authored `UIMessage`, not a lossy text reconstruction.
+ */
+function getLatestUserMessage(messages: UIMessage[]): UIMessage | null {
+  return [...messages].reverse().find((message) => message.role === 'user') ?? null;
+}
+
+/**
+ * Persists the current user/assistant exchange to chat history.
+ * Why this exists: The Graph Reconciler reads `chat_messages`, so the turn must
+ * be saved before background reconciliation starts in full `UIMessage` format.
+ */
+async function persistTurnMessages(params: {
+  conversationId?: string;
+  userMessage: UIMessage;
+  responseMessage: UIMessage;
+}): Promise<void> {
+  const { conversationId, userMessage, responseMessage } = params;
+  if (!isUuid(conversationId)) {
+    return;
+  }
+
+  const supabase = getSupabase();
+  const { error } = await supabase.from('chat_messages').insert([
+    {
+      conversation_id: conversationId,
+      role: 'user',
+      content: serializeUIMessage(userMessage),
+    },
+    {
+      conversation_id: conversationId,
+      role: 'assistant',
+      content: serializeUIMessage(responseMessage),
+    },
+  ]);
+
+  if (error) {
+    throw new Error(`Failed to persist chat messages: ${error.message}`);
+  }
+}
+
+/**
+ * Runs the post-stream handoff for persistence and background agents.
+ * Why this exists: Keeps the live user response fast while still ensuring the
+ * new three-agent architecture receives the finished turn artifacts.
+ */
+async function runPostTurnAgents(params: {
+  userId: string;
+  conversationId?: string;
+  userMessage: UIMessage;
+  responseMessage: UIMessage;
+}): Promise<void> {
+  const { userId, conversationId, userMessage, responseMessage } = params;
+  const userMessageText = extractTextFromUIMessage(userMessage);
+  const assistantReply = extractTextFromUIMessage(responseMessage);
+
+  await persistTurnMessages({ conversationId, userMessage, responseMessage });
+
+  try {
+    await storeMemory(userId, [
+      { role: 'user', content: userMessageText },
+      { role: 'assistant', content: assistantReply },
+    ]);
+  } catch (error) {
+    console.warn('[chat/route] Memory storage failed:', error);
+  }
+
+  const graphResult = await executeGraphReconciler({ userId });
+  if (!graphResult.success) {
+    console.error('[chat/route] Graph Reconciler failed:', graphResult.errors);
+    return;
+  }
+
+  const insightResult = await executeInsightAgent({ userId });
+  if (!insightResult.success) {
+    console.error('[chat/route] Insight Agent failed:', insightResult.errors);
+  }
 }
 
 export async function POST(req: Request) {
@@ -62,114 +150,58 @@ export async function POST(req: Request) {
   } = await req.json();
 
   const uid = userId || 'anonymous';
-  setActiveUserId(uid);
-  const supabase = getSupabase();
 
-  // Check service health (non-blocking, just for logging)
-  Promise.all([isOpenMedHealthy(), isRasaHealthy()]).then(([openmed, rasa]) => {
-    if (!openmed) console.warn('[chat/route] OpenMed service unavailable');
-    if (!rasa) console.warn('[chat/route] Rasa service unavailable');
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHASE 1: Pre-LLM orchestration via Chat Agent
+  // ─────────────────────────────────────────────────────────────────────────
+  // The Chat Agent builds the system prompt, but the route preserves streaming.
+  
+  const preLLMResult = await executeChatAgent({
+    messages,
+    userId: uid,
+    conversationId,
   });
 
-  // Check if user is in flare mode
-  const { data: prefs } = await supabase
-    .from('user_preferences')
-    .select('flare_mode')
-    .eq('user_id', uid)
-    .single();
-
-  const isFlareMode = prefs?.flare_mode ?? false;
-
-  // Extract the last user message text from parts
-  const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
-  const lastMessageText = lastUserMsg?.parts
-    ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
-    .join(' ') || '';
-
-  // Step 1: Fetch memories, graph state, and run pre-pipeline v2 in parallel
-  // Pre-pipeline v2: OpenMed + LLM factors → Rasa slots → Supabase → HealthKG question
-  const [memories, graphSummary, preResult] = await Promise.all([
-    getRelevantMemories(uid, lastMessageText),
-    uid !== 'anonymous' ? getGraphSummary(uid) : '',
-    uid !== 'anonymous' && lastMessageText
-      ? runPreResponsePipelineV2({ userId: uid, message: lastMessageText })
-      : Promise.resolve(null as PrePipelineV2Result | null),
-  ]);
-
-  // Build system prompt
-  const systemPrompt = buildSystemPrompt({
-    memories: memories || undefined,
-    graphSummary: graphSummary || undefined,
-    isFlareMode,
-    intakeQuestion: preResult?.intakeQuestion
-      ? {
-          prompt: preResult.intakeQuestion.prompt,
-          inputType: preResult.intakeQuestion.inputType,
-          metric: preResult.intakeQuestion.metric,
-          labelPreset: preResult.intakeQuestion.labelPreset,
-        }
-      : undefined,
-    exploratoryQuestion: preResult?.intakeQuestion ? undefined : preResult?.nextQuestion?.question,
-    rasaContext: undefined,
-  });
-
-  if (preResult?.intakeQuestion) {
-    console.log('[chat/route] Injecting structured intake directive:', preResult.intakeQuestion.id);
-  } else if (preResult?.nextQuestion) {
-    console.log('[chat/route] Injecting exploratory question:', preResult.nextQuestion.question);
+  if (!preLLMResult.success && preLLMResult.errors.length > 0) {
+    console.error('[chat/route] Pre-LLM phase failed:', preLLMResult.errors);
+    // Continue with empty system prompt — LLM will handle gracefully
   }
 
-  // Step 3: Stream the response
+  const systemPrompt = preLLMResult.systemPrompt || '';
+  const chatState = preLLMResult.state;
+  const latestUserMessage = getLatestUserMessage(messages);
+
+  if (chatState.nextClue) {
+    console.log('[chat/route] Injecting clue:', chatState.nextClue.question);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PHASE 2: Stream the LLM response
+  // ─────────────────────────────────────────────────────────────────────────
+  // The system prompt was built by the Chat Agent; we stream here for UX.
+
   const result = streamText({
     model: 'openai/gpt-5.4',
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: chatTools,
-    onFinish: async ({ text }) => {
-      const fullChatMessages = [
-        { role: 'user' as const, content: lastMessageText },
-        { role: 'assistant' as const, content: text || '' },
-      ];
+  });
 
-      // Store memories (fire-and-forget) — Mem0 for long-term memory
-      if (lastMessageText && text) {
-        storeMemory(uid, fullChatMessages).catch(() => {});
-      }
-
-      // Run post-response pipeline v2 (fire-and-forget)
-      // This generates clue nodes and deletes resolved Unknown nodes
-      if (uid !== 'anonymous' && preResult) {
-        runPostResponsePipelineV2({ userId: uid, message: lastMessageText }, preResult).catch((err) => {
-          console.error('[chat/route] Post-pipeline v2 failed:', err);
+  return result.toUIMessageStreamResponse({
+    originalMessages: messages,
+    generateMessageId: generateId,
+    onFinish: async ({ responseMessage }) => {
+      if (uid !== 'anonymous' && latestUserMessage) {
+        runPostTurnAgents({
+          userId: uid,
+          conversationId,
+          userMessage: latestUserMessage,
+          responseMessage,
+        }).catch((err) => {
+          console.error('[chat/route] Post-turn handoff failed:', err);
         });
-      }
-
-      // Persist messages to database
-      if (conversationId && lastMessageText) {
-        const { error } = await supabase.from('chat_messages').insert([
-          {
-            conversation_id: conversationId,
-            role: 'user',
-            content: lastMessageText,
-          },
-          {
-            conversation_id: conversationId,
-            role: 'assistant',
-            content: text || '',
-          },
-        ]);
-        if (error) {
-          console.error('[chat/route] Failed to save messages:', error);
-        } else {
-          console.log('[chat/route] Saved messages for conversation:', conversationId);
-        }
-      } else {
-        console.log('[chat/route] Skipped saving - conversationId:', conversationId, 'lastMessageText:', !!lastMessageText);
       }
     },
   });
-
-  return result.toUIMessageStreamResponse();
 }

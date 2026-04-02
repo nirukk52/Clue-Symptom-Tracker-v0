@@ -79,7 +79,8 @@ function loadKnowledgeGraph(): Map<string, DiseaseEntry> {
   
   try {
     const csvContent = readFileSync(csvPath, 'utf-8');
-    const lines = csvContent.split('\n');
+    // Split on \r\n (Windows), \r (old Mac), or \n (Unix) — the CSV uses \r\n
+    const lines = csvContent.split(/\r\n|\r|\n/);
     
     _knowledgeGraph = new Map();
     _symptomToConditions = new Map();

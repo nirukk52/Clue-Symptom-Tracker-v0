@@ -5,6 +5,7 @@ import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { deserializeStoredChatMessage } from '@/lib/chat-ui-messages';
 import { supabase } from '@/lib/supabase';
 
 import { ChatCanvas } from './ChatCanvas';
@@ -361,13 +362,35 @@ export function ClueChat({
           .order('created_at', { ascending: true });
 
         if (chatMessages && chatMessages.length > 0) {
-          const loadedMessages: UIMessage[] = chatMessages.map((m) => ({
-            id: m.id,
-            role: m.role as 'user' | 'assistant',
-            parts: [{ type: 'text' as const, text: m.content }],
-          }));
+          const loadedMessages: UIMessage[] = chatMessages.map((message) =>
+            deserializeStoredChatMessage({
+              id: message.id,
+              role: message.role as 'user' | 'assistant',
+              content: message.content,
+            })
+          );
+
+          const restoredInteractiveState = loadedMessages.reduce<
+            Record<string, { interactive?: ChatInteractiveComponent; completed?: boolean }>
+          >((acc, message, index) => {
+            const interactive = extractSeverityToolResult(message.parts);
+            if (!interactive) {
+              return acc;
+            }
+
+            const hasLaterUserMessage = loadedMessages
+              .slice(index + 1)
+              .some((laterMessage) => laterMessage.role === 'user');
+
+            acc[message.id] = {
+              interactive,
+              completed: hasLaterUserMessage,
+            };
+            return acc;
+          }, {});
 
           setAiMessages(loadedMessages);
+          setInteractiveState(restoredInteractiveState);
           userMessageCount.current = loadedMessages.filter((m) => m.role === 'user').length;
         }
       } catch (error) {
@@ -458,12 +481,13 @@ export function ClueChat({
       }));
 
       const state = interactiveState[messageId];
-      const symptom = state?.interactive?.type === 'severity-slider'
-        ? state.interactive.symptom
-        : 'symptom';
+      const metric =
+        state?.interactive && 'symptom' in state.interactive
+          ? state.interactive.metric || state.interactive.symptom
+          : 'symptom';
 
       const severityLabel = severity <= 3 ? 'mild' : severity <= 6 ? 'moderate' : 'severe';
-      await handleSendMessage(`${severity}/10 - ${severityLabel} ${symptom}`);
+      await handleSendMessage(`${severity}/10 - ${severityLabel} ${metric}`);
     },
     [interactiveState, handleSendMessage]
   );

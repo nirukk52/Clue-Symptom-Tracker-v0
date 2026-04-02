@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
+import { ClueAgentMark } from '@/components/brand/ClueAgentLogo';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { supabase } from '@/lib/supabase';
 
@@ -87,6 +88,9 @@ export function ChatSidebar({
         role="navigation"
         aria-label="Main navigation"
       >
+        <div className="mb-2 shrink-0" title="Clue">
+          <ClueAgentMark size={40} className="rounded-[14px] shadow-soft" />
+        </div>
         {/* User avatar - rounded square like in the design */}
         <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mb-3 overflow-hidden shrink-0">
           {user.avatarUrl ? (

@@ -30,13 +30,15 @@ export const CLUE_SYSTEM_PROMPT = `You are Clue, an AI symptom tracking companio
 ### When users share symptoms or how they feel:
 1. Acknowledge what they said briefly and warmly.
 2. Call the log_symptom tool to capture structured data. IMPORTANT: Only include the severity parameter if the user explicitly mentioned a number (like "7/10", "5 out of 10") or a severity word (mild, moderate, severe). If they just say "I have a headache" with no severity, call log_symptom WITHOUT the severity parameter -- do NOT pass severity:0.
-3. Only ask a structured follow-up when the system gives you a Structured Intake Directive or Exploratory Follow-up Directive. Never invent your own intake question.
-4. If they seem tired or in pain, skip extra follow-ups unless the system explicitly tells you otherwise.
+3. When log_symptom is called without severity, the UI will automatically show a severity slider. Do NOT separately call ask_severity for symptom logs unless the system explicitly asks for a non-symptom rating.
+4. Only ask a follow-up question when the system gives you a Clue Directive.
+5. If no Clue Directive is present, do not invent your own health follow-up question.
+6. If they seem tired or in pain, keep it brief unless the system explicitly tells you otherwise.
 
 ### When users ask about patterns, triggers, or "why":
-1. Call generate_insights to check their data for real patterns.
-2. Only share findings backed by actual logged data. Use language like "your data suggests" or "over the past X days".
-3. If not enough data exists, say so honestly and gently encourage continued logging.
+1. Only discuss patterns that are already grounded in the graph summary, memories, or timeline data you have in this turn.
+2. Only share findings backed by actual logged data. Use language like "your data suggests" or "what you've logged so far suggests".
+3. If not enough data exists in the current context, say so honestly and gently encourage continued logging.
 
 ### When users mention medications:
 1. Call log_medication to record it.
@@ -71,7 +73,7 @@ export const CLUE_SYSTEM_PROMPT = `You are Clue, an AI symptom tracking companio
 - Never fabricate data or trends you haven't seen in their actual logs.
 
 ## Tone Examples
-Good: "Logged that. Your fatigue has been running higher this week -- want me to check what might be driving it?"
+Good: "Logged that. I'll keep tracking the pattern with you."
 Good: "Got it. Rest up. I'll be here when you're ready."
 Good: "Your data shows a pattern: on days you slept under 6 hours, your pain averaged 7.2 vs 4.1 on better sleep nights. That's over 12 days of tracking."
 Bad: "You should try to sleep more! That would help your pain."
@@ -90,7 +92,7 @@ The user is experiencing a flare or has very low energy.
 - Accept any input, no matter how minimal.
 - If they just say a number, log it as severity.
 - Acknowledge gently: "Got it." or "Logged. Take care."
-- Only call log_symptom or log_mood. Skip insights and summaries.`;
+- Only call log_symptom or log_mood unless the user explicitly asks for a timeline or doctor summary.`;
 
 /**
  * Graph context modifier -- appended when we have graph state.
@@ -112,64 +114,60 @@ export const GRAPH_INTERACTION_RULES = `
 When the user answers a question that was shown in their health graph:
 1. Acknowledge what you learned briefly.
 2. Update your understanding based on their answer.
-3. If this completes a pattern, share the insight (call generate_insights if appropriate).
+3. If this clarifies a pattern, briefly say what you learned without inventing fresh analysis.
 4. Don't repeat the same question unless they gave an ambiguous answer.`;
 
 /**
- * Structured intake instruction for the canonical dynamic questionnaire.
- * Why this exists: Keeps the LLM in a wording role while the intake engine owns
- * which question is active and how it should be collected.
+ * Formats extracted biomedical entities for prompt injection.
+ * Why this exists: The Chat Agent can hand the model normalized names before
+ * tool calling, which reduces mismatched symptom and medication labels.
  */
-export const STRUCTURED_INTAKE_INSTRUCTION = `
+function formatExtractedEntities(
+  entities: Array<{ type: 'symptom' | 'medication' | 'condition'; name: string }>
+): string {
+  if (entities.length === 0) {
+    return '';
+  }
 
-## Structured Intake Directive
-There is exactly one active structured intake question for this turn.
+  const lines = entities.map((entity) => `- ${entity.type}: "${entity.name}"`).join('\n');
 
-Question: "{prompt}"
-Input type: "{inputType}"
-Metric: "{metric}"
-Label preset: "{labelPreset}"
+  return `\n\n## Extracted Biomedical Entities\nThe user's message contains these biomedical entities:\n${lines}\nUse these normalized names when calling tools.`;
+}
+
+/**
+ * Insight-owned clue directive for the next best follow-up question.
+ * Why this exists: The new three-agent architecture lets the Insight Agent own
+ * question selection while the Chat Agent only handles wording and delivery.
+ */
+export const CLUE_DIRECTIVE_INSTRUCTION = `
+
+## Clue Directive
+There is one follow-up question for this turn.
+
+Question: "{question}"
+Reasoning: "{reasoning}"
 
 Rules:
-1. Do not choose a different follow-up question.
-2. If input type is "slider", briefly acknowledge the user and then call the ask_severity tool with the exact metric, prompt, and label preset from this directive.
-3. If input type is "free_text_number", briefly acknowledge the user and then ask the exact prompt text once.
-4. Do not ask any second follow-up in the same response.
+1. After acknowledging and logging the current turn, ask this exact question.
+2. Ask only this one follow-up question. Do not add others.
+3. Skip it entirely if flare mode is active or the user seems exhausted or overwhelmed.
 `;
 
 /**
- * Exploratory follow-up instruction for info-gain questions.
- * Why this exists: Separates symptom-exploration questions from structured
- * intake so they only appear after intake yields control.
- */
-export const EXPLORATORY_QUESTION_INSTRUCTION = `
-
-## Exploratory Follow-up Directive
-You may ask this exact exploratory question at the end of your response:
-"{question}"
-
-Rules:
-1. Ask it only after acknowledging and logging the current turn.
-2. Ask only this one exploratory question.
-3. Skip it entirely if flare mode is active.
-`;
-
-/**
- * Builds the complete system prompt with optional memory context, graph state,
- * flare mode, Rasa dialogue context, and next question to ask.
+ * Builds the complete system prompt for the three-agent chat flow.
+ * Why this exists: The Chat Agent should only assemble prompt context that it
+ * owns directly plus the latest clue chosen by the Insight Agent.
  */
 export function buildSystemPrompt(options?: {
   memories?: string;
   graphSummary?: string;
   isFlareMode?: boolean;
-  intakeQuestion?: {
-    prompt: string;
-    inputType: 'slider' | 'free_text_number';
-    metric: string;
-    labelPreset?: 'severity' | 'sleep' | 'stress' | 'energy' | 'mood';
+  extractedEntities?: Array<{ type: 'symptom' | 'medication' | 'condition'; name: string }>;
+  nextClue?: {
+    question: string;
+    reasoning: string;
+    priority: number;
   };
-  exploratoryQuestion?: string;
-  rasaContext?: string;
 }): string {
   let prompt = CLUE_SYSTEM_PROMPT;
 
@@ -181,25 +179,22 @@ export function buildSystemPrompt(options?: {
     prompt += GRAPH_CONTEXT_HEADER + options.graphSummary + GRAPH_INTERACTION_RULES;
   }
 
-  // Add Rasa dialogue context if form is active
-  if (options?.rasaContext) {
-    prompt += `\n\n## Active Dialogue Context\n${options.rasaContext}`;
+  if (options?.extractedEntities?.length) {
+    prompt += formatExtractedEntities(options.extractedEntities);
   }
 
   if (options?.isFlareMode) {
     prompt += FLARE_MODE_MODIFIER;
   }
 
-  if (options?.intakeQuestion && !options?.isFlareMode) {
-    prompt += STRUCTURED_INTAKE_INSTRUCTION
-      .replace('{prompt}', options.intakeQuestion.prompt)
-      .replace('{inputType}', options.intakeQuestion.inputType)
-      .replace('{metric}', options.intakeQuestion.metric)
-      .replace('{labelPreset}', options.intakeQuestion.labelPreset ?? 'severity');
-  }
-
-  if (options?.exploratoryQuestion && !options?.isFlareMode && !options?.intakeQuestion) {
-    prompt += EXPLORATORY_QUESTION_INSTRUCTION.replace('{question}', options.exploratoryQuestion);
+  if (options?.nextClue && !options?.isFlareMode) {
+    const reasoning =
+      options.nextClue.reasoning?.trim() ||
+      'This clue was selected by the insight engine to reduce uncertainty for the next turn.';
+    prompt += CLUE_DIRECTIVE_INSTRUCTION.replace('{question}', options.nextClue.question).replace(
+      '{reasoning}',
+      reasoning
+    );
   }
 
   return prompt;

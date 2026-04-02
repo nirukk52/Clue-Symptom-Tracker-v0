@@ -15,6 +15,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+import { extractTextFromStoredChatMessage } from '@/lib/chat-ui-messages';
+
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
@@ -108,8 +110,13 @@ async function main() {
         for (const msg of msgs) {
           const prefix = msg.role === 'user' ? '  👤' : '  🤖';
           // Truncate long messages for readability
-          const text = (msg.content as string).replace(/\n/g, ' ').slice(0, 120);
-          const ellipsis = (msg.content as string).length > 120 ? '…' : '';
+          const fullText = extractTextFromStoredChatMessage({
+            id: `${convo.id}:${msg.created_at}`,
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content as string | null,
+          }).replace(/\n/g, ' ');
+          const text = fullText.slice(0, 120);
+          const ellipsis = fullText.length > 120 ? '…' : '';
           console.log(`     ${prefix} [${msg.role}] ${text}${ellipsis}`);
         }
       }

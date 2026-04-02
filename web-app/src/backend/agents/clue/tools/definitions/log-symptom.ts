@@ -11,6 +11,34 @@ import { z } from 'zod';
 
 import { getSupabase, getUid } from '../utils';
 
+/**
+ * Maps tool input severity to DB: omit 0 and negatives so the model cannot
+ * overwrite "unknown" with a false zero (graph/pipeline use null for unknown).
+ */
+function resolveStoredSeverity(severity: number | undefined): number | null {
+  if (severity === undefined || severity === null) return null;
+  if (severity <= 0) return null;
+  if (severity > 10) return 10;
+  return severity;
+}
+
+/**
+ * Builds the deterministic slider payload used when symptom severity is missing.
+ * Why this exists: Every symptom log should capture severity through the same UI
+ * flow, without relying on the model to remember a second tool call.
+ */
+function buildSeveritySlider(symptomName: string) {
+  return {
+    interactive: true,
+    type: 'severity-slider' as const,
+    metric: symptomName,
+    symptom: symptomName,
+    prompt: `How intense is your ${symptomName.toLowerCase()} right now?`,
+    initialValue: 5,
+    labels: 'severity' as const,
+  };
+}
+
 export const logSymptom = tool({
   description:
     'Log a symptom mentioned by the user. Call this whenever the user describes how they feel, reports pain, fatigue, or any health symptom.',
@@ -35,28 +63,29 @@ export const logSymptom = tool({
       .limit(1)
       .maybeSingle();
 
+    const storedSev = resolveStoredSeverity(severity);
+
     if (recentLog) {
       // Recent log exists - update with severity if provided and current severity is missing or zero
-      const needsSeverityUpdate = severity !== undefined && 
-        severity > 0 && 
-        (recentLog.severity === null || recentLog.severity === 0);
+      const needsSeverityUpdate =
+        storedSev !== null && (recentLog.severity === null || recentLog.severity === 0);
       
       if (needsSeverityUpdate) {
         await supabase
           .from('symptom_logs')
-          .update({ severity, notes: notes ?? undefined })
+          .update({ severity: storedSev, notes: notes ?? undefined })
           .eq('id', recentLog.id);
 
         await supabase
           .from('timeline_entries')
-          .update({ severity, description: notes ?? undefined })
+          .update({ severity: storedSev, description: notes ?? undefined })
           .eq('user_id', uid)
           .ilike('title', symptomName)
           .gte('logged_at', fiveMinAgo);
 
         return {
           success: true,
-          message: `Updated ${symptomName} to ${severity}/10.`,
+          message: `Updated ${symptomName} to ${storedSev}/10.`,
           logId: recentLog.id,
           updated: true,
         };
@@ -78,6 +107,7 @@ export const logSymptom = tool({
         message: `${symptomName} already logged.`,
         logId: recentLog.id,
         skipped: true,
+        ...buildSeveritySlider(symptomName),
       };
     }
 
@@ -87,7 +117,7 @@ export const logSymptom = tool({
       .insert({
         user_id: uid,
         symptom_name: symptomName,
-        severity: severity ?? null,
+        severity: storedSev,
         notes: notes ?? null,
       })
       .select('id')
@@ -103,7 +133,7 @@ export const logSymptom = tool({
       type: 'symptom',
       title: symptomName,
       description: notes ?? null,
-      severity: severity ?? null,
+      severity: storedSev,
       status: 'current',
     });
 
@@ -111,11 +141,12 @@ export const logSymptom = tool({
       console.error('[log_symptom] timeline_entries insert failed:', timelineError);
     }
 
-    const severityText = severity !== undefined ? ` at ${severity}/10` : '';
+    const severityText = storedSev !== null ? ` at ${storedSev}/10` : '';
     return {
       success: true,
       message: `Logged ${symptomName}${severityText}.`,
       logId: symptomLog?.id,
+      ...(storedSev === null ? buildSeveritySlider(symptomName) : {}),
     };
   },
 });

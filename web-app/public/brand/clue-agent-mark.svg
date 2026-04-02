@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <rect width="48" height="48" rx="14" fill="#20132e" />
+  <!-- Uplifting ribbon: sweeps up with energy and optimism,
+       like a confident flourish rising toward the insight dot. -->
+  <path
+    d="M12 38
+       C14 34, 14 28, 18 22
+       Q22 16, 30 14
+       Q34 13, 36 16
+       L34 19
+       Q32 17, 28 18
+       Q22 20, 18 26
+       C15 31, 15 35, 14 39
+       Z"
+    fill="#b8e3d6"
+  />
+  <!-- Peach insight dot — the bright moment of clarity -->
+  <circle cx="36" cy="15" r="4.5" fill="#e8974f" />
+</svg>
