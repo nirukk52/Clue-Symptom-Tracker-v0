@@ -45,6 +45,11 @@ let _knowledgeGraph: Map<string, DiseaseEntry> | null = null;
 let _symptomToConditions: Map<string, Array<{ condition: string; weight: number }>> | null = null;
 let _allSymptoms: Set<string> | null = null;
 const SYMPTOM_NOISE_WORDS = new Set(['a', 'an', 'and', 'in', 'my', 'of', 'the', 'with']);
+const SYMPTOM_ALIAS_MAP = new Map<string, string>([
+  ['dizzy', 'dizziness'],
+  ['head hurts', 'headache'],
+  ['head pain', 'headache'],
+]);
 
 /**
  * Parses symptom string like "pain (0.318), fever (0.119)" into array of {symptom, weight}
@@ -166,6 +171,35 @@ function tokenizeSymptomPhrase(value: string): string[] {
  */
 function buildSymptomFingerprint(value: string): string {
   return tokenizeSymptomPhrase(value).sort().join(' ');
+}
+
+/**
+ * Resolves common plain-language symptom aliases before KG matching.
+ * Why this exists: Users often say "head hurts" or "dizzy" instead of the
+ * clinical noun phrase stored in the graph, and those variants should still
+ * land on the same canonical symptom label.
+ */
+function resolveSymptomAlias(userInput: string): string | null {
+  const comparableInput = tokenizeSymptomPhrase(userInput).join(' ');
+  if (!comparableInput) {
+    return null;
+  }
+
+  const directAlias = SYMPTOM_ALIAS_MAP.get(comparableInput);
+  if (directAlias) {
+    return directAlias;
+  }
+
+  const tokens = new Set(comparableInput.split(' '));
+  if (tokens.has('dizzy')) {
+    return 'dizziness';
+  }
+
+  if (tokens.has('head') && (tokens.has('hurt') || tokens.has('hurts') || tokens.has('pain'))) {
+    return 'headache';
+  }
+
+  return null;
 }
 
 /**
@@ -324,6 +358,11 @@ export function normalizeSymptom(userInput: string): string | null {
   const inputTokens = tokenizeSymptomPhrase(input);
   const comparableInput = inputTokens.join(' ');
   const inputFingerprint = buildSymptomFingerprint(input);
+  const aliasMatch = resolveSymptomAlias(input);
+
+  if (aliasMatch && symptoms.has(aliasMatch)) {
+    return aliasMatch;
+  }
 
   // Exact match
   if (symptoms.has(input)) {
