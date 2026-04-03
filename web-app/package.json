@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "purge-user": "npx tsx --env-file=.env.local src/backend/scripts/purge-test-user.ts",
-    "analyze-user": "npx tsx --env-file=.env.local src/backend/scripts/analyze-test-user.ts"
+    "analyze-user": "npx tsx --env-file=.env.local src/backend/scripts/analyze-test-user.ts",
+    "eval-clue-chat": "npx tsx --env-file=.env.local src/backend/scripts/eval-clue-chat.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.6",

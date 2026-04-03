@@ -3,6 +3,7 @@
 "test_scenarios": [
 {
 "persona_id": "overwhelmed_spoonie_multi_condition",
+"test_user_email": "overwhelmed_spoonie_multi_condition@gmail.com",
 "persona_name": "Overwhelmed Spoonie",
 "profile": {
 "conditions": ["fibromyalgia", "POTS", "migraine"],
@@ -45,10 +46,36 @@
 "Priority selection",
 "Low-energy flow",
 "Flare capture"
+],
+"expected_state": {
+"graph": {
+"symptom": [
+{ "label": "Fatigue" },
+{ "label": "Headache" },
+{ "label": "Dizziness", "aliases": ["Dizzy"] }
 ]
+},
+"logs": {
+"symptoms": [
+{ "label": "Fatigue", "severity": 8 }
+]
+},
+"timeline": {
+"symptoms": [
+{ "label": "Fatigue", "severity": 8 }
+]
+},
+"insights": {
+"requireNextQuestion": true,
+"forbidAnsweredLabels": [
+{ "label": "Fatigue" }
+]
+}
+}
 },
 {
 "persona_id": "single_symptom_headache_entry",
+"test_user_email": "single_symptom_headache_entry@gmail.com",
 "persona_name": "Minimal-input user",
 "profile": {
 "conditions": [],
@@ -91,10 +118,37 @@
 "Condition clarification",
 "Fast symptom structuring",
 "Minimal friction"
+],
+"expected_state": {
+"graph": {
+"symptom": [
+{ "label": "Headache" }
+],
+"optionalCondition": [
+{ "label": "Migraine" }
 ]
+},
+"logs": {
+"symptoms": [
+{ "label": "Headache", "severity": 7 }
+]
+},
+"timeline": {
+"symptoms": [
+{ "label": "Headache", "severity": 7 }
+]
+},
+"insights": {
+"requireNextQuestion": true,
+"forbidAnsweredLabels": [
+{ "label": "Headache" }
+]
+}
+}
 },
 {
 "persona_id": "ibs_food_detective",
+"test_user_email": "ibs_food_detective@gmail.com",
 "persona_name": "IBS Food Detective",
 "profile": {
 "conditions": ["IBS"],
@@ -137,10 +191,41 @@
 "Driver chips",
 "Pattern-question setup",
 "IBS-specific flow"
+],
+"expected_state": {
+"graph": {
+"symptom": [
+{ "label": "Cramping" },
+{ "label": "Bloating" }
+],
+"factor": [
+{ "label": "Meal" },
+{ "label": "Stress" }
 ]
+},
+"logs": {
+"symptoms": [
+{ "label": "Cramping", "severity": 6 }
+]
+},
+"timeline": {
+"symptoms": [
+{ "label": "Cramping", "severity": 6 }
+]
+},
+"insights": {
+"requireNextQuestion": true,
+"forbidAnsweredLabels": [
+{ "label": "Cramping" },
+{ "label": "Meal" },
+{ "label": "Stress" }
+]
+}
+}
 },
 {
 "persona_id": "sleep_deprived_tracker",
+"test_user_email": "sleep_deprived_tracker@gmail.com",
 "persona_name": "Sleep-Deprived Tracker",
 "profile": {
 "conditions": ["insomnia"],
@@ -182,10 +267,38 @@
 "Sleep-to-outcome framing",
 "Low-effort daily check-in",
 "Impact-question setup"
+],
+"expected_state": {
+"graph": {
+"symptom": [
+{ "label": "Fatigue", "aliases": ["Low energy", "Energy", "Exhaustion"] }
+],
+"factor": [
+{ "label": "Sleep", "aliases": ["Poor sleep"] }
 ]
+},
+"logs": {
+"symptoms": [
+{ "label": "Fatigue", "aliases": ["Low energy", "Energy", "Exhaustion"], "severity": 9 }
+]
+},
+"timeline": {
+"symptoms": [
+{ "label": "Fatigue", "aliases": ["Low energy", "Energy", "Exhaustion"], "severity": 9 }
+]
+},
+"insights": {
+"requireNextQuestion": true,
+"forbidAnsweredLabels": [
+{ "label": "Fatigue", "aliases": ["Low energy", "Energy", "Exhaustion"] },
+{ "label": "Sleep", "aliases": ["Poor sleep"] }
+]
+}
+}
 },
 {
 "persona_id": "hormonal_balancer",
+"test_user_email": "hormonal_balancer@gmail.com",
 "persona_name": "Hormonal Balancer",
 "profile": {
 "conditions": ["PCOS", "possible endometriosis"],
@@ -227,10 +340,40 @@
 "Hormonal trigger capture",
 "Pain-first flow",
 "Doctor-summary friendly structure"
+],
+"expected_state": {
+"graph": {
+"symptom": [
+{ "label": "Pelvic pain" }
+],
+"factor": [
+{ "label": "Cycle" },
+{ "label": "Stress" }
 ]
+},
+"logs": {
+"symptoms": [
+{ "label": "Pelvic pain", "severity": 7 }
+]
+},
+"timeline": {
+"symptoms": [
+{ "label": "Pelvic pain", "severity": 7 }
+]
+},
+"insights": {
+"requireNextQuestion": true,
+"forbidAnsweredLabels": [
+{ "label": "Pelvic pain" },
+{ "label": "Cycle" },
+{ "label": "Stress" }
+]
+}
+}
 },
 {
 "persona_id": "fibro_fog_fighter",
+"test_user_email": "fibro_fog_fighter@gmail.com",
 "persona_name": "Fibro Fog Fighter",
 "profile": {
 "conditions": ["fibromyalgia"],
@@ -272,10 +415,37 @@
 "Flare-mode trigger from natural language",
 "Ultra-low-friction mode",
 "Respecting exhaustion"
+],
+"expected_state": {
+"graph": {
+"symptom": [
+{ "label": "Pain" }
+],
+"optionalCondition": [
+{ "label": "Fibromyalgia" }
 ]
+},
+"logs": {
+"symptoms": [
+{ "label": "Pain", "severity": 8 }
+]
+},
+"timeline": {
+"symptoms": [
+{ "label": "Pain", "severity": 8 }
+]
+},
+"insights": {
+"requireNextQuestion": true,
+"forbidAnsweredLabels": [
+{ "label": "Pain" }
+]
+}
+}
 },
 {
 "persona_id": "doctor_advocate",
+"test_user_email": "doctor_advocate@gmail.com",
 "persona_name": "Needs doctor-ready proof",
 "profile": {
 "conditions": ["chronic pain", "migraine"],
@@ -317,7 +487,30 @@
 "Appointment-prep entry point",
 "Doctor-oriented symptom structure",
 "Onset + severity capture"
+],
+"expected_state": {
+"graph": {
+"symptom": [
+{ "label": "Headache" }
 ]
+},
+"logs": {
+"symptoms": [
+{ "label": "Headache", "severity": 6 }
+]
+},
+"timeline": {
+"symptoms": [
+{ "label": "Headache", "severity": 6 }
+]
+},
+"insights": {
+"requireNextQuestion": true,
+"forbidAnsweredLabels": [
+{ "label": "Headache" }
+]
+}
+}
 }
 ],
 "design_rules_for_the_agent": [

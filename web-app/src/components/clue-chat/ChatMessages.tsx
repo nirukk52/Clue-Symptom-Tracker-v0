@@ -5,7 +5,8 @@ import { useEffect, useRef } from 'react';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 import { RatingSlider, RATING_LABEL_PRESETS } from './SeveritySlider';
-import type { ChatMessage, ChatUser } from './types';
+import { SuggestionPills } from './SuggestionPills';
+import type { ChatMessage, ChatSuggestionOption, ChatUser } from './types';
 
 /**
  * ChatMessages - Message display area for ClueChat
@@ -24,9 +25,17 @@ interface ChatMessagesProps {
   isTyping?: boolean;
   /** Callback when severity slider is submitted */
   onSeveritySubmit?: (messageId: string, severity: number) => void;
+  /** Callback when a suggestion pill is selected */
+  onSuggestionSelect?: (messageId: string, option: ChatSuggestionOption) => void;
 }
 
-export function ChatMessages({ messages, user, isTyping, onSeveritySubmit }: ChatMessagesProps) {
+export function ChatMessages({
+  messages,
+  user,
+  isTyping,
+  onSeveritySubmit,
+  onSuggestionSelect,
+}: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,6 +101,13 @@ export function ChatMessages({ messages, user, isTyping, onSeveritySubmit }: Cha
                 disabled={message.interactiveCompleted}
                 labels={message.interactive.labels as keyof typeof RATING_LABEL_PRESETS || 'severity'}
                 onSubmit={(value) => onSeveritySubmit(message.id, value)}
+              />
+            )}
+            {message.interactive?.type === 'suggestion-pills' && onSuggestionSelect && (
+              <SuggestionPills
+                options={message.interactive.options}
+                disabled={message.interactiveCompleted}
+                onSelect={(option) => onSuggestionSelect(message.id, option)}
               />
             )}
           </div>

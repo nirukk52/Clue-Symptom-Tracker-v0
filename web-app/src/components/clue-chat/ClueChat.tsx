@@ -18,7 +18,14 @@ import { FlareModePanel } from './FlareModePanel';
 import { InsightsPanel } from './InsightsPanel';
 import { QuickEntryPanel } from './QuickEntryPanel';
 import { TimelineView } from './TimelineView';
-import type { ChatInteractiveComponent, ChatMessage, ChatUser, NavItem } from './types';
+import { buildSuggestionInteractive, type InsightSuggestionRow } from './chat-suggestions';
+import type {
+  ChatInteractiveComponent,
+  ChatMessage,
+  ChatSuggestionOption,
+  ChatUser,
+  NavItem,
+} from './types';
 
 /**
  * ClueChat - Full-page chat experience for Chronic Life symptom tracker
@@ -86,6 +93,16 @@ function extractSeverityToolResult(
   return undefined;
 }
 
+/**
+ * wait delays suggestion hydration long enough for the post-turn insight agent
+ * to persist the latest ranked suggestions.
+ */
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 interface ClueChatProps {
   /** Initial greeting message from the assistant */
   initialMessage?: string;
@@ -128,6 +145,98 @@ export function ClueChat({
 
   // Ref to track Supabase user ID for API calls (survives re-renders)
   const supabaseUserId = useRef<string | null>(null);
+  const latestSuggestionMessageId = useRef<string | null>(null);
+
+  /**
+   * applySuggestionPills keeps suggestion chips bound to only the latest
+   * assistant turn so the rail does not accumulate stale prompts.
+   */
+  const applySuggestionPills = useCallback(
+    (
+      messageId: string,
+      interactive?: Extract<ChatInteractiveComponent, { type: 'suggestion-pills' }>
+    ) => {
+      setInteractiveState((prev) => {
+        if (prev[messageId]?.interactive && prev[messageId].interactive.type !== 'suggestion-pills') {
+          return prev;
+        }
+
+        const nextState: typeof prev = {};
+
+        for (const [id, state] of Object.entries(prev)) {
+          if (state.interactive?.type === 'suggestion-pills' && id !== messageId) {
+            continue;
+          }
+          nextState[id] = state;
+        }
+
+        if (!interactive) {
+          if (nextState[messageId]?.interactive?.type === 'suggestion-pills') {
+            delete nextState[messageId];
+          }
+          return nextState;
+        }
+
+        nextState[messageId] = {
+          interactive,
+          completed: false,
+        };
+
+        return nextState;
+      });
+    },
+    []
+  );
+
+  /**
+   * loadSuggestionPills reads the top-ranked queued insights after a chat turn
+   * and hydrates them into pill affordances for the latest assistant message.
+   */
+  const loadSuggestionPills = useCallback(
+    async (messageId: string, retryDelays: number[] = [1200, 3000]) => {
+      const userId = supabaseUserId.current;
+      if (!userId) {
+        return;
+      }
+
+      for (const delayMs of retryDelays) {
+        if (delayMs > 0) {
+          await wait(delayMs);
+        }
+
+        if (latestSuggestionMessageId.current !== messageId) {
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `/api/insights?userId=${encodeURIComponent(userId)}&type=next_question&limit=4`,
+            { cache: 'no-store' }
+          );
+
+          if (!response.ok) {
+            continue;
+          }
+
+          const data = (await response.json()) as { insights?: InsightSuggestionRow[] };
+          const interactive = buildSuggestionInteractive(data.insights ?? []);
+
+          if (latestSuggestionMessageId.current !== messageId) {
+            return;
+          }
+
+          applySuggestionPills(messageId, interactive);
+
+          if (interactive?.options.length) {
+            return;
+          }
+        } catch (error) {
+          console.error('[ClueChat] Failed to load suggestion pills:', error);
+        }
+      }
+    },
+    [applySuggestionPills]
+  );
 
   // Transport for AI SDK v6 with conversation ID and user ID support
   const transport = useMemo(() => new DefaultChatTransport({
@@ -163,6 +272,9 @@ export function ClueChat({
           ...prev,
           [message.id]: { interactive },
         }));
+      } else {
+        latestSuggestionMessageId.current = message.id;
+        void loadSuggestionPills(message.id);
       }
       // Trigger graph refresh after each message to show updated nodes/edges
       setGraphRefreshTrigger((prev) => prev + 1);
@@ -187,6 +299,33 @@ export function ClueChat({
       interactiveCompleted: state?.completed,
     };
   });
+
+  /**
+   * Rehydrates suggestions when an existing conversation is loaded so returning
+   * users still see the current top four prompts in the latest assistant turn.
+   */
+  useEffect(() => {
+    if (!isLoggedIn || isLoadingHistory) {
+      return;
+    }
+
+    const latestAssistantMessage = [...aiMessages].reverse().find((message) => message.role === 'assistant');
+    if (!latestAssistantMessage) {
+      return;
+    }
+
+    const existingInteractive = interactiveState[latestAssistantMessage.id]?.interactive;
+    if (existingInteractive?.type && existingInteractive.type !== 'suggestion-pills') {
+      return;
+    }
+
+    if (existingInteractive?.type === 'suggestion-pills' && existingInteractive.options.length > 0) {
+      return;
+    }
+
+    latestSuggestionMessageId.current = latestAssistantMessage.id;
+    void loadSuggestionPills(latestAssistantMessage.id, [0]);
+  }, [aiMessages, interactiveState, isLoadingHistory, isLoggedIn, loadSuggestionPills]);
 
   /**
    * Check session on mount — determines if user is logged in and syncs conversation
@@ -507,6 +646,22 @@ export function ClueChat({
   );
 
   /**
+   * handleSuggestionSelect turns a ranked insight pill into a natural follow-up
+   * user message so suggestion taps continue the same chat stream.
+   */
+  const handleSuggestionSelect = useCallback(
+    async (messageId: string, option: ChatSuggestionOption) => {
+      setActiveSubTab('chat');
+      setInteractiveState((prev) => ({
+        ...prev,
+        [messageId]: { ...prev[messageId], completed: true },
+      }));
+      await handleSendMessage(option.prompt);
+    },
+    [handleSendMessage]
+  );
+
+  /**
    * Determines whether the current nav tab uses the split chat+canvas layout.
    * Why: Only 'chat' and 'insights' tabs show the two-panel layout.
    * 'timeline' and 'doctor-pack' are full-width standalone views.
@@ -621,6 +776,7 @@ export function ClueChat({
                   user={activeUser}
                   isTyping={isTyping || isLoadingHistory}
                   onSeveritySubmit={handleSeveritySubmit}
+                  onSuggestionSelect={handleSuggestionSelect}
                 />
               ) : (
                 renderCanvas()
@@ -644,6 +800,7 @@ export function ClueChat({
               user={activeUser}
               isTyping={isTyping || isLoadingHistory}
               onSeveritySubmit={handleSeveritySubmit}
+              onSuggestionSelect={handleSuggestionSelect}
             />
             <ChatInput
               onSendMessage={handleSendMessage}

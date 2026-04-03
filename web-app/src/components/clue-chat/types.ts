@@ -9,8 +9,20 @@
 /**
  * Interactive component types that can appear in chat messages.
  * Why this exists: Enables rich interactions beyond plain text.
- * These are triggered by tool calls (e.g. ask_severity) rather than regex detection.
+ * These are triggered by tool calls or server-hydrated suggestion state rather
+ * than regex detection.
  */
+export interface ChatSuggestionOption {
+  /** Stable insight identifier for follow-up actions and deduping. */
+  id: string;
+  /** Short label that fits within a pill-style affordance. */
+  label: string;
+  /** Natural-language prompt sent back into chat when selected. */
+  prompt: string;
+  /** Optional supporting context shown under the pill label. */
+  description?: string;
+}
+
 export type ChatInteractiveComponent =
   | { 
       type: 'severity-slider' | 'rating-slider';
@@ -23,7 +35,8 @@ export type ChatInteractiveComponent =
       /** Label preset for the slider (severity, energy, mood, stress, pain, sleep) */
       labels?: string;
     }
-  | { type: 'quick-log'; options: string[] };
+  | { type: 'quick-log'; options: string[] }
+  | { type: 'suggestion-pills'; options: ChatSuggestionOption[] };
 
 export interface ChatMessage {
   id: string;
