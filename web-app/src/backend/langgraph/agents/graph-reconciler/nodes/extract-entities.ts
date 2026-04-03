@@ -5,6 +5,7 @@
  * Graph Agent can recover entities the chat model did not log explicitly.
  */
 
+import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import { extractBiomedicalEntities, extractFactors } from '@/backend/lib/openmed';
 
 import type {
@@ -12,6 +13,8 @@ import type {
   GraphReconcilerStateUpdate,
   ReconciledEntity,
 } from '../state';
+
+const MIN_OPENMED_CONFIDENCE = 0.75;
 
 /**
  * Converts factor extraction output into graph-ready factor entities.
@@ -68,6 +71,60 @@ function factorValuesToEntities(
 }
 
 /**
+ * Builds a stable lookup key for deduping reconciled entities.
+ * Why this exists: The extraction pass merges multiple sources and needs one
+ * canonical comparison key for exact duplicate suppression.
+ */
+function entityKey(entity: ReconciledEntity): string {
+  return `${entity.type}:${entity.name.trim().toLowerCase()}`;
+}
+
+/**
+ * Tokenizes a symptom label into comparable words.
+ * Why this exists: Low-trust symptom candidates should be dropped when they are
+ * clearly just a generic substring of a stronger logged symptom.
+ */
+function tokenizeLabel(value: string): string[] {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Checks whether a low-trust symptom is already covered by a logged symptom.
+ * Why this exists: OpenMed can extract partial spans like "Heartbeat" from a
+ * logged symptom such as "Racing Heartbeat", which should not become a new node.
+ */
+function isCoveredByLoggedSymptom(
+  entity: ReconciledEntity,
+  logEntities: ReconciledEntity[]
+): boolean {
+  if (entity.type !== 'symptom') {
+    return false;
+  }
+
+  const candidateTokens = tokenizeLabel(entity.name);
+  if (candidateTokens.length === 0) {
+    return false;
+  }
+
+  return logEntities.some((loggedEntity) => {
+    if (loggedEntity.type !== 'symptom') {
+      return false;
+    }
+
+    const loggedTokens = tokenizeLabel(loggedEntity.name);
+    if (loggedTokens.length <= candidateTokens.length) {
+      return false;
+    }
+
+    return candidateTokens.every((token) => loggedTokens.includes(token));
+  });
+}
+
+/**
  * Converts fresh log rows into graph-ready entities.
  * Why this exists: Structured logs are the Graph Agent's primary source of
  * truth, so they should be normalized before we compare them with gap entities.
@@ -75,7 +132,7 @@ function factorValuesToEntities(
 function buildLogEntities(state: GraphReconcilerStateType): ReconciledEntity[] {
   const symptomEntities = state.recentLogs.symptomLogs.map<ReconciledEntity>((log) => ({
     type: 'symptom',
-    name: log.symptom_name,
+    name: canonicalizeSymptomName(log.symptom_name),
     source: 'log',
     timestamp: log.logged_at,
     severity: log.severity,
@@ -111,13 +168,23 @@ function filterGapEntities(
   logEntities: ReconciledEntity[],
   recoveredEntities: ReconciledEntity[]
 ): ReconciledEntity[] {
-  const logKeys = new Set(
-    logEntities.map((entity) => `${entity.type}:${entity.name.trim().toLowerCase()}`)
-  );
+  const logKeys = new Set(logEntities.map(entityKey));
   const seenRecovered = new Set<string>();
 
   return recoveredEntities.filter((entity) => {
-    const key = `${entity.type}:${entity.name.trim().toLowerCase()}`;
+    if (
+      entity.source === 'openmed' &&
+      entity.provisional &&
+      (entity.confidence ?? 0) < MIN_OPENMED_CONFIDENCE
+    ) {
+      return false;
+    }
+
+    if (entity.source === 'openmed' && entity.provisional && isCoveredByLoggedSymptom(entity, logEntities)) {
+      return false;
+    }
+
+    const key = entityKey(entity);
     if (logKeys.has(key) || seenRecovered.has(key)) {
       return false;
     }
@@ -137,7 +204,6 @@ export async function extractEntitiesNode(
 ): Promise<GraphReconcilerStateUpdate> {
   try {
     const logEntities = buildLogEntities(state);
-    const fullExchangeText = state.recentMessages.map((message) => message.content).join('\n').trim();
     const userOnlyText = state.recentMessages
       .filter((message) => message.role === 'user')
       .map((message) => message.content)
@@ -150,7 +216,7 @@ export async function extractEntitiesNode(
       state.recentLogs.moodLogs.at(-1)?.logged_at;
 
     const [biomedicalEntities, factorValues] = await Promise.all([
-      fullExchangeText ? extractBiomedicalEntities(fullExchangeText) : Promise.resolve([]),
+      userOnlyText ? extractBiomedicalEntities(userOnlyText) : Promise.resolve([]),
       userOnlyText
         ? extractFactors(userOnlyText)
         : Promise.resolve({
@@ -168,6 +234,9 @@ export async function extractEntitiesNode(
         name: entity.name,
         source: 'openmed' as const,
         timestamp: latestTimestamp,
+        confidence: entity.confidence,
+        provisional: true,
+        rawText: entity.rawText,
       })),
       ...factorValuesToEntities(factorValues, latestTimestamp),
     ];

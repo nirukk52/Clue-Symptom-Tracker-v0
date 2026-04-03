@@ -73,15 +73,17 @@ function getLatestUserMessage(messages: UIMessage[]): UIMessage | null {
  */
 async function persistTurnMessages(params: {
   conversationId?: string;
+  userId: string;
   userMessage: UIMessage;
   responseMessage: UIMessage;
 }): Promise<void> {
-  const { conversationId, userMessage, responseMessage } = params;
+  const { conversationId, userId, userMessage, responseMessage } = params;
   if (!isUuid(conversationId)) {
     return;
   }
 
   const supabase = getSupabase();
+  await ensureConversationExists(supabase, conversationId, userId);
   const { error } = await supabase.from('chat_messages').insert([
     {
       conversation_id: conversationId,
@@ -97,6 +99,49 @@ async function persistTurnMessages(params: {
 
   if (error) {
     throw new Error(`Failed to persist chat messages: ${error.message}`);
+  }
+
+  const { error: updateError } = await supabase
+    .from('chat_conversations')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', conversationId);
+
+  if (updateError) {
+    console.warn('[chat/route] Failed to update conversation timestamp:', updateError);
+  }
+}
+
+/**
+ * Ensures the referenced conversation row exists before message persistence.
+ * Why this exists: The post-turn handoff must not fail if the client supplies a
+ * valid UUID whose conversation row was not persisted or was created out of band.
+ */
+async function ensureConversationExists(
+  supabase: SupabaseClient,
+  conversationId: string,
+  userId: string
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('chat_conversations')
+    .select('id')
+    .eq('id', conversationId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to verify conversation: ${error.message}`);
+  }
+
+  if (data?.id) {
+    return;
+  }
+
+  const { error: insertError } = await supabase.from('chat_conversations').insert({
+    id: conversationId,
+    user_id: userId,
+  });
+
+  if (insertError) {
+    throw new Error(`Failed to create missing conversation: ${insertError.message}`);
   }
 }
 
@@ -115,7 +160,7 @@ async function runPostTurnAgents(params: {
   const userMessageText = extractTextFromUIMessage(userMessage);
   const assistantReply = extractTextFromUIMessage(responseMessage);
 
-  await persistTurnMessages({ conversationId, userMessage, responseMessage });
+  await persistTurnMessages({ conversationId, userId, userMessage, responseMessage });
 
   try {
     await storeMemory(userId, [

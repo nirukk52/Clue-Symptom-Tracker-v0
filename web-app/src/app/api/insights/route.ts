@@ -8,6 +8,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+const MAX_INSIGHTS_RESPONSE = 10;
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,7 +36,9 @@ export async function GET(req: Request) {
       .select('*')
       .eq('user_id', userId)
       .neq('status', 'dismissed')
-      .order('created_at', { ascending: false });
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(MAX_INSIGHTS_RESPONSE);
 
     if (error) {
       console.error('[api/insights] Failed to fetch insights:', error);

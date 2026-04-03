@@ -19,6 +19,7 @@ export interface GeneratedClue {
   question: string;
   reasoning: string;
   priority: number;
+  relatedSymptom?: string | null;
 }
 
 /**

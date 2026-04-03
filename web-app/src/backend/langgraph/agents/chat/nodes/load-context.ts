@@ -51,6 +51,7 @@ async function getLatestClue(
     .eq('user_id', userId)
     .eq('type', 'next_question')
     .neq('status', 'dismissed')
+    .order('priority', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle<InsightRow>();

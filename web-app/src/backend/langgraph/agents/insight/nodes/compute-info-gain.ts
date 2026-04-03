@@ -37,6 +37,7 @@ async function getRecentClueTexts(userId: string): Promise<string[]> {
     .select('content')
     .eq('user_id', userId)
     .eq('type', 'next_question')
+    .neq('status', 'dismissed')
     .order('created_at', { ascending: false })
     .limit(5);
 
@@ -135,6 +136,7 @@ Rules:
     question: result.object.question,
     reasoning: `LLM fallback: ${result.object.reasoning}`,
     priority: 1,
+    relatedSymptom: null,
   };
 }
 
@@ -163,6 +165,7 @@ export async function computeInfoGainNode(
           question: infoGainQuestion.question,
           reasoning: infoGainQuestion.reasoning,
           priority: infoGainQuestion.priority,
+          relatedSymptom: infoGainQuestion.relatedSymptom,
         },
       };
     }
@@ -173,6 +176,7 @@ export async function computeInfoGainNode(
             question: 'What symptoms have been bothering you most lately?',
             reasoning: 'No symptom nodes exist yet, so the next clue should establish the core symptom picture.',
             priority: 1,
+            relatedSymptom: null,
           }
         : await generateFallbackClue({
             symptomNodes: state.symptomNodes,

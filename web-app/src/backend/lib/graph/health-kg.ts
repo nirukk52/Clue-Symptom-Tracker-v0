@@ -44,6 +44,7 @@ interface MissingSymptom {
 let _knowledgeGraph: Map<string, DiseaseEntry> | null = null;
 let _symptomToConditions: Map<string, Array<{ condition: string; weight: number }>> | null = null;
 let _allSymptoms: Set<string> | null = null;
+const SYMPTOM_NOISE_WORDS = new Set(['a', 'an', 'and', 'in', 'my', 'of', 'the', 'with']);
 
 /**
  * Parses symptom string like "pain (0.318), fever (0.119)" into array of {symptom, weight}
@@ -141,6 +142,42 @@ function loadKnowledgeGraph(): Map<string, DiseaseEntry> {
 function getSymptomToConditions(): Map<string, Array<{ condition: string; weight: number }>> {
   loadKnowledgeGraph();
   return _symptomToConditions!;
+}
+
+/**
+ * Tokenizes a symptom phrase into comparable semantic tokens.
+ * Why this exists: User-entered symptom phrases often include filler words like
+ * "in" or "my", which should not create distinct graph nodes.
+ */
+function tokenizeSymptomPhrase(value: string): string[] {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .filter((token) => !SYMPTOM_NOISE_WORDS.has(token));
+}
+
+/**
+ * Builds a stable comparison fingerprint for a symptom phrase.
+ * Why this exists: Sorting the semantic tokens lets us match word-order variants
+ * such as "pain in chest" and "chest pain" to the same canonical symptom.
+ */
+function buildSymptomFingerprint(value: string): string {
+  return tokenizeSymptomPhrase(value).sort().join(' ');
+}
+
+/**
+ * Formats a symptom label for user-facing storage and display.
+ * Why this exists: HealthKG stores normalized lowercase labels, but logs and the
+ * graph should keep a consistent title-cased presentation.
+ */
+function formatSymptomLabel(value: string): string {
+  return value
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 /**
@@ -284,18 +321,49 @@ export function getConditionsForSymptom(symptom: string): Array<{ condition: str
 export function normalizeSymptom(userInput: string): string | null {
   const symptoms = getAllSymptoms();
   const input = userInput.toLowerCase().trim();
+  const inputTokens = tokenizeSymptomPhrase(input);
+  const comparableInput = inputTokens.join(' ');
+  const inputFingerprint = buildSymptomFingerprint(input);
 
   // Exact match
   if (symptoms.has(input)) {
     return input;
   }
 
+  // Match semantically equivalent phrases after removing filler words and order differences.
+  for (const symptom of symptoms) {
+    if (buildSymptomFingerprint(symptom) === inputFingerprint && inputFingerprint) {
+      return symptom;
+    }
+  }
+
   // Check for contains match
   for (const symptom of symptoms) {
-    if (symptom.includes(input) || input.includes(symptom)) {
+    const symptomTokens = tokenizeSymptomPhrase(symptom);
+    const comparableSymptom = symptomTokens.join(' ');
+    const hasMeaningfulSubstringMatch =
+      inputTokens.length >= 2 &&
+      symptomTokens.length >= 2 &&
+      (symptom.includes(input) || input.includes(symptom));
+    const hasMeaningfulPhraseMatch =
+      inputTokens.length >= 2 &&
+      symptomTokens.length >= 2 &&
+      ((comparableInput && comparableSymptom.includes(comparableInput)) ||
+        (comparableSymptom && comparableInput.includes(comparableSymptom)));
+
+    if (hasMeaningfulSubstringMatch || hasMeaningfulPhraseMatch) {
       return symptom;
     }
   }
 
   return null;
+}
+
+/**
+ * Returns the canonical display label for a symptom name when possible.
+ * Why this exists: All symptom writes should converge on one stable label even
+ * when the model or the user phrases the same symptom slightly differently.
+ */
+export function canonicalizeSymptomName(userInput: string): string {
+  return formatSymptomLabel(normalizeSymptom(userInput) ?? userInput.trim());
 }

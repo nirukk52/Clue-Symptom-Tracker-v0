@@ -7,7 +7,10 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import type { InsightAgentStateType, InsightAgentStateUpdate } from '../state';
+
+const MAX_ACTIVE_NEXT_QUESTIONS = 10;
 
 /**
  * Creates a privileged Supabase client for clue persistence.
@@ -19,6 +22,160 @@ function getSupabase(): SupabaseClient {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+}
+
+interface ExistingInsightRow {
+  id: string;
+  content: string | null;
+  priority?: number | null;
+  created_at?: string | null;
+  metadata: { relatedSymptom?: string | null } | null;
+}
+
+/**
+ * Normalizes a tracked follow-up label for lifecycle comparisons.
+ * Why this exists: Stored clue metadata and parsed question text should compare
+ * against the current graph using the same canonical symptom vocabulary.
+ */
+function normalizeTrackedLabel(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const lower = trimmed.toLowerCase();
+  if (['sleep', 'stress', 'energy', 'mood'].includes(lower)) {
+    return lower;
+  }
+
+  return canonicalizeSymptomName(trimmed).toLowerCase();
+}
+
+/**
+ * Extracts the target label from a stored next-question clue.
+ * Why this exists: Older clue rows may lack structured metadata, so cleanup must
+ * recover the intended symptom or factor from the question text when possible.
+ */
+function inferTrackedLabelFromQuestion(question: string | null | undefined): string | null {
+  if (!question) {
+    return null;
+  }
+
+  const trimmed = question.trim();
+  const symptomMatch =
+    trimmed.match(/^Have you been experiencing (.+)\?$/i) ??
+    trimmed.match(/^Have you noticed any (.+)\?$/i) ??
+    trimmed.match(/^Are you having any (.+)\?$/i);
+
+  if (symptomMatch?.[1]) {
+    return normalizeTrackedLabel(symptomMatch[1]);
+  }
+
+  if (/sleep/i.test(trimmed)) return 'sleep';
+  if (/stress/i.test(trimmed)) return 'stress';
+  if (/energy/i.test(trimmed)) return 'energy';
+  if (/mood/i.test(trimmed)) return 'mood';
+
+  return null;
+}
+
+/**
+ * Dismisses stale answered or duplicate next-question clues before storing a new one.
+ * Why this exists: The latest clue should reflect the current graph, not keep
+ * resurfacing symptoms or factors the user already answered.
+ */
+async function dismissObsoleteClues(
+  supabase: SupabaseClient,
+  state: InsightAgentStateType
+): Promise<void> {
+  const knownLabels = new Set<string>([
+    ...Array.from(state.knownSymptoms).map((symptom) => normalizeTrackedLabel(symptom)).filter(Boolean),
+    ...state.factorNodes.map((node) => normalizeTrackedLabel(node.label)).filter(Boolean),
+  ] as string[]);
+  const newQuestion = state.clue?.question.trim().toLowerCase();
+  const newTrackedLabel = normalizeTrackedLabel(state.clue?.relatedSymptom ?? null);
+
+  const { data, error } = await supabase
+    .from('insights')
+    .select('id, content, metadata')
+    .eq('user_id', state.userId)
+    .eq('type', 'next_question')
+    .neq('status', 'dismissed');
+
+  if (error) {
+    console.error('[insight/store-clue] Failed to load existing clues for cleanup:', error);
+    return;
+  }
+
+  const insightIdsToDismiss = ((data as ExistingInsightRow[] | null) ?? [])
+    .filter((row) => {
+      const trackedLabel =
+        normalizeTrackedLabel(row.metadata?.relatedSymptom) ?? inferTrackedLabelFromQuestion(row.content);
+      const normalizedQuestion = row.content?.trim().toLowerCase() ?? null;
+
+      return (
+        (trackedLabel !== null && knownLabels.has(trackedLabel)) ||
+        (newQuestion !== null && normalizedQuestion === newQuestion) ||
+        (newTrackedLabel !== null && trackedLabel === newTrackedLabel)
+      );
+    })
+    .map((row) => row.id);
+
+  if (insightIdsToDismiss.length === 0) {
+    return;
+  }
+
+  const { error: dismissError } = await supabase
+    .from('insights')
+    .update({ status: 'dismissed' })
+    .in('id', insightIdsToDismiss);
+
+  if (dismissError) {
+    console.error('[insight/store-clue] Failed to dismiss obsolete clues:', dismissError);
+  }
+}
+
+/**
+ * Dismisses low-ranked overflow clues beyond the active queue cap.
+ * Why this exists: The next-question backlog should stay bounded so stale clues
+ * do not accumulate indefinitely and crowd out better ranked follow-ups.
+ */
+async function pruneClueBacklog(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('insights')
+    .select('id, priority, created_at')
+    .eq('user_id', userId)
+    .eq('type', 'next_question')
+    .neq('status', 'dismissed')
+    .order('priority', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[insight/store-clue] Failed to load clue backlog for pruning:', error);
+    return;
+  }
+
+  const rows = (data as ExistingInsightRow[] | null) ?? [];
+  if (rows.length <= MAX_ACTIVE_NEXT_QUESTIONS) {
+    return;
+  }
+
+  const insightIdsToDismiss = rows.slice(MAX_ACTIVE_NEXT_QUESTIONS).map((row) => row.id);
+  const { error: dismissError } = await supabase
+    .from('insights')
+    .update({ status: 'dismissed' })
+    .in('id', insightIdsToDismiss);
+
+  if (dismissError) {
+    console.error('[insight/store-clue] Failed to prune clue backlog:', dismissError);
+  }
 }
 
 /**
@@ -35,6 +192,7 @@ export async function storeClueNode(
 
   try {
     const supabase = getSupabase();
+    await dismissObsoleteClues(supabase, state);
     const topConditions = state.topConditions.slice(0, 3).map((condition) => ({
       condition: condition.condition,
       probability: condition.probability,
@@ -53,6 +211,7 @@ export async function storeClueNode(
         metadata: {
           topConditions,
           method: state.topConditions.length > 0 ? 'info_gain' : 'fallback',
+          relatedSymptom: state.clue.relatedSymptom ?? null,
         },
       })
       .select('id')
@@ -64,6 +223,8 @@ export async function storeClueNode(
         errors: [error.message],
       };
     }
+
+    await pruneClueBacklog(supabase, state.userId);
 
     return {
       insightId: (data as { id: string } | null)?.id ?? null,

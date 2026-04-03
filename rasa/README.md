@@ -1,6 +1,6 @@
-# Rasa Pro (CALM) for Clue Symptom Tracker
+# Rasa Pro (CALM) for Clue Symptom Tracker - DEPRECATED
 
-Minimal Rasa Pro setup for dialogue state tracking. Uses CALM architecture with 
+Minimal Rasa Pro setup for dialogue state tracking. Uses CALM architecture with
 **controlled slots** — all slot filling happens via API from Next.js backend.
 
 ## Architecture
@@ -11,7 +11,7 @@ Next.js Backend → Rasa Pro API → Redis (state persistence)
      │                │ POST /conversations/{id}/tracker/events
      │                │ GET  /conversations/{id}/tracker
      └────────────────┘
-   
+
    OpenMed extracts biomedical entities
    LLM extracts factors (sleep, stress, etc.)
    Next.js sets slots via Rasa API

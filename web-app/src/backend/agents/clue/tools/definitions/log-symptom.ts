@@ -9,6 +9,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
+import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import { getSupabase, getUid } from '../utils';
 
 /**
@@ -50,6 +51,7 @@ export const logSymptom = tool({
   execute: async ({ symptomName, severity, notes }) => {
     const uid = getUid();
     const supabase = getSupabase();
+    const canonicalSymptomName = canonicalizeSymptomName(symptomName);
 
     // Check for recent duplicate (same symptom within 5 minutes) to prevent double-logging
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
@@ -57,7 +59,7 @@ export const logSymptom = tool({
       .from('symptom_logs')
       .select('id, severity')
       .eq('user_id', uid)
-      .ilike('symptom_name', symptomName)
+      .ilike('symptom_name', canonicalSymptomName)
       .gte('logged_at', fiveMinAgo)
       .order('logged_at', { ascending: false })
       .limit(1)
@@ -80,12 +82,12 @@ export const logSymptom = tool({
           .from('timeline_entries')
           .update({ severity: storedSev, description: notes ?? undefined })
           .eq('user_id', uid)
-          .ilike('title', symptomName)
+          .ilike('title', canonicalSymptomName)
           .gte('logged_at', fiveMinAgo);
 
         return {
           success: true,
-          message: `Updated ${symptomName} to ${storedSev}/10.`,
+          message: `Updated ${canonicalSymptomName} to ${storedSev}/10.`,
           logId: recentLog.id,
           updated: true,
         };
@@ -95,7 +97,7 @@ export const logSymptom = tool({
       if (recentLog.severity !== null && recentLog.severity > 0) {
         return {
           success: true,
-          message: `${symptomName} already logged at ${recentLog.severity}/10.`,
+          message: `${canonicalSymptomName} already logged at ${recentLog.severity}/10.`,
           logId: recentLog.id,
           skipped: true,
         };
@@ -104,10 +106,10 @@ export const logSymptom = tool({
       // Logged without severity and no new severity provided - skip duplicate
       return {
         success: true,
-        message: `${symptomName} already logged.`,
+        message: `${canonicalSymptomName} already logged.`,
         logId: recentLog.id,
         skipped: true,
-        ...buildSeveritySlider(symptomName),
+        ...buildSeveritySlider(canonicalSymptomName),
       };
     }
 
@@ -116,7 +118,7 @@ export const logSymptom = tool({
       .from('symptom_logs')
       .insert({
         user_id: uid,
-        symptom_name: symptomName,
+        symptom_name: canonicalSymptomName,
         severity: storedSev,
         notes: notes ?? null,
       })
@@ -131,7 +133,7 @@ export const logSymptom = tool({
     const { error: timelineError } = await supabase.from('timeline_entries').insert({
       user_id: uid,
       type: 'symptom',
-      title: symptomName,
+      title: canonicalSymptomName,
       description: notes ?? null,
       severity: storedSev,
       status: 'current',
@@ -144,9 +146,9 @@ export const logSymptom = tool({
     const severityText = storedSev !== null ? ` at ${storedSev}/10` : '';
     return {
       success: true,
-      message: `Logged ${symptomName}${severityText}.`,
+      message: `Logged ${canonicalSymptomName}${severityText}.`,
       logId: symptomLog?.id,
-      ...(storedSev === null ? buildSeveritySlider(symptomName) : {}),
+      ...(storedSev === null ? buildSeveritySlider(canonicalSymptomName) : {}),
     };
   },
 });

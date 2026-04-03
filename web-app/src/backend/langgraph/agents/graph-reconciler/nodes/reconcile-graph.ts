@@ -7,6 +7,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import {
   upsertGraphEdge,
   upsertGraphNode,
@@ -40,7 +41,8 @@ function getSupabase(): SupabaseClient {
  * a user alternates between shorthand and canonical labels.
  */
 function normalizeEntityName(entity: ReconciledEntity, existingNodes: GraphNode[]): string {
-  const rawName = entity.name.trim();
+  const rawName =
+    entity.type === 'symptom' ? canonicalizeSymptomName(entity.name) : entity.name.trim();
   const lowerRawName = rawName.toLowerCase();
 
   const sameTypeNodes = existingNodes.filter((node) => node.type === entity.type);
@@ -147,6 +149,9 @@ async function upsertEntities(
         source: entity.source,
         occurredAt: entity.timestamp ?? null,
         notes: entity.notes ?? null,
+        confidence: entity.confidence ?? null,
+        provisional: entity.provisional ?? false,
+        rawText: entity.rawText ?? null,
       },
     });
 

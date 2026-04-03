@@ -10,6 +10,8 @@
  * - pharma_detection_superclinical: Medications and supplements
  */
 
+import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -123,7 +125,10 @@ export async function extractBiomedicalEntities(
 
     normalized.push({
       type: mapDiseaseLabel(entity.label),
-      name: capitalizeWords(entity.text),
+      name:
+        mapDiseaseLabel(entity.label) === 'symptom'
+          ? canonicalizeSymptomName(entity.text)
+          : capitalizeWords(entity.text),
       confidence: entity.confidence,
       rawText: entity.text,
     });

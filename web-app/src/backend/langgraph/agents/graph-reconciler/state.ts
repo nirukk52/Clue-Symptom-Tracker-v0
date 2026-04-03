@@ -71,6 +71,9 @@ export interface ReconciledEntity {
   severity?: number | null;
   value?: number | null;
   notes?: string | null;
+  confidence?: number | null;
+  provisional?: boolean;
+  rawText?: string | null;
 }
 
 /**
