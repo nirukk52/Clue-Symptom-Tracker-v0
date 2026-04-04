@@ -47,8 +47,13 @@ let _allSymptoms: Set<string> | null = null;
 const SYMPTOM_NOISE_WORDS = new Set(['a', 'an', 'and', 'in', 'my', 'of', 'the', 'with']);
 const SYMPTOM_ALIAS_MAP = new Map<string, string>([
   ['dizzy', 'dizziness'],
+  ['energy', 'fatigue'],
+  ['energy level', 'fatigue'],
+  ['exhausted', 'fatigue'],
+  ['exhaustion', 'fatigue'],
   ['head hurts', 'headache'],
   ['head pain', 'headache'],
+  ['low energy', 'fatigue'],
 ]);
 
 /**

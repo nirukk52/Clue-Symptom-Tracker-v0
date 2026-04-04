@@ -71,6 +71,29 @@ function factorValuesToEntities(
 }
 
 /**
+ * Recovers qualitative factor mentions that do not carry a numeric value.
+ * Why this exists: Users often name likely drivers like meal, stress, or cycle
+ * without rating them, but the graph should still preserve those factor nodes.
+ */
+function extractMentionedFactorEntities(text: string, timestamp?: string): ReconciledEntity[] {
+  const normalizedText = text.toLowerCase();
+  const factorMatchers: Array<{ name: string; pattern: RegExp }> = [
+    { name: 'Meal', pattern: /\bmeal(s)?\b|\bfood\b/ },
+    { name: 'Stress', pattern: /\bstress(ed)?\b/ },
+    { name: 'Cycle', pattern: /\bcycle\b|\bperiod\b|\bhormone(s)?\b/ },
+  ];
+
+  return factorMatchers
+    .filter(({ pattern }) => pattern.test(normalizedText))
+    .map(({ name }) => ({
+      type: 'factor' as const,
+      name,
+      source: 'factor_extractor' as const,
+      timestamp,
+    }));
+}
+
+/**
  * Builds a stable lookup key for deduping reconciled entities.
  * Why this exists: The extraction pass merges multiple sources and needs one
  * canonical comparison key for exact duplicate suppression.
@@ -238,6 +261,7 @@ export async function extractEntitiesNode(
         provisional: true,
         rawText: entity.rawText,
       })),
+      ...extractMentionedFactorEntities(userOnlyText, latestTimestamp),
       ...factorValuesToEntities(factorValues, latestTimestamp),
     ];
 

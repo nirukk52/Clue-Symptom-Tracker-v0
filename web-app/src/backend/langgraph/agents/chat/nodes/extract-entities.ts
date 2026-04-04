@@ -38,7 +38,8 @@ export async function extractEntitiesNode(
   state: ChatAgentStateType
 ): Promise<ChatAgentStateUpdate> {
   try {
-    const userMessageText = extractLastUserMessageText(state.messages);
+    const messages = state.modelMessages.length > 0 ? state.modelMessages : state.messages;
+    const userMessageText = extractLastUserMessageText(messages);
     const extractedEntities = userMessageText
       ? await extractBiomedicalEntities(userMessageText)
       : [];

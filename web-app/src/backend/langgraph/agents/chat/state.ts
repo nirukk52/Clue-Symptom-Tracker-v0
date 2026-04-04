@@ -24,6 +24,17 @@ export interface NextClue {
 }
 
 /**
+ * Deterministic follow-up action resolved before the model runs.
+ * Why this exists: Some terse replies should update stored state directly
+ * instead of depending on the chat model to infer the correct write target.
+ */
+export interface ResolvedFollowupAction {
+  kind: 'update_symptom_severity' | 'update_latest_unrated_symptom_severity';
+  symptomName?: string;
+  severity: number;
+}
+
+/**
  * Chat Agent state root.
  * Why this exists: Keeps the new three-node Chat Agent small, explicit, and
  * independent from the legacy deterministic intake pipeline.
@@ -33,6 +44,14 @@ export const ChatAgentState = Annotation.Root({
    * Full UI message history for the conversation.
    */
   messages: Annotation<UIMessage[]>({
+    reducer: (_, next) => next,
+    default: () => [],
+  }),
+
+  /**
+   * Model-ready UI message history after deterministic follow-up resolution.
+   */
+  modelMessages: Annotation<UIMessage[]>({
     reducer: (_, next) => next,
     default: () => [],
   }),
@@ -59,6 +78,22 @@ export const ChatAgentState = Annotation.Root({
   userMessageText: Annotation<string>({
     reducer: (_, next) => next,
     default: () => '',
+  }),
+
+  /**
+   * Explicit interpretation of the latest turn when the raw user reply is ambiguous.
+   */
+  turnResolution: Annotation<string | null>({
+    reducer: (_, next) => next,
+    default: () => null,
+  }),
+
+  /**
+   * Structured follow-up action ready for deterministic route-side application.
+   */
+  resolvedFollowupAction: Annotation<ResolvedFollowupAction | null>({
+    reducer: (_, next) => next,
+    default: () => null,
   }),
 
   /**

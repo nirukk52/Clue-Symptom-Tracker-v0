@@ -28,6 +28,7 @@ import {
   executeGraphReconciler,
   executeInsightAgent,
 } from '@/backend/langgraph';
+import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import { storeMemory } from '@/backend/lib/memory';
 import { extractTextFromUIMessage, serializeUIMessage } from '@/lib/chat-ui-messages';
 
@@ -64,6 +65,87 @@ function isUuid(value: string | undefined): value is string {
  */
 function getLatestUserMessage(messages: UIMessage[]): UIMessage | null {
   return [...messages].reverse().find((message) => message.role === 'user') ?? null;
+}
+
+/**
+ * Returns the latest user-authored message before the newest user turn.
+ * Why this exists: Deterministic fallbacks sometimes need the previous user
+ * label when the Chat Agent could not resolve a terse numeric reply.
+ */
+function getPreviousUserMessage(messages: UIMessage[]): UIMessage | null {
+  let seenLatestUser = false;
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role !== 'user') {
+      continue;
+    }
+
+    if (!seenLatestUser) {
+      seenLatestUser = true;
+      continue;
+    }
+
+    return message;
+  }
+
+  return null;
+}
+
+/**
+ * Parses a bare numeric follow-up reply.
+ * Why this exists: Numeric severity turns should be handled deterministically
+ * even if the Chat Agent does not resolve them on one specific path.
+ */
+function parseNumericReply(text: string): number | null {
+  const match = text.trim().match(/^([0-9]|10)(?:\s*\/\s*10)?$/);
+  if (!match) {
+    return null;
+  }
+
+  const value = Number(match[1]);
+  return Number.isInteger(value) && value >= 0 && value <= 10 ? value : null;
+}
+
+/**
+ * Builds a conservative fallback action for terse numeric replies.
+ * Why this exists: The route should still protect user-facing logging flows if
+ * the upstream chat node could not fully resolve the target.
+ */
+function inferFallbackResolvedFollowupAction(messages: UIMessage[]):
+  | { kind: 'update_symptom_severity'; symptomName?: string; severity: number }
+  | { kind: 'update_latest_unrated_symptom_severity'; symptomName?: string; severity: number }
+  | null {
+  const latestUserMessage = getLatestUserMessage(messages);
+  if (!latestUserMessage) {
+    return null;
+  }
+
+  const rating = parseNumericReply(extractTextFromUIMessage(latestUserMessage));
+  if (rating === null) {
+    return null;
+  }
+
+  const previousUserMessage = getPreviousUserMessage(messages);
+  const previousUserText = previousUserMessage
+    ? extractTextFromUIMessage(previousUserMessage).trim().toLowerCase()
+    : '';
+  if (previousUserText === 'energy') {
+    return {
+      kind: 'update_symptom_severity',
+      symptomName: 'Fatigue',
+      severity: rating,
+    };
+  }
+
+  if (previousUserText && previousUserText.split(/\s+/).length <= 3) {
+    return {
+      kind: 'update_latest_unrated_symptom_severity',
+      severity: rating,
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -146,6 +228,138 @@ async function ensureConversationExists(
 }
 
 /**
+ * Applies one resolved follow-up action before the model responds.
+ * Why this exists: Explicit rating replies should update durable symptom state
+ * deterministically when the Chat Agent has already resolved the target.
+ */
+async function applyResolvedFollowupAction(params: {
+  userId: string;
+  action:
+    | { kind: 'update_symptom_severity'; symptomName?: string; severity: number }
+    | { kind: 'update_latest_unrated_symptom_severity'; symptomName?: string; severity: number }
+    | null;
+}): Promise<void> {
+  const { userId, action } = params;
+  if (!action) {
+    return;
+  }
+
+  const supabase = getSupabase();
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const notes = `User confirmed severity as ${action.severity}/10 in direct follow-up.`;
+
+  if (action.kind === 'update_latest_unrated_symptom_severity') {
+    const { data: recentUnratedLog, error: recentUnratedLogError } = await supabase
+      .from('symptom_logs')
+      .select('id, symptom_name')
+      .eq('user_id', userId)
+      .or('severity.is.null,severity.eq.0')
+      .gte('logged_at', fiveMinAgo)
+      .order('logged_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (recentUnratedLogError) {
+      throw new Error(`Failed to load recent unrated symptom log: ${recentUnratedLogError.message}`);
+    }
+
+    if (!recentUnratedLog?.id || !recentUnratedLog.symptom_name) {
+      return;
+    }
+
+    const canonicalSymptomName = canonicalizeSymptomName(recentUnratedLog.symptom_name);
+    const { error: updateLogError } = await supabase
+      .from('symptom_logs')
+      .update({ severity: action.severity, notes })
+      .eq('id', recentUnratedLog.id);
+
+    if (updateLogError) {
+      throw new Error(`Failed to update unrated symptom log: ${updateLogError.message}`);
+    }
+
+    const { error: updateTimelineError } = await supabase
+      .from('timeline_entries')
+      .update({ severity: action.severity, description: notes })
+      .eq('user_id', userId)
+      .ilike('title', canonicalSymptomName)
+      .gte('entry_time', fiveMinAgo);
+
+    if (updateTimelineError) {
+      throw new Error(`Failed to update unrated timeline entry: ${updateTimelineError.message}`);
+    }
+
+    return;
+  }
+
+  if (!action.symptomName) {
+    return;
+  }
+
+  const canonicalSymptomName = canonicalizeSymptomName(action.symptomName);
+  const { data: recentLog, error: recentLogError } = await supabase
+    .from('symptom_logs')
+    .select('id')
+    .eq('user_id', userId)
+    .ilike('symptom_name', canonicalSymptomName)
+    .gte('logged_at', fiveMinAgo)
+    .order('logged_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (recentLogError) {
+    throw new Error(`Failed to load recent symptom log: ${recentLogError.message}`);
+  }
+
+  if (recentLog?.id) {
+    const { error: updateLogError } = await supabase
+      .from('symptom_logs')
+      .update({ severity: action.severity, notes })
+      .eq('id', recentLog.id);
+
+    if (updateLogError) {
+      throw new Error(`Failed to update symptom log: ${updateLogError.message}`);
+    }
+
+    const { error: updateTimelineError } = await supabase
+      .from('timeline_entries')
+      .update({ severity: action.severity, description: notes })
+      .eq('user_id', userId)
+      .ilike('title', canonicalSymptomName)
+      .gte('entry_time', fiveMinAgo);
+
+    if (updateTimelineError) {
+      throw new Error(`Failed to update timeline entry: ${updateTimelineError.message}`);
+    }
+
+    return;
+  }
+
+  const { error: insertLogError } = await supabase.from('symptom_logs').insert({
+    user_id: userId,
+    symptom_name: canonicalSymptomName,
+    severity: action.severity,
+    notes,
+  });
+
+  if (insertLogError) {
+    throw new Error(`Failed to insert symptom log: ${insertLogError.message}`);
+  }
+
+  const { error: insertTimelineError } = await supabase.from('timeline_entries').insert({
+    user_id: userId,
+    type: 'symptom',
+    title: canonicalSymptomName,
+    description: notes,
+    severity: action.severity,
+    status: 'current',
+  });
+
+  if (insertTimelineError) {
+    throw new Error(`Failed to insert timeline entry: ${insertTimelineError.message}`);
+  }
+}
+
+/**
  * Runs the post-stream handoff for persistence and background agents.
  * Why this exists: Keeps the live user response fast while still ensuring the
  * new three-agent architecture receives the finished turn artifacts.
@@ -220,6 +434,17 @@ export async function POST(req: Request) {
     console.log('[chat/route] Injecting clue:', chatState.nextClue.question);
   }
 
+  if (uid !== 'anonymous') {
+    try {
+      await applyResolvedFollowupAction({
+        userId: uid,
+        action: chatState.resolvedFollowupAction ?? inferFallbackResolvedFollowupAction(messages),
+      });
+    } catch (error) {
+      console.warn('[chat/route] Failed to apply resolved follow-up action:', error);
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // PHASE 2: Stream the LLM response
   // ─────────────────────────────────────────────────────────────────────────
@@ -228,7 +453,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: 'openai/gpt-5.4',
     system: systemPrompt,
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(chatState.modelMessages?.length ? chatState.modelMessages : messages),
     stopWhen: stepCountIs(5),
     tools: chatTools,
   });

@@ -28,6 +28,7 @@ export async function buildReplyContextNode(
         graphSummary: state.graphSummary || undefined,
         isFlareMode: state.isFlareMode,
         extractedEntities: state.extractedEntities,
+        turnResolution: state.turnResolution || undefined,
         nextClue: state.nextClue || undefined,
       }),
     };

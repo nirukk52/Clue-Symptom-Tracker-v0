@@ -6,9 +6,10 @@
  * evals can score the same durable state that the canvas and insight flow use.
  */
 
+import type { UIMessage } from 'ai';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { extractTextFromStoredChatMessage } from '@/lib/chat-ui-messages';
+import { deserializeStoredChatMessage, extractTextFromStoredChatMessage } from '@/lib/chat-ui-messages';
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -375,9 +376,35 @@ export async function createConversation(baseUrl: string, userId: string): Promi
 }
 
 /**
+ * Loads the persisted conversation history as `UIMessage[]`.
+ * Why this exists: The live app sends accumulated chat history on every turn, so
+ * eval replays must do the same or numeric follow-ups lose their prior context.
+ */
+async function loadConversationMessages(conversationId: string): Promise<UIMessage[]> {
+  const supabase = getAdminSupabase();
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('id, role, content')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load conversation history for ${conversationId}: ${error.message}`);
+  }
+
+  return (data ?? []).map((message) =>
+    deserializeStoredChatMessage({
+      id: message.id,
+      role: message.role as 'user' | 'assistant',
+      content: message.content as string | null,
+    })
+  );
+}
+
+/**
  * Sends one user turn through the live chat route.
  * Why this exists: State-based evals are only meaningful if they drive the same
- * `/api/chat` path that production chat uses.
+ * `/api/chat` path and accumulated message history that production chat uses.
  */
 export async function sendChatTurn(
   baseUrl: string,
@@ -385,17 +412,18 @@ export async function sendChatTurn(
   conversationId: string,
   text: string
 ): Promise<string> {
+  const history = await loadConversationMessages(conversationId);
+  const nextUserMessage: UIMessage = {
+    id: `eval-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    role: 'user',
+    parts: [{ type: 'text', text }],
+  };
+
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      messages: [
-        {
-          id: `eval-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          role: 'user',
-          parts: [{ type: 'text', text }],
-        },
-      ],
+      messages: [...history, nextUserMessage],
       userId,
       conversationId,
     }),

@@ -135,6 +135,15 @@ function formatExtractedEntities(
 }
 
 /**
+ * Formats deterministic turn-resolution guidance for the latest reply.
+ * Why this exists: Short follow-up answers like "7" should be grounded in the
+ * preceding assistant question before the model chooses a logging tool.
+ */
+function formatTurnResolution(turnResolution: string): string {
+  return `\n\n## Turn Resolution\n${turnResolution}`;
+}
+
+/**
  * Insight-owned clue directive for the next best follow-up question.
  * Why this exists: The new three-agent architecture lets the Insight Agent own
  * question selection while the Chat Agent only handles wording and delivery.
@@ -163,6 +172,7 @@ export function buildSystemPrompt(options?: {
   graphSummary?: string;
   isFlareMode?: boolean;
   extractedEntities?: Array<{ type: 'symptom' | 'medication' | 'condition'; name: string }>;
+  turnResolution?: string;
   nextClue?: {
     question: string;
     reasoning: string;
@@ -181,6 +191,10 @@ export function buildSystemPrompt(options?: {
 
   if (options?.extractedEntities?.length) {
     prompt += formatExtractedEntities(options.extractedEntities);
+  }
+
+  if (options?.turnResolution?.trim()) {
+    prompt += formatTurnResolution(options.turnResolution.trim());
   }
 
   if (options?.isFlareMode) {

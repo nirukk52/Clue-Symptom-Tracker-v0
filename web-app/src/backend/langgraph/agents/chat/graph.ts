@@ -11,6 +11,7 @@ import { END, START, StateGraph } from '@langchain/langgraph';
 import { buildReplyContextNode } from './nodes/build-reply-context';
 import { extractEntitiesNode } from './nodes/extract-entities';
 import { loadContextNode } from './nodes/load-context';
+import { resolveFollowupTurnNode } from './nodes/resolve-followup-turn';
 import { ChatAgentState } from './state';
 
 /**
@@ -19,6 +20,7 @@ import { ChatAgentState } from './state';
  * debugging stay consistent as the architecture grows.
  */
 export const CHAT_AGENT_NODE_NAMES = {
+  RESOLVE_FOLLOWUP_TURN: 'ResolveFollowupTurn',
   EXTRACT_ENTITIES: 'ExtractEntities',
   LOAD_CONTEXT: 'LoadContext',
   BUILD_REPLY_CONTEXT: 'BuildReplyContext',
@@ -31,10 +33,12 @@ export const CHAT_AGENT_NODE_NAMES = {
  */
 export function createChatAgentGraph() {
   return new StateGraph(ChatAgentState)
+    .addNode(CHAT_AGENT_NODE_NAMES.RESOLVE_FOLLOWUP_TURN, resolveFollowupTurnNode)
     .addNode(CHAT_AGENT_NODE_NAMES.EXTRACT_ENTITIES, extractEntitiesNode)
     .addNode(CHAT_AGENT_NODE_NAMES.LOAD_CONTEXT, loadContextNode)
     .addNode(CHAT_AGENT_NODE_NAMES.BUILD_REPLY_CONTEXT, buildReplyContextNode)
-    .addEdge(START, CHAT_AGENT_NODE_NAMES.EXTRACT_ENTITIES)
+    .addEdge(START, CHAT_AGENT_NODE_NAMES.RESOLVE_FOLLOWUP_TURN)
+    .addEdge(CHAT_AGENT_NODE_NAMES.RESOLVE_FOLLOWUP_TURN, CHAT_AGENT_NODE_NAMES.EXTRACT_ENTITIES)
     .addEdge(CHAT_AGENT_NODE_NAMES.EXTRACT_ENTITIES, CHAT_AGENT_NODE_NAMES.LOAD_CONTEXT)
     .addEdge(CHAT_AGENT_NODE_NAMES.LOAD_CONTEXT, CHAT_AGENT_NODE_NAMES.BUILD_REPLY_CONTEXT)
     .addEdge(CHAT_AGENT_NODE_NAMES.BUILD_REPLY_CONTEXT, END);
