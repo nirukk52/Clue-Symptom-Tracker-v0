@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { deserializeStoredChatMessage, extractTextFromUIMessage } from '@/lib/chat-ui-messages';
+import type { QuickEntrySnapshot } from '@/lib/quick-entry';
 import { supabase } from '@/lib/supabase';
 
 import { ChatCanvas } from './ChatCanvas';
@@ -46,7 +47,7 @@ import type {
  * Structured result from the ask_severity tool (now generalized as rating-slider).
  * Why this exists: Type-safe access to the tool's return value.
  */
-interface AskRatingResult {
+interface ToolInteractiveResult {
   interactive?: boolean;
   type?: string;
   /** New generalized metric name */
@@ -57,6 +58,8 @@ interface AskRatingResult {
   initialValue?: number;
   /** Label preset name (severity, energy, mood, etc.) */
   labels?: string;
+  /** Entry kind for structured quick-entry widgets. */
+  entryKind?: 'mood' | 'medication' | 'sleep' | 'factor' | 'measurement';
 }
 
 /**
@@ -65,7 +68,7 @@ interface AskRatingResult {
  * prompt phrasing or regex matching. Supports both legacy severity-slider and
  * new rating-slider types.
  */
-function extractSeverityToolResult(
+function extractToolInteractiveResult(
   parts: UIMessage['parts']
 ): ChatInteractiveComponent | undefined {
   if (!parts) return undefined;
@@ -77,7 +80,7 @@ function extractSeverityToolResult(
       (part.state === 'output-available' || part.state === 'done')
     ) {
       const toolPart = part as { output?: unknown };
-      const output = toolPart.output as AskRatingResult | undefined;
+      const output = toolPart.output as ToolInteractiveResult | undefined;
       // Support both legacy severity-slider and new rating-slider types
       if (output?.interactive && (output.type === 'severity-slider' || output.type === 'rating-slider')) {
         const metric = output.metric || output.symptom || 'symptom';
@@ -88,6 +91,13 @@ function extractSeverityToolResult(
           prompt: output.prompt,
           initialValue: output.initialValue ?? 5,
           labels: output.labels,
+        };
+      }
+      if (output?.interactive && output.type === 'quick-entry-card' && output.entryKind) {
+        return {
+          type: 'quick-entry-card',
+          entryKind: output.entryKind,
+          prompt: output.prompt,
         };
       }
     }
@@ -311,7 +321,7 @@ export function ClueChat({
     transport,
     messages: initialMessages,
     onFinish: ({ message }) => {
-      const interactive = extractSeverityToolResult(message.parts);
+      const interactive = extractToolInteractiveResult(message.parts);
       if (interactive) {
         setInteractiveState((prev) => ({
           ...prev,
@@ -557,7 +567,7 @@ export function ClueChat({
           const restoredInteractiveState = loadedMessages.reduce<
             Record<string, { interactive?: ChatInteractiveComponent; completed?: boolean }>
           >((acc, message, index) => {
-            const interactive = extractSeverityToolResult(message.parts);
+            const interactive = extractToolInteractiveResult(message.parts);
             if (!interactive) {
               return acc;
             }
@@ -694,6 +704,36 @@ export function ClueChat({
   );
 
   /**
+   * handleQuickEntrySubmit saves an inline structured widget through the shared
+   * quick-entry API and marks the chat interactive as completed without sending
+   * the user back through an ambiguous freeform log message.
+   */
+  const handleQuickEntrySubmit = useCallback(
+    async (messageId: string, snapshot: QuickEntrySnapshot) => {
+      if (!supabaseUserId.current) {
+        return;
+      }
+
+      await fetch('/api/quick-entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: supabaseUserId.current,
+          source: 'chat_widget',
+          snapshot,
+        }),
+      });
+
+      setInteractiveState((prev) => ({
+        ...prev,
+        [messageId]: { ...prev[messageId], completed: true },
+      }));
+      setGraphRefreshTrigger((prev) => prev + 1);
+    },
+    []
+  );
+
+  /**
    * Handle question from graph unknown node tap
    * Why: Sends the question into the chat and switches to chat view on mobile
    */
@@ -806,7 +846,12 @@ export function ClueChat({
       )}
 
       {/* Quick Entry modal */}
-      <QuickEntryPanel isOpen={showQuickEntry} onClose={() => setShowQuickEntry(false)} />
+      <QuickEntryPanel
+        isOpen={showQuickEntry}
+        onClose={() => setShowQuickEntry(false)}
+        userId={supabaseUserId.current ?? undefined}
+        onSaved={() => setGraphRefreshTrigger((prev) => prev + 1)}
+      />
 
       {/* Flare Mode modal */}
       <FlareModePanel isOpen={showFlareMode} onClose={() => setShowFlareMode(false)} />
@@ -842,9 +887,16 @@ export function ClueChat({
                   isTyping={isTyping || isLoadingHistory}
                   onSeveritySubmit={handleSeveritySubmit}
                   onSuggestionSelect={handleSuggestionSelect}
+                  onQuickEntrySubmit={handleQuickEntrySubmit}
                 />
               ) : activeSubTab === 'quick-entry' ? (
-                <QuickEntryPanel isOpen={true} onClose={() => setActiveSubTab('chat')} variant="inline" />
+                <QuickEntryPanel
+                  isOpen={true}
+                  onClose={() => setActiveSubTab('chat')}
+                  variant="inline"
+                  userId={supabaseUserId.current ?? undefined}
+                  onSaved={() => setGraphRefreshTrigger((prev) => prev + 1)}
+                />
               ) : (
                 renderCanvas()
               )}
@@ -870,6 +922,7 @@ export function ClueChat({
               isTyping={isTyping || isLoadingHistory}
               onSeveritySubmit={handleSeveritySubmit}
               onSuggestionSelect={handleSuggestionSelect}
+              onQuickEntrySubmit={handleQuickEntrySubmit}
             />
             <ChatInput
               onSendMessage={handleSendMessage}

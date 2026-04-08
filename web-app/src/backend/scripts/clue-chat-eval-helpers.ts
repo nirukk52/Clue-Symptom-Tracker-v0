@@ -125,8 +125,8 @@ export interface TimelineEntrySnapshot {
 
 /**
  * Insight snapshot used during state assertions.
- * Why this exists: The insight agent's durable handoff is stored in `insights`,
- * so evals need the latest clue metadata and lifecycle state.
+ * Why this exists: The unified clue model stores follow-up questions and clues
+ * in graph nodes, but the eval contract still wants one comparable insight list.
  */
 export interface InsightSnapshot {
   id: string;
@@ -179,6 +179,20 @@ export interface UserStateSnapshot {
   renderedGraph: RenderedGraphSnapshot;
 }
 
+interface InsightGraphNodeRow {
+  id: string;
+  type: string;
+  name: string;
+  status: string;
+  sub_label: string | null;
+  confidence: string | null;
+  confidence_score: number | null;
+  question_text: string | null;
+  question_priority: number;
+  data_json: Record<string, unknown> | null;
+  created_at: string;
+}
+
 /**
  * Resolved auth identity for a replay target.
  * Why this exists: The eval loop begins from an email or lookup hint, but the
@@ -203,6 +217,35 @@ export function getAdminSupabase(): SupabaseClient {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+}
+
+/**
+ * Converts graph node lifecycle states into the legacy eval insight status field.
+ * Why this exists: Scenario scoring still expects `pending` semantics for active
+ * next-question clues even though they now live in `graph_nodes`.
+ */
+function mapGraphNodeStatusToInsightStatus(status: string): string {
+  return status === 'active' ? 'pending' : status;
+}
+
+/**
+ * Builds eval insight snapshots from persisted graph nodes.
+ * Why this exists: The regression runner still reasons about "insights", but
+ * the source of truth for clues and queued questions is now the graph.
+ */
+function buildInsightSnapshots(nodes: InsightGraphNodeRow[]): InsightSnapshot[] {
+  return nodes
+    .filter((node) => node.type === 'clue' || node.type === 'unknown')
+    .map((node) => ({
+      id: node.id,
+      type: node.type === 'unknown' ? 'next_question' : 'pattern',
+      content: node.type === 'unknown' ? node.question_text?.trim() || node.name : node.name,
+      reasoning: typeof node.data_json?.reasoning === 'string' ? node.data_json.reasoning : null,
+      priority: node.type === 'unknown' ? node.question_priority : null,
+      status: mapGraphNodeStatusToInsightStatus(node.status),
+      metadata: node.data_json ?? null,
+      createdAt: node.created_at,
+    }));
 }
 
 /**
@@ -467,7 +510,7 @@ export async function buildUserStateSnapshot(
   baseUrl: string
 ): Promise<UserStateSnapshot> {
   const supabase = getAdminSupabase();
-  const [conversationResult, nodeResult, edgeResult, symptomResult, medicationResult, moodResult, timelineResult, insightResult, renderedGraph] =
+  const [conversationResult, nodeResult, edgeResult, symptomResult, medicationResult, moodResult, timelineResult, renderedGraph] =
     await Promise.all([
       supabase
         .from('chat_conversations')
@@ -476,7 +519,7 @@ export async function buildUserStateSnapshot(
         .order('created_at', { ascending: false }),
       supabase
         .from('graph_nodes')
-        .select('id, type, name, status, sub_label, confidence, confidence_score, question_text, question_priority')
+        .select('id, type, name, status, sub_label, confidence, confidence_score, question_text, question_priority, data_json, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false }),
       supabase
@@ -504,11 +547,6 @@ export async function buildUserStateSnapshot(
         .select('type, title, description, severity, dosage, status, entry_time')
         .eq('user_id', userId)
         .order('entry_time', { ascending: false }),
-      supabase
-        .from('insights')
-        .select('id, type, content, reasoning, priority, status, metadata, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false }),
       fetchRenderedGraph(baseUrl, userId),
     ]);
 
@@ -569,15 +607,13 @@ export async function buildUserStateSnapshot(
     throw new Error(`Failed to load timeline entries: ${timelineResult.error.message}`);
   }
 
-  if (insightResult.error) {
-    throw new Error(`Failed to load insights: ${insightResult.error.message}`);
-  }
+  const persistedGraphNodes = (nodeResult.data ?? []) as InsightGraphNodeRow[];
 
   return {
     userId,
     email,
     conversations,
-    graphNodes: (nodeResult.data ?? []).map((node) => ({
+    graphNodes: persistedGraphNodes.map((node) => ({
       id: node.id,
       type: node.type,
       label: node.name,
@@ -624,16 +660,7 @@ export async function buildUserStateSnapshot(
       status: entry.status,
       entryTime: entry.entry_time,
     })),
-    insights: (insightResult.data ?? []).map((insight) => ({
-      id: insight.id,
-      type: insight.type,
-      content: insight.content,
-      reasoning: insight.reasoning,
-      priority: insight.priority,
-      status: insight.status,
-      metadata: (insight.metadata as Record<string, unknown> | null) ?? null,
-      createdAt: insight.created_at,
-    })),
+    insights: buildInsightSnapshots(persistedGraphNodes),
     renderedGraph,
   };
 }

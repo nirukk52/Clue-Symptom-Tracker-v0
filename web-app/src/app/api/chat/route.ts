@@ -30,6 +30,8 @@ import {
   type NextClue,
 } from '@/backend/langgraph';
 import { getChatModel, type ChatModelProvider } from '@/backend/lib/ai/providers';
+import { getLatestQueuedQuestionNode } from '@/backend/lib/graph';
+import { updateClues } from '@/backend/lib/graph/update-clues';
 import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import { storeMemory } from '@/backend/lib/memory';
 import { extractTextFromUIMessage, serializeUIMessage } from '@/lib/chat-ui-messages';
@@ -69,11 +71,12 @@ function serializePendingNextQuestion(nextClue: NextClue): string {
 }
 
 /**
- * Detects whether a tool result asks the client to render a rating slider.
+ * Detects whether a tool result asks the client to render a blocking structured
+ * interaction.
  * Why this exists: The post-turn handoff should queue the next clue only after a
- * reply that intentionally stopped to collect missing severity.
+ * reply that intentionally stopped to collect structured user input.
  */
-function isRatingSliderOutput(output: unknown): boolean {
+function isBlockingInteractiveOutput(output: unknown): boolean {
   if (!output || typeof output !== 'object') {
     return false;
   }
@@ -81,12 +84,16 @@ function isRatingSliderOutput(output: unknown): boolean {
   const candidate = output as { interactive?: unknown; type?: unknown };
   return (
     candidate.interactive === true &&
-    (candidate.type === 'severity-slider' || candidate.type === 'rating-slider')
+    (
+      candidate.type === 'severity-slider' ||
+      candidate.type === 'rating-slider' ||
+      candidate.type === 'quick-entry-card'
+    )
   );
 }
 
 /**
- * Checks whether the assistant response included a severity collection UI.
+ * Checks whether the assistant response included a blocking structured UI.
  * Why this exists: This is the deterministic signal that the turn should queue
  * the next clue for later instead of asking it immediately.
  */
@@ -100,7 +107,7 @@ function responseRequestsSeverityFollowup(responseMessage: UIMessage): boolean {
       return false;
     }
 
-    return 'output' in part && isRatingSliderOutput(part.output);
+    return 'output' in part && isBlockingInteractiveOutput(part.output);
   });
 }
 
@@ -131,40 +138,27 @@ async function setPendingNextQuestion(
 }
 
 /**
- * Loads the latest active next-question clue from the insight queue.
+ * Loads the latest active next-question clue from the graph queue.
  * Why this exists: Post-turn pacing needs the freshly generated clue so the next
  * severity reply can ask it without waiting for another background fetch.
  */
 async function getLatestQueuedClue(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   userId: string
 ): Promise<NextClue | null> {
-  const { data, error } = await supabase
-    .from('insights')
-    .select('content, reasoning, priority')
-    .eq('user_id', userId)
-    .eq('type', 'next_question')
-    .neq('status', 'dismissed')
-    .order('priority', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to load latest queued clue: ${error.message}`);
-  }
-
-  if (!data?.content) {
+  const queuedNode = await getLatestQueuedQuestionNode(userId);
+  if (!queuedNode?.questionText) {
     return null;
   }
 
+  const nodeData = queuedNode.data as { reasoning?: unknown } | undefined;
   return {
-    question: data.content,
+    question: queuedNode.questionText,
     reasoning:
-      typeof data.reasoning === 'string' && data.reasoning.trim()
-        ? data.reasoning.trim()
+      typeof nodeData?.reasoning === 'string' && nodeData.reasoning.trim()
+        ? nodeData.reasoning.trim()
         : 'This clue was selected from the latest graph-based insight pass.',
-    priority: typeof data.priority === 'number' ? data.priority : 0,
+    priority: queuedNode.questionPriority ?? 0,
   };
 }
 
@@ -516,6 +510,8 @@ async function runPostTurnAgents(params: {
     console.error('[chat/route] Graph Reconciler failed:', graphResult.errors);
     return;
   }
+
+  await updateClues(userId);
 
   const insightResult = await executeInsightAgent({ userId });
   if (!insightResult.success) {

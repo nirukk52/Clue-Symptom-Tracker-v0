@@ -9,7 +9,13 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { models } from '../ai/providers';
-import { getUserGraph, upsertGraphNode, upsertGraphEdge } from './index';
+import {
+  getUserGraph,
+  purgeDismissedNodesByType,
+  upsertGraphNode,
+  upsertGraphEdge,
+  updateNodeStatus,
+} from './index';
 import type { GraphNode, GraphConfidenceLevel } from '@/components/clue-chat/types';
 
 // =============================================================================
@@ -108,6 +114,12 @@ export async function updateClues(userId: string): Promise<void> {
     }
 
     const generatedClues = await generateClues(evidenceNodes, existingClues);
+    if (generatedClues.length === 0) {
+      return;
+    }
+
+    await dismissExistingClues(existingClues);
+    await purgeDismissedNodesByType(userId, 'clue');
 
     // Create or update clue nodes and their edges
     for (const clue of generatedClues) {
@@ -167,6 +179,18 @@ async function generateClues(
   });
 
   return result.object.clues;
+}
+
+/**
+ * Dismisses the currently active clue set before storing a refreshed one.
+ * Why this exists: The post-turn flow may regenerate clues several times during
+ * one conversation, so the canvas should show the latest set rather than an
+ * ever-growing pile of near-duplicate active insights.
+ */
+async function dismissExistingClues(existingClues: GraphNode[]): Promise<void> {
+  for (const clue of existingClues) {
+    await updateNodeStatus(clue.id, 'dismissed');
+  }
 }
 
 /**

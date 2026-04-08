@@ -35,6 +35,11 @@ export type ChatInteractiveComponent =
       /** Label preset for the slider (severity, energy, mood, stress, pain, sleep) */
       labels?: string;
     }
+  | {
+      type: 'quick-entry-card';
+      entryKind: 'mood' | 'medication' | 'sleep' | 'factor' | 'measurement';
+      prompt?: string;
+    }
   | { type: 'quick-log'; options: string[] }
   | { type: 'suggestion-pills'; options: ChatSuggestionOption[] };
 
@@ -98,6 +103,8 @@ export type TimelineEntryType =
   | 'supplement'
   | 'diet'
   | 'test'
+  | 'measurement'
+  | 'factor'
   | 'reaction'
   | 'note'
   | 'mood';

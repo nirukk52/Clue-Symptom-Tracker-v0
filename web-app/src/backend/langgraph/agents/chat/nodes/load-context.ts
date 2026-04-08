@@ -8,21 +8,10 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { getGraphSummary } from '@/backend/lib/graph';
+import { getGraphSummary, getLatestQueuedQuestionNode } from '@/backend/lib/graph';
 import { getRelevantMemories } from '@/backend/lib/memory';
 
 import type { ChatAgentStateType, ChatAgentStateUpdate, NextClue } from '../state';
-
-/**
- * Minimal shape of the latest clue row fetched from Supabase.
- * Why this exists: The Chat Agent only needs the clue payload that is injected
- * into the system prompt, not the full insights record.
- */
-interface InsightRow {
-  content: string | null;
-  reasoning: string | null;
-  priority: number | null;
-}
 
 /**
  * Minimal shape of the user preference row needed for turn pacing.
@@ -52,35 +41,21 @@ function getSupabase(): SupabaseClient {
  * Chat Agent for the next best follow-up question.
  */
 async function getLatestClue(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   userId: string
 ): Promise<NextClue | null> {
-  const { data, error } = await supabase
-    .from('insights')
-    .select('content, reasoning, priority')
-    .eq('user_id', userId)
-    .eq('type', 'next_question')
-    .neq('status', 'dismissed')
-    .order('priority', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle<InsightRow>();
-
-  if (error) {
-    console.error('[chat-agent/load-context] Failed to load latest clue:', error);
+  const queuedNode = await getLatestQueuedQuestionNode(userId);
+  if (!queuedNode?.questionText) {
     return null;
   }
 
-  if (!data?.content) {
-    return null;
-  }
-
+  const nodeData = queuedNode.data as { reasoning?: unknown } | undefined;
   return {
-    question: data.content,
+    question: queuedNode.questionText,
     reasoning:
-      data.reasoning?.trim() ||
+      (typeof nodeData?.reasoning === 'string' && nodeData.reasoning.trim()) ||
       'This clue was selected from the latest graph-based insight pass.',
-    priority: data.priority ?? 0,
+    priority: queuedNode.questionPriority ?? 0,
   };
 }
 

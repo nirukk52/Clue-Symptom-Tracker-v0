@@ -7,6 +7,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { purgeDismissedNodesByType, upsertGraphNode } from '@/backend/lib/graph';
 import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import type { InsightAgentStateType, InsightAgentStateUpdate } from '../state';
 
@@ -14,8 +15,8 @@ const MAX_ACTIVE_NEXT_QUESTIONS = 10;
 
 /**
  * Creates a privileged Supabase client for clue persistence.
- * Why this exists: The Insight Agent writes background-generated clues to the
- * shared insights table outside of a direct user request.
+ * Why this exists: The Insight Agent writes background-generated follow-up
+ * questions to the graph outside of a direct user request.
  */
 function getSupabase(): SupabaseClient {
   return createClient(
@@ -26,10 +27,10 @@ function getSupabase(): SupabaseClient {
 
 interface ExistingInsightRow {
   id: string;
-  content: string | null;
-  priority?: number | null;
+  question_text: string | null;
+  question_priority?: number | null;
   created_at?: string | null;
-  metadata: { relatedSymptom?: string | null } | null;
+  data_json: { relatedSymptom?: string | null } | null;
 }
 
 /**
@@ -56,8 +57,8 @@ function normalizeTrackedLabel(value: string | null | undefined): string | null 
 }
 
 /**
- * Extracts the target label from a stored next-question clue.
- * Why this exists: Older clue rows may lack structured metadata, so cleanup must
+ * Extracts the target label from a stored next-question node.
+ * Why this exists: Older clue nodes may lack structured metadata, so cleanup must
  * recover the intended symptom or factor from the question text when possible.
  */
 function inferTrackedLabelFromQuestion(question: string | null | undefined): string | null {
@@ -84,7 +85,7 @@ function inferTrackedLabelFromQuestion(question: string | null | undefined): str
 }
 
 /**
- * Dismisses stale answered or duplicate next-question clues before storing a new one.
+ * Dismisses stale answered or duplicate next-question nodes before storing a new one.
  * Why this exists: The latest clue should reflect the current graph, not keep
  * resurfacing symptoms or factors the user already answered.
  */
@@ -100,22 +101,23 @@ async function dismissObsoleteClues(
   const newTrackedLabel = normalizeTrackedLabel(state.clue?.relatedSymptom ?? null);
 
   const { data, error } = await supabase
-    .from('insights')
-    .select('id, content, metadata')
+    .from('graph_nodes')
+    .select('id, question_text, data_json')
     .eq('user_id', state.userId)
-    .eq('type', 'next_question')
-    .neq('status', 'dismissed');
+    .eq('type', 'unknown')
+    .eq('status', 'active');
 
   if (error) {
-    console.error('[insight/store-clue] Failed to load existing clues for cleanup:', error);
+    console.error('[insight/store-clue] Failed to load existing queued questions for cleanup:', error);
     return;
   }
 
-  const insightIdsToDismiss = ((data as ExistingInsightRow[] | null) ?? [])
+  const clueNodeIdsToDismiss = ((data as ExistingInsightRow[] | null) ?? [])
     .filter((row) => {
       const trackedLabel =
-        normalizeTrackedLabel(row.metadata?.relatedSymptom) ?? inferTrackedLabelFromQuestion(row.content);
-      const normalizedQuestion = row.content?.trim().toLowerCase() ?? null;
+        normalizeTrackedLabel(row.data_json?.relatedSymptom) ??
+        inferTrackedLabelFromQuestion(row.question_text);
+      const normalizedQuestion = row.question_text?.trim().toLowerCase() ?? null;
 
       return (
         (trackedLabel !== null && knownLabels.has(trackedLabel)) ||
@@ -125,17 +127,17 @@ async function dismissObsoleteClues(
     })
     .map((row) => row.id);
 
-  if (insightIdsToDismiss.length === 0) {
+  if (clueNodeIdsToDismiss.length === 0) {
     return;
   }
 
   const { error: dismissError } = await supabase
-    .from('insights')
-    .update({ status: 'dismissed' })
-    .in('id', insightIdsToDismiss);
+    .from('graph_nodes')
+    .update({ status: 'dismissed', updated_at: new Date().toISOString() })
+    .in('id', clueNodeIdsToDismiss);
 
   if (dismissError) {
-    console.error('[insight/store-clue] Failed to dismiss obsolete clues:', dismissError);
+    console.error('[insight/store-clue] Failed to dismiss obsolete queued questions:', dismissError);
   }
 }
 
@@ -149,16 +151,16 @@ async function pruneClueBacklog(
   userId: string
 ): Promise<void> {
   const { data, error } = await supabase
-    .from('insights')
-    .select('id, priority, created_at')
+    .from('graph_nodes')
+    .select('id, question_priority, created_at')
     .eq('user_id', userId)
-    .eq('type', 'next_question')
-    .neq('status', 'dismissed')
-    .order('priority', { ascending: false })
+    .eq('type', 'unknown')
+    .eq('status', 'active')
+    .order('question_priority', { ascending: false })
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('[insight/store-clue] Failed to load clue backlog for pruning:', error);
+    console.error('[insight/store-clue] Failed to load queued-question backlog for pruning:', error);
     return;
   }
 
@@ -167,21 +169,21 @@ async function pruneClueBacklog(
     return;
   }
 
-  const insightIdsToDismiss = rows.slice(MAX_ACTIVE_NEXT_QUESTIONS).map((row) => row.id);
+  const clueNodeIdsToDismiss = rows.slice(MAX_ACTIVE_NEXT_QUESTIONS).map((row) => row.id);
   const { error: dismissError } = await supabase
-    .from('insights')
-    .update({ status: 'dismissed' })
-    .in('id', insightIdsToDismiss);
+    .from('graph_nodes')
+    .update({ status: 'dismissed', updated_at: new Date().toISOString() })
+    .in('id', clueNodeIdsToDismiss);
 
   if (dismissError) {
-    console.error('[insight/store-clue] Failed to prune clue backlog:', dismissError);
+    console.error('[insight/store-clue] Failed to prune queued-question backlog:', dismissError);
   }
 }
 
 /**
- * Stores the latest clue in the insights table.
- * Why this exists: The clue is the durable handoff from the Insight Agent to
- * the next Chat Agent run.
+ * Stores the latest clue as a graph-backed unknown node.
+ * Why this exists: The next-turn question should share the same canonical graph
+ * storage model as the rest of the chat canvas.
  */
 export async function storeClueNode(
   state: InsightAgentStateType
@@ -193,41 +195,38 @@ export async function storeClueNode(
   try {
     const supabase = getSupabase();
     await dismissObsoleteClues(supabase, state);
+    await purgeDismissedNodesByType(state.userId, 'unknown');
     const topConditions = state.topConditions.slice(0, 3).map((condition) => ({
       condition: condition.condition,
       probability: condition.probability,
       matchedSymptoms: condition.matchedSymptoms,
     }));
 
-    const { data, error } = await supabase
-      .from('insights')
-      .insert({
-        user_id: state.userId,
-        type: 'next_question',
-        content: state.clue.question,
+    const clueNodeId = await upsertGraphNode(state.userId, {
+      type: 'unknown',
+      name: truncate(state.clue.question, 50),
+      subLabel: 'Tap to answer',
+      questionText: state.clue.question,
+      questionPriority: state.clue.priority,
+      data: {
+        topConditions,
+        method: state.topConditions.length > 0 ? 'info_gain' : 'fallback',
+        relatedSymptom: state.clue.relatedSymptom ?? null,
         reasoning: state.clue.reasoning,
-        priority: state.clue.priority,
-        status: 'pending',
-        metadata: {
-          topConditions,
-          method: state.topConditions.length > 0 ? 'info_gain' : 'fallback',
-          relatedSymptom: state.clue.relatedSymptom ?? null,
-        },
-      })
-      .select('id')
-      .single();
+      },
+    });
 
-    if (error) {
-      console.error('[insight/store-clue] Failed to store clue:', error);
+    if (!clueNodeId) {
       return {
-        errors: [error.message],
+        errors: ['Failed to store clue node.'],
       };
     }
 
     await pruneClueBacklog(supabase, state.userId);
+    await purgeDismissedNodesByType(state.userId, 'unknown');
 
     return {
-      insightId: (data as { id: string } | null)?.id ?? null,
+      insightId: clueNodeId,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to store clue';
@@ -237,4 +236,17 @@ export async function storeClueNode(
       errors: [message],
     };
   }
+}
+
+/**
+ * Shortens queued-question labels for graph display.
+ * Why this exists: Full question text lives in `question_text`, while the node
+ * label on the canvas should stay compact and readable.
+ */
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 3)}...`;
 }

@@ -14,6 +14,7 @@ import {
   getTimeline,
   generateDoctorSummary,
   askSeverity,
+  openQuickEntryCard,
   toggleFlareMode,
 } from './definitions';
 
@@ -28,4 +29,5 @@ export const chatTools = {
   generate_doctor_summary: generateDoctorSummary,
   toggle_flare_mode: toggleFlareMode,
   ask_severity: askSeverity,
+  open_quick_entry_card: openQuickEntryCard,
 };

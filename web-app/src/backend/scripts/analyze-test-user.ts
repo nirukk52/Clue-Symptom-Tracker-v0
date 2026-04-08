@@ -267,18 +267,24 @@ async function main() {
   // -------------------------------------------------------------------------
   section('💡  INSIGHTS');
 
-  const { data: insights } = await supabase
-    .from('insights')
-    .select('content, confidence, status, created_at')
+  const { data: insightNodes } = await supabase
+    .from('graph_nodes')
+    .select('type, name, question_text, question_priority, status, data_json, created_at')
     .eq('user_id', userId)
+    .in('type', ['clue', 'unknown'])
     .order('created_at', { ascending: false });
 
-  if (!insights?.length) {
+  if (!insightNodes?.length) {
     empty('insights');
   } else {
-    for (const i of insights) {
-      const conf = i.confidence != null ? ` [conf: ${(i.confidence * 100).toFixed(0)}%]` : '';
-      console.log(`  • [${i.status}]${conf} ${i.content.slice(0, 100)}`);
+    for (const node of insightNodes) {
+      const content = node.type === 'unknown' ? node.question_text || node.name : node.name;
+      const kind = node.type === 'unknown' ? 'next_question' : 'pattern';
+      const priority =
+        node.type === 'unknown' && node.question_priority != null
+          ? ` [priority: ${node.question_priority}]`
+          : '';
+      console.log(`  • [${node.status}] [${kind}]${priority} ${content.slice(0, 100)}`);
     }
   }
 
@@ -297,7 +303,7 @@ async function main() {
   console.log(`  Medication logs: ${meds?.length ?? 0}${meds?.length === 20 ? '+' : ''}`);
   console.log(`  Mood logs      : ${moods?.length ?? 0}`);
   console.log(`  Timeline       : ${timeline?.length ?? 0}${timeline?.length === 20 ? '+' : ''}`);
-  console.log(`  Insights       : ${insights?.length ?? 0}`);
+  console.log(`  Insights       : ${insightNodes?.length ?? 0}`);
   console.log('');
 }
 

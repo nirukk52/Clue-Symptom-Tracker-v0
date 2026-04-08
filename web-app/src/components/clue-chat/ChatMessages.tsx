@@ -4,9 +4,11 @@ import { useEffect, useRef } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
+import { QuickEntryChatCard } from './quick-entry/QuickEntryChatCard';
 import { RatingSlider, RATING_LABEL_PRESETS } from './SeveritySlider';
 import { SuggestionPills } from './SuggestionPills';
 import type { ChatMessage, ChatSuggestionOption, ChatUser } from './types';
+import type { QuickEntrySnapshot } from '@/lib/quick-entry';
 
 /**
  * ChatMessages - Message display area for ClueChat
@@ -27,6 +29,8 @@ interface ChatMessagesProps {
   onSeveritySubmit?: (messageId: string, severity: number) => void;
   /** Callback when a suggestion pill is selected */
   onSuggestionSelect?: (messageId: string, option: ChatSuggestionOption) => void;
+  /** Callback when an inline quick-entry card is submitted */
+  onQuickEntrySubmit?: (messageId: string, snapshot: QuickEntrySnapshot) => Promise<void> | void;
 }
 
 export function ChatMessages({
@@ -35,6 +39,7 @@ export function ChatMessages({
   isTyping,
   onSeveritySubmit,
   onSuggestionSelect,
+  onQuickEntrySubmit,
 }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -108,6 +113,14 @@ export function ChatMessages({
                 options={message.interactive.options}
                 disabled={message.interactiveCompleted}
                 onSelect={(option) => onSuggestionSelect(message.id, option)}
+              />
+            )}
+            {message.interactive?.type === 'quick-entry-card' && onQuickEntrySubmit && (
+              <QuickEntryChatCard
+                entryKind={message.interactive.entryKind}
+                prompt={message.interactive.prompt}
+                disabled={message.interactiveCompleted}
+                onSubmit={(snapshot) => onQuickEntrySubmit(message.id, snapshot)}
               />
             )}
           </div>

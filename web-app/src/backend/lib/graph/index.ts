@@ -73,16 +73,6 @@ interface DbGraphEdge {
   updated_at: string;
 }
 
-interface DbInsightRow {
-  id: string;
-  type: string | null;
-  content: string | null;
-  reasoning: string | null;
-  priority: number | null;
-  metadata: Record<string, unknown> | null;
-  created_at: string | null;
-}
-
 // =============================================================================
 // CONVERTERS
 // =============================================================================
@@ -116,118 +106,6 @@ function dbEdgeToGraphEdge(dbEdge: DbGraphEdge): GraphEdge {
   };
 }
 
-/**
- * Normalizes a graph payload returned by the RPC.
- * Why this exists: The canvas should stay resilient if the RPC returns null-ish
- * arrays while we layer in synthetic nodes from the active insight queue.
- */
-function normalizeGraphData(data: unknown): GraphData {
-  const candidate = (data ?? {}) as Partial<GraphData>;
-
-  return {
-    nodes: Array.isArray(candidate.nodes) ? candidate.nodes : [],
-    edges: Array.isArray(candidate.edges) ? candidate.edges : [],
-  };
-}
-
-/**
- * Builds a stable dedupe key for graph nodes.
- * Why this exists: The current architecture can source canvas nodes from both
- * graph tables and insight rows, so we need one comparison strategy.
- */
-function getNodeDedupKey(node: GraphNode): string {
-  const rawValue =
-    node.type === 'unknown'
-      ? (node.questionText ?? node.label)
-      : node.label;
-
-  return `${node.type}:${rawValue.trim().toLowerCase()}`;
-}
-
-/**
- * Shortens long insight text for node labels.
- * Why this exists: The canvas needs compact labels even when the durable clue
- * text in the insights queue is a full natural-language question.
- */
-function truncateNodeLabel(value: string, maxLength: number): string {
-  if (value.length <= maxLength) {
-    return value;
-  }
-
-  return `${value.slice(0, maxLength - 3)}...`;
-}
-
-/**
- * Converts active insight rows into synthetic graph nodes.
- * Why this exists: The three-agent architecture stores follow-up clues in the
- * insights table, but the canvas still renders from graph nodes.
- */
-function mapInsightsToGraphNodes(
-  insightRows: DbInsightRow[],
-  existingNodes: GraphNode[]
-): GraphNode[] {
-  const seenKeys = new Set(existingNodes.map(getNodeDedupKey));
-
-  return insightRows.flatMap((row) => {
-    const content = row.content?.trim();
-    if (!content) {
-      return [];
-    }
-
-    if (row.type === 'next_question') {
-      const node: GraphNode = {
-        id: `insight-next-question-${row.id}`,
-        type: 'unknown',
-        label: truncateNodeLabel(content, 50),
-        subLabel: 'Tap to answer',
-        questionText: content,
-        questionPriority: row.priority ?? 0,
-        data: {
-          source: 'insights',
-          insightId: row.id,
-          insightType: row.type,
-          reasoning: row.reasoning ?? null,
-          metadata: row.metadata ?? {},
-        },
-        createdAt: row.created_at ?? undefined,
-        updatedAt: row.created_at ?? undefined,
-      };
-      const dedupKey = getNodeDedupKey(node);
-      if (seenKeys.has(dedupKey)) {
-        return [];
-      }
-      seenKeys.add(dedupKey);
-      return [node];
-    }
-
-    if (row.type === 'pattern') {
-      const node: GraphNode = {
-        id: `insight-pattern-${row.id}`,
-        type: 'clue',
-        label: content,
-        subLabel: 'Insight',
-        data: {
-          source: 'insights',
-          insightId: row.id,
-          insightType: row.type,
-          reasoning: row.reasoning ?? null,
-          metadata: row.metadata ?? {},
-        },
-        createdAt: row.created_at ?? undefined,
-        updatedAt: row.created_at ?? undefined,
-      };
-      const dedupKey = getNodeDedupKey(node);
-      if (seenKeys.has(dedupKey)) {
-        return [];
-      }
-      seenKeys.add(dedupKey);
-      return [node];
-    }
-
-    return [];
-  });
-}
-
 // =============================================================================
 // PUBLIC API
 // =============================================================================
@@ -239,41 +117,18 @@ function mapInsightsToGraphNodes(
 export async function getUserGraph(userId: string): Promise<GraphData> {
   const supabase = getSupabase();
 
-  const [graphResult, insightResult] = await Promise.all([
-    supabase.rpc('get_user_graph', {
-      p_user_id: userId,
-    }),
-    supabase
-      .from('insights')
-      .select('id, type, content, reasoning, priority, metadata, created_at')
-      .eq('user_id', userId)
-      .neq('status', 'dismissed')
-      .in('type', ['next_question', 'pattern'])
-      .order('priority', { ascending: false })
-      .order('created_at', { ascending: false }),
-  ]);
-
-  const { data, error } = graphResult;
+  // Use the database function for optimized retrieval
+  const { data, error } = await supabase.rpc('get_user_graph', {
+    p_user_id: userId,
+  });
 
   if (error) {
     console.error('[graph] get_user_graph failed:', error);
     return { nodes: [], edges: [] };
   }
 
-  if (insightResult.error) {
-    console.error('[graph] Failed to load active insights for graph hydration:', insightResult.error);
-  }
-
-  const graphData = normalizeGraphData(data);
-  const hydratedInsightNodes = mapInsightsToGraphNodes(
-    (insightResult.data as DbInsightRow[] | null) ?? [],
-    graphData.nodes
-  );
-
-  return {
-    nodes: [...graphData.nodes, ...hydratedInsightNodes],
-    edges: graphData.edges,
-  };
+  // The RPC returns {nodes: [...], edges: [...]} already
+  return data as GraphData;
 }
 
 /**
@@ -448,13 +303,24 @@ export async function updateNodeStatus(
 
 /**
  * Deletes a graph node by ID.
- * Used to remove resolved Unknown nodes when slots are filled.
+ * Used to remove stale clue/question history and any connected edges.
  */
 export async function deleteGraphNode(
   userId: string,
   nodeId: string
 ): Promise<boolean> {
   const supabase = getSupabase();
+
+  const { error: edgeError } = await supabase
+    .from('graph_edges')
+    .delete()
+    .eq('user_id', userId)
+    .or(`source_node_id.eq.${nodeId},target_node_id.eq.${nodeId}`);
+
+  if (edgeError) {
+    console.error('[graph] deleteGraphNode edges failed:', edgeError);
+    return false;
+  }
 
   const { error } = await supabase
     .from('graph_nodes')
@@ -468,6 +334,40 @@ export async function deleteGraphNode(
   }
 
   return true;
+}
+
+/**
+ * Deletes dismissed nodes of a specific type for a user.
+ * Why this exists: Clue/question regeneration can dismiss older graph nodes
+ * every turn, so the raw tables need periodic compaction to avoid history spam.
+ */
+export async function purgeDismissedNodesByType(
+  userId: string,
+  type: Extract<GraphNodeType, 'clue' | 'unknown'>
+): Promise<number> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('graph_nodes')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', type)
+    .eq('status', 'dismissed');
+
+  if (error) {
+    console.error('[graph] purgeDismissedNodesByType failed to load nodes:', error);
+    return 0;
+  }
+
+  const nodeIds = (data as Array<{ id: string }> | null)?.map((row) => row.id) ?? [];
+  let deletedCount = 0;
+
+  for (const nodeId of nodeIds) {
+    if (await deleteGraphNode(userId, nodeId)) {
+      deletedCount += 1;
+    }
+  }
+
+  return deletedCount;
 }
 
 /**
@@ -486,6 +386,7 @@ export async function getTopUnknownNodes(
     .eq('type', 'unknown')
     .eq('status', 'active')
     .order('question_priority', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) {
@@ -494,6 +395,18 @@ export async function getTopUnknownNodes(
   }
 
   return (data as DbGraphNode[]).map(dbNodeToGraphNode);
+}
+
+/**
+ * Gets the highest-priority active queued question node for the user.
+ * Why this exists: Chat prompt injection and post-turn pacing both need one
+ * canonical way to read the latest graph-backed follow-up question.
+ */
+export async function getLatestQueuedQuestionNode(
+  userId: string
+): Promise<GraphNode | null> {
+  const nodes = await getTopUnknownNodes(userId, 1);
+  return nodes[0] ?? null;
 }
 
 /**
