@@ -5,20 +5,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 /**
- * QuickEntryPanel - Modal overlay for rapid symptom logging
+ * QuickEntryPanel - Rapid symptom logging surface
  *
  * Why this exists: Spoonies need a low-effort alternative to chatting.
- * Promoted from a desktop-only right-panel to a modal so it is accessible
- * on all screen sizes. Logs multiple data points in one batch.
- * Captures a day snapshot in under 30 seconds.
+ * It can render as the existing modal or as an inline panel behind the new
+ * mobile sub-tab, while keeping the same batch logging flow in one place.
  */
 
 interface QuickEntryPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  variant?: 'modal' | 'inline';
 }
 
-export function QuickEntryPanel({ isOpen, onClose }: QuickEntryPanelProps) {
+export function QuickEntryPanel({
+  isOpen,
+  onClose,
+  variant = 'modal',
+}: QuickEntryPanelProps) {
   const [severity, setSeverity] = useState<number | null>(null);
   const [mood, setMood] = useState<number | null>(null);
   const [sleepQuality, setSleepQuality] = useState<number | null>(null);
@@ -27,6 +31,7 @@ export function QuickEntryPanel({ isOpen, onClose }: QuickEntryPanelProps) {
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const isInline = variant === 'inline';
 
   // Close on Escape key
   useEffect(() => {
@@ -40,13 +45,13 @@ export function QuickEntryPanel({ isOpen, onClose }: QuickEntryPanelProps) {
 
   // Prevent body scroll when open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isInline) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+  }, [isInline, isOpen]);
 
   const handleSubmit = useCallback(async () => {
     setIsSaving(true);
@@ -121,16 +126,29 @@ export function QuickEntryPanel({ isOpen, onClose }: QuickEntryPanelProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <div
+      className={
+        isInline
+          ? 'flex min-h-0 flex-1 flex-col bg-white'
+          : 'fixed inset-0 z-70 flex items-end justify-center sm:items-center'
+      }
+    >
+      {!isInline && (
+        <div
+          className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Modal panel — bottom-sheet on mobile, centered card on sm+ */}
-      <div className="relative z-10 w-full sm:max-w-md bg-white sm:rounded-2xl rounded-t-2xl shadow-xl flex flex-col max-h-[90dvh] overflow-hidden">
+      <div
+        className={
+          isInline
+            ? 'flex min-h-0 flex-1 w-full flex-col bg-white'
+            : 'relative z-10 flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-w-md sm:rounded-2xl'
+        }
+      >
         {/* Header */}
         <div className="px-5 py-4 border-b border-primary/6 flex items-center justify-between shrink-0">
           <div>
@@ -144,7 +162,7 @@ export function QuickEntryPanel({ isOpen, onClose }: QuickEntryPanelProps) {
             type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:bg-primary/5 hover:text-primary transition-all cursor-pointer"
-            aria-label="Close"
+            aria-label={isInline ? 'Return to chat' : 'Close'}
           >
             <MaterialIcon name="close" size="sm" />
           </button>

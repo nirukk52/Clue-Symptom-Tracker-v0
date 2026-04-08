@@ -35,6 +35,16 @@ export interface ResolvedFollowupAction {
 }
 
 /**
+ * Whether the current turn should avoid asking the next clue.
+ * Why this exists: Symptom turns that still need a severity slider should end
+ * after logging so Clue does not stack the next question into the same reply.
+ */
+export interface TurnPacingState {
+  deferNextClueForSeverityCollection: boolean;
+  usedPendingNextClue: boolean;
+}
+
+/**
  * Chat Agent state root.
  * Why this exists: Keeps the new three-node Chat Agent small, explicit, and
  * independent from the legacy deterministic intake pipeline.
@@ -94,6 +104,22 @@ export const ChatAgentState = Annotation.Root({
   resolvedFollowupAction: Annotation<ResolvedFollowupAction | null>({
     reducer: (_, next) => next,
     default: () => null,
+  }),
+
+  /**
+   * Whether this turn should stop after logging and severity capture.
+   */
+  deferNextClueForSeverityCollection: Annotation<boolean>({
+    reducer: (_, next) => next,
+    default: () => false,
+  }),
+
+  /**
+   * Whether the clue injected into this turn came from the queued handoff slot.
+   */
+  usedPendingNextClue: Annotation<boolean>({
+    reducer: (_, next) => next,
+    default: () => false,
   }),
 
   /**

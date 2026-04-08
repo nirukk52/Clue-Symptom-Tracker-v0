@@ -91,20 +91,6 @@ export function ChatSidebar({
         <div className="mb-2 shrink-0" title="Clue">
           <ClueAgentMark size={40} className="rounded-[14px] shadow-soft" />
         </div>
-        {/* User avatar - rounded square like in the design */}
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mb-3 overflow-hidden shrink-0">
-          {user.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt={user.initials}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-white text-xs font-semibold tracking-wider">
-              {user.initials}
-            </span>
-          )}
-        </div>
 
         {/* Navigation items */}
         <nav className="flex flex-col items-center w-full px-2">

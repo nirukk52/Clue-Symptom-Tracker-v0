@@ -34,7 +34,7 @@ export const logMood = tool({
 
     const { error: timelineError } = await supabase.from('timeline_entries').insert({
       user_id: uid,
-      type: 'note',
+      type: 'mood',
       title: `Mood: ${rating}/10`,
       description: note ?? null,
     });

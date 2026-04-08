@@ -5,7 +5,7 @@ import { DefaultChatTransport, type UIMessage } from 'ai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
-import { deserializeStoredChatMessage } from '@/lib/chat-ui-messages';
+import { deserializeStoredChatMessage, extractTextFromUIMessage } from '@/lib/chat-ui-messages';
 import { supabase } from '@/lib/supabase';
 
 import { ChatCanvas } from './ChatCanvas';
@@ -21,6 +21,8 @@ import { TimelineView } from './TimelineView';
 import { buildSuggestionInteractive, type InsightSuggestionRow } from './chat-suggestions';
 import type {
   ChatInteractiveComponent,
+  ChatModelProvider,
+  ChatInputSubTab,
   ChatMessage,
   ChatSuggestionOption,
   ChatUser,
@@ -32,8 +34,9 @@ import type {
  *
  * Why this exists: Core product interface. Rearchitected so every feature is
  * accessible on both mobile and desktop:
- * - Chat and Insights nav tabs: two-sub-tab layout (Chat | Canvas). On desktop
- *   both panels are visible side-by-side; on mobile the pill switches between them.
+ * - Chat and Insights nav tabs: bottom sub-tab layout (Chat | Quick Entry | Canvas).
+ *   On desktop the primary panels stay visible side-by-side; on mobile the pill
+ *   switches between them.
  *   Chat and Insights share the same canvas panel.
  * - Timeline and Doctor Summary: full-width standalone views on all screen sizes.
  * - Quick Entry and Flare Mode: modal pop-ups triggered by FAB buttons.
@@ -94,6 +97,41 @@ function extractSeverityToolResult(
 }
 
 /**
+ * Narrows a chat interactive payload to the rating slider variants.
+ * Why this exists: Rehydration updates should only write `initialValue` onto
+ * slider payloads and must leave other interactive unions untouched.
+ */
+function isRatingInteractiveComponent(
+  interactive: ChatInteractiveComponent | undefined
+): interactive is Extract<ChatInteractiveComponent, { type: 'severity-slider' | 'rating-slider' }> {
+  return interactive?.type === 'severity-slider' || interactive?.type === 'rating-slider';
+}
+
+/**
+ * Extracts the numeric rating from a stored slider follow-up reply.
+ * Why this exists: Reloaded conversations need the submitted slider value so
+ * answered sliders can render the persisted choice instead of the default `5`.
+ */
+function extractSubmittedRating(message: UIMessage | undefined): number | null {
+  if (!message) {
+    return null;
+  }
+
+  const text = extractTextFromUIMessage(message).trim();
+  const slashMatch = text.match(/\b(10|[0-9])\s*\/\s*10\b/);
+  if (slashMatch?.[1]) {
+    return Number(slashMatch[1]);
+  }
+
+  const bareMatch = text.match(/^\s*(10|[0-9])\s*$/);
+  if (bareMatch?.[1]) {
+    return Number(bareMatch[1]);
+  }
+
+  return null;
+}
+
+/**
  * wait delays suggestion hydration long enough for the post-turn insight agent
  * to persist the latest ranked suggestions.
  */
@@ -117,8 +155,8 @@ export function ClueChat({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Default to 'chat' nav tab
   const [activeNavId, setActiveNavId] = useState<string>('chat');
-  // Sub-tab within chat/insights tabs — 'chat' column or 'canvas' column (mobile only)
-  const [activeSubTab, setActiveSubTab] = useState<'chat' | 'canvas'>('chat');
+  // Sub-tab within chat/insights tabs for the mobile switcher and desktop input state.
+  const [activeSubTab, setActiveSubTab] = useState<ChatInputSubTab>('chat');
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   // Modal visibility state for pop-up panels
@@ -139,6 +177,7 @@ export function ClueChat({
   const [interactiveState, setInteractiveState] = useState<
     Record<string, { interactive?: ChatInteractiveComponent; completed?: boolean }>
   >({});
+  const [modelProvider, setModelProvider] = useState<ChatModelProvider>('chatgpt');
 
   // Graph refresh trigger - increment to force graph refetch
   const [graphRefreshTrigger, setGraphRefreshTrigger] = useState(0);
@@ -146,6 +185,11 @@ export function ClueChat({
   // Ref to track Supabase user ID for API calls (survives re-renders)
   const supabaseUserId = useRef<string | null>(null);
   const latestSuggestionMessageId = useRef<string | null>(null);
+  const modelProviderRef = useRef<ChatModelProvider>('chatgpt');
+
+  useEffect(() => {
+    modelProviderRef.current = modelProvider;
+  }, [modelProvider]);
 
   /**
    * applySuggestionPills keeps suggestion chips bound to only the latest
@@ -244,6 +288,7 @@ export function ClueChat({
     body: () => ({
       conversationId: conversationId.current,
       userId: supabaseUserId.current,
+      modelProvider: modelProviderRef.current,
     }),
   }), []);
 
@@ -517,13 +562,21 @@ export function ClueChat({
               return acc;
             }
 
-            const hasLaterUserMessage = loadedMessages
+            const nextUserMessage = loadedMessages
               .slice(index + 1)
-              .some((laterMessage) => laterMessage.role === 'user');
+              .find((laterMessage) => laterMessage.role === 'user');
+            const submittedRating = extractSubmittedRating(nextUserMessage);
+            const hydratedInteractive =
+              submittedRating !== null && isRatingInteractiveComponent(interactive)
+                ? {
+                    ...interactive,
+                    initialValue: submittedRating,
+                  }
+                : interactive;
 
             acc[message.id] = {
-              interactive,
-              completed: hasLaterUserMessage,
+              interactive: hydratedInteractive,
+              completed: submittedRating !== null || Boolean(nextUserMessage),
             };
             return acc;
           }, {});
@@ -616,7 +669,16 @@ export function ClueChat({
     async (messageId: string, severity: number) => {
       setInteractiveState((prev) => ({
         ...prev,
-        [messageId]: { ...prev[messageId], completed: true },
+        [messageId]: {
+          ...prev[messageId],
+          interactive: isRatingInteractiveComponent(prev[messageId]?.interactive)
+            ? {
+                ...prev[messageId].interactive,
+                initialValue: severity,
+              }
+            : prev[messageId]?.interactive,
+          completed: true,
+        },
       }));
 
       const state = interactiveState[messageId];
@@ -766,9 +828,12 @@ export function ClueChat({
       {isSplitLayout && (
         <>
           {/* Mobile: single column with swappable content area + fixed pill at bottom */}
-          <div className="flex flex-col min-h-screen min-h-svh w-full lg:hidden">
-            <ChatHeader onMenuClick={handleMenuClick} />
-            {/* Content area: either chat messages or canvas */}
+          <div className="flex flex-col min-h-svh w-full lg:hidden">
+            <ChatHeader
+              onMenuClick={handleMenuClick}
+              showCanvasPattern={activeSubTab === 'canvas'}
+            />
+            {/* Content area: chat messages, quick entry, or canvas */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {activeSubTab === 'chat' ? (
                 <ChatMessages
@@ -778,6 +843,8 @@ export function ClueChat({
                   onSeveritySubmit={handleSeveritySubmit}
                   onSuggestionSelect={handleSuggestionSelect}
                 />
+              ) : activeSubTab === 'quick-entry' ? (
+                <QuickEntryPanel isOpen={true} onClose={() => setActiveSubTab('chat')} variant="inline" />
               ) : (
                 renderCanvas()
               )}
@@ -789,11 +856,13 @@ export function ClueChat({
               activeSubTab={activeSubTab}
               onSubTabChange={setActiveSubTab}
               showSubTabPill={true}
+              modelProvider={modelProvider}
+              onModelProviderChange={setModelProvider}
             />
           </div>
 
           {/* Desktop: two-column layout (chat left, canvas right) */}
-          <div className="hidden lg:flex flex-col min-h-screen min-h-svh w-full lg:max-w-[420px] lg:flex-none lg:border-r lg:border-primary/6">
+          <div className="hidden w-full flex-col lg:flex lg:h-svh lg:min-h-0 lg:max-w-[420px] lg:flex-none lg:overflow-hidden lg:border-r lg:border-primary/6">
             <ChatHeader onMenuClick={handleMenuClick} />
             <ChatMessages
               messages={messages}
@@ -805,14 +874,16 @@ export function ClueChat({
             <ChatInput
               onSendMessage={handleSendMessage}
               disabled={isTyping}
-              activeSubTab={activeSubTab}
+              activeSubTab="chat"
               onSubTabChange={setActiveSubTab}
-              showSubTabPill={true}
+              showSubTabPill={false}
+              modelProvider={modelProvider}
+              onModelProviderChange={setModelProvider}
             />
           </div>
 
           {/* Desktop: canvas panel — always visible */}
-          <div className="hidden lg:flex flex-1">
+          <div className="hidden flex-1 overflow-hidden lg:flex lg:h-svh lg:min-h-0">
             {renderCanvas()}
           </div>
         </>

@@ -43,7 +43,7 @@ export function ChatMessages({
   }, [messages, isTyping]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 pb-4">
       {messages.map((message) => {
         // System notification - icon + text
         if (message.isNotification) {

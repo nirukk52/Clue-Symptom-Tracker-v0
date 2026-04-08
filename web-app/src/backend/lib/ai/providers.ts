@@ -14,6 +14,7 @@
 
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 
 // =============================================================================
 // PROVIDER INITIALIZATION
@@ -31,6 +32,13 @@ export const openaiProvider = createOpenAI({
  */
 export const googleProvider = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
+
+/**
+ * Anthropic Claude provider configuration.
+ */
+export const anthropicProvider = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 // =============================================================================
@@ -78,6 +86,30 @@ export type ModelKey = keyof typeof models;
  */
 export function getModel(key: ModelKey) {
   return models[key];
+}
+
+/**
+ * Chat model provider options exposed in the chat composer.
+ * Why this exists: The client allows users to choose a model family while the
+ * backend resolves that preference into a concrete provider/model pair.
+ */
+export type ChatModelProvider = 'chatgpt' | 'gemini' | 'claude';
+
+/**
+ * Resolves a chat provider key to a concrete model instance.
+ * Why this exists: Route handlers should not duplicate provider-specific model
+ * wiring when supporting user-selected chat backends.
+ */
+export function getChatModel(provider: ChatModelProvider | undefined) {
+  if (provider === 'gemini') {
+    return googleProvider('gemini-2.5-flash');
+  }
+
+  if (provider === 'claude') {
+    return anthropicProvider('claude-sonnet-4-20250514');
+  }
+
+  return openaiProvider('gpt-5.4');
 }
 
 // =============================================================================

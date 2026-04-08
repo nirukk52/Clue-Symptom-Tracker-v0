@@ -493,6 +493,14 @@ When `flareMode=true`:
 
 ---
 
+## Composer Controls Pattern (ChatInput)
+
+- Add a compact `Model` segmented control above the bottom action row when the chat composer is visible.
+- Supported options in this codebase: `ChatGPT`, `Gemini`, `Claude`.
+- Keep the control hidden for non-chat sub-tabs (`quick-entry`, `canvas`) to avoid UI clutter.
+
+---
+
 ## Web Implementation (web-app)
 
 The following components are implemented in `web-app/src/components/widgets/`:

@@ -163,6 +163,22 @@ Rules:
 `;
 
 /**
+ * Instruction for turns that still need a severity slider response.
+ * Why this exists: The assistant should stop after logging when a symptom lacks
+ * severity so the next clue is asked on the following turn instead.
+ */
+export const SEVERITY_CAPTURE_DIRECTIVE = `
+
+## Severity Capture Directive
+This turn is for logging the symptom and collecting the missing severity only.
+
+Rules:
+1. Acknowledge and log the current symptom update.
+2. Do not ask any additional health follow-up question in this same reply.
+3. End the reply after the logging/severity-capture response.
+`;
+
+/**
  * Builds the complete system prompt for the three-agent chat flow.
  * Why this exists: The Chat Agent should only assemble prompt context that it
  * owns directly plus the latest clue chosen by the Insight Agent.
@@ -173,6 +189,7 @@ export function buildSystemPrompt(options?: {
   isFlareMode?: boolean;
   extractedEntities?: Array<{ type: 'symptom' | 'medication' | 'condition'; name: string }>;
   turnResolution?: string;
+  deferNextClueForSeverityCollection?: boolean;
   nextClue?: {
     question: string;
     reasoning: string;
@@ -199,6 +216,10 @@ export function buildSystemPrompt(options?: {
 
   if (options?.isFlareMode) {
     prompt += FLARE_MODE_MODIFIER;
+  }
+
+  if (options?.deferNextClueForSeverityCollection && !options?.isFlareMode) {
+    prompt += SEVERITY_CAPTURE_DIRECTIVE;
   }
 
   if (options?.nextClue && !options?.isFlareMode) {

@@ -58,6 +58,20 @@ export interface ChatUser {
   email?: string;
 }
 
+/**
+ * ChatInputSubTab enumerates the bottom mobile switcher states.
+ * Why this exists: Chat input, mobile content swapping, and quick-entry reuse
+ * all need the same source of truth for which pane is active.
+ */
+export type ChatInputSubTab = 'chat' | 'quick-entry' | 'canvas';
+
+/**
+ * ChatModelProvider enumerates user-selectable chat backends.
+ * Why this exists: The input composer exposes a model picker so users can
+ * choose between OpenAI, Gemini, and Claude per message turn.
+ */
+export type ChatModelProvider = 'chatgpt' | 'gemini' | 'claude';
+
 export type NavItem = {
   id: string;
   label: string;
@@ -71,7 +85,6 @@ export const CLUE_NAV_ITEMS: NavItem[] = [
   { id: 'timeline', label: 'Timeline', icon: 'calendar_today' },
   { id: 'insights', label: 'Insights', icon: 'auto_awesome' },
   { id: 'doctor-pack', label: 'Doctor\nSummary', icon: 'stethoscope' },
-  { id: 'quick-entry', label: 'Quick\nEntry', icon: 'add_circle' },
   { id: 'flare-mode', label: 'Flare\nMode', icon: 'local_fire_department' },
 ];
 
@@ -112,10 +125,12 @@ export interface TimelineEntry {
   title: string;
   description?: string;
   time?: string; // e.g., "2:00 PM" - optional for long-running interventions
+  occurredAt?: string; // ISO timestamp used for grouping and richer UI summaries
   status?: TimelineEntryStatus;
   duration?: string; // e.g., "4 months", "1 week"
   dosage?: string; // e.g., "150mg (2 billion CFU)"
-  intensity?: 1 | 2 | 3 | 4 | 5; // For symptoms
+  severity?: number; // Symptom severity on a 0-10 scale when known
+  intensity?: 1 | 2 | 3 | 4 | 5; // Legacy field kept for backwards compatibility
 }
 
 /**

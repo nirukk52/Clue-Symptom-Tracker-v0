@@ -73,6 +73,16 @@ interface DbGraphEdge {
   updated_at: string;
 }
 
+interface DbInsightRow {
+  id: string;
+  type: string | null;
+  content: string | null;
+  reasoning: string | null;
+  priority: number | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string | null;
+}
+
 // =============================================================================
 // CONVERTERS
 // =============================================================================
@@ -106,6 +116,118 @@ function dbEdgeToGraphEdge(dbEdge: DbGraphEdge): GraphEdge {
   };
 }
 
+/**
+ * Normalizes a graph payload returned by the RPC.
+ * Why this exists: The canvas should stay resilient if the RPC returns null-ish
+ * arrays while we layer in synthetic nodes from the active insight queue.
+ */
+function normalizeGraphData(data: unknown): GraphData {
+  const candidate = (data ?? {}) as Partial<GraphData>;
+
+  return {
+    nodes: Array.isArray(candidate.nodes) ? candidate.nodes : [],
+    edges: Array.isArray(candidate.edges) ? candidate.edges : [],
+  };
+}
+
+/**
+ * Builds a stable dedupe key for graph nodes.
+ * Why this exists: The current architecture can source canvas nodes from both
+ * graph tables and insight rows, so we need one comparison strategy.
+ */
+function getNodeDedupKey(node: GraphNode): string {
+  const rawValue =
+    node.type === 'unknown'
+      ? (node.questionText ?? node.label)
+      : node.label;
+
+  return `${node.type}:${rawValue.trim().toLowerCase()}`;
+}
+
+/**
+ * Shortens long insight text for node labels.
+ * Why this exists: The canvas needs compact labels even when the durable clue
+ * text in the insights queue is a full natural-language question.
+ */
+function truncateNodeLabel(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 3)}...`;
+}
+
+/**
+ * Converts active insight rows into synthetic graph nodes.
+ * Why this exists: The three-agent architecture stores follow-up clues in the
+ * insights table, but the canvas still renders from graph nodes.
+ */
+function mapInsightsToGraphNodes(
+  insightRows: DbInsightRow[],
+  existingNodes: GraphNode[]
+): GraphNode[] {
+  const seenKeys = new Set(existingNodes.map(getNodeDedupKey));
+
+  return insightRows.flatMap((row) => {
+    const content = row.content?.trim();
+    if (!content) {
+      return [];
+    }
+
+    if (row.type === 'next_question') {
+      const node: GraphNode = {
+        id: `insight-next-question-${row.id}`,
+        type: 'unknown',
+        label: truncateNodeLabel(content, 50),
+        subLabel: 'Tap to answer',
+        questionText: content,
+        questionPriority: row.priority ?? 0,
+        data: {
+          source: 'insights',
+          insightId: row.id,
+          insightType: row.type,
+          reasoning: row.reasoning ?? null,
+          metadata: row.metadata ?? {},
+        },
+        createdAt: row.created_at ?? undefined,
+        updatedAt: row.created_at ?? undefined,
+      };
+      const dedupKey = getNodeDedupKey(node);
+      if (seenKeys.has(dedupKey)) {
+        return [];
+      }
+      seenKeys.add(dedupKey);
+      return [node];
+    }
+
+    if (row.type === 'pattern') {
+      const node: GraphNode = {
+        id: `insight-pattern-${row.id}`,
+        type: 'clue',
+        label: content,
+        subLabel: 'Insight',
+        data: {
+          source: 'insights',
+          insightId: row.id,
+          insightType: row.type,
+          reasoning: row.reasoning ?? null,
+          metadata: row.metadata ?? {},
+        },
+        createdAt: row.created_at ?? undefined,
+        updatedAt: row.created_at ?? undefined,
+      };
+      const dedupKey = getNodeDedupKey(node);
+      if (seenKeys.has(dedupKey)) {
+        return [];
+      }
+      seenKeys.add(dedupKey);
+      return [node];
+    }
+
+    return [];
+  });
+}
+
 // =============================================================================
 // PUBLIC API
 // =============================================================================
@@ -117,18 +239,41 @@ function dbEdgeToGraphEdge(dbEdge: DbGraphEdge): GraphEdge {
 export async function getUserGraph(userId: string): Promise<GraphData> {
   const supabase = getSupabase();
 
-  // Use the database function for optimized retrieval
-  const { data, error } = await supabase.rpc('get_user_graph', {
-    p_user_id: userId,
-  });
+  const [graphResult, insightResult] = await Promise.all([
+    supabase.rpc('get_user_graph', {
+      p_user_id: userId,
+    }),
+    supabase
+      .from('insights')
+      .select('id, type, content, reasoning, priority, metadata, created_at')
+      .eq('user_id', userId)
+      .neq('status', 'dismissed')
+      .in('type', ['next_question', 'pattern'])
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false }),
+  ]);
+
+  const { data, error } = graphResult;
 
   if (error) {
     console.error('[graph] get_user_graph failed:', error);
     return { nodes: [], edges: [] };
   }
 
-  // The RPC returns {nodes: [...], edges: [...]} already
-  return data as GraphData;
+  if (insightResult.error) {
+    console.error('[graph] Failed to load active insights for graph hydration:', insightResult.error);
+  }
+
+  const graphData = normalizeGraphData(data);
+  const hydratedInsightNodes = mapInsightsToGraphNodes(
+    (insightResult.data as DbInsightRow[] | null) ?? [],
+    graphData.nodes
+  );
+
+  return {
+    nodes: [...graphData.nodes, ...hydratedInsightNodes],
+    edges: graphData.edges,
+  };
 }
 
 /**

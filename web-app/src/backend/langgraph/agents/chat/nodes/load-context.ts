@@ -25,6 +25,16 @@ interface InsightRow {
 }
 
 /**
+ * Minimal shape of the user preference row needed for turn pacing.
+ * Why this exists: The Chat Agent only needs flare mode plus the queued
+ * follow-up question handoff, not the full preferences record.
+ */
+interface UserPreferencesRow {
+  flare_mode: boolean | null;
+  pending_next_question: string | null;
+}
+
+/**
  * Creates a privileged Supabase client for server-side context reads.
  * Why this exists: The Chat Agent runs inside the API route and needs direct
  * access to user-specific insights and preference rows.
@@ -75,6 +85,35 @@ async function getLatestClue(
 }
 
 /**
+ * Parses the queued next-question payload stored in user preferences.
+ * Why this exists: The post-turn handoff stores a compact JSON string so the
+ * next severity reply can consume the clue without racing the insight write.
+ */
+function parsePendingNextQuestion(value: string | null | undefined): NextClue | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as Partial<NextClue> | null;
+    if (!parsed?.question || typeof parsed.question !== 'string') {
+      return null;
+    }
+
+    return {
+      question: parsed.question,
+      reasoning:
+        typeof parsed.reasoning === 'string' && parsed.reasoning.trim()
+          ? parsed.reasoning.trim()
+          : 'This clue was queued while Clue finished collecting symptom severity.',
+      priority: typeof parsed.priority === 'number' ? parsed.priority : 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Loads the user context required to assemble the system prompt.
  * Why this exists: Keeps context reads centralized so the Chat Agent sees one
  * consistent snapshot of memories, graph state, preferences, and clue output.
@@ -99,13 +138,20 @@ export async function loadContextNode(
       getRelevantMemories(userId, state.userMessageText),
       getGraphSummary(userId),
       getLatestClue(supabase, userId),
-      supabase.from('user_preferences').select('flare_mode').eq('user_id', userId).maybeSingle(),
+      supabase
+        .from('user_preferences')
+        .select('flare_mode, pending_next_question')
+        .eq('user_id', userId)
+        .maybeSingle<UserPreferencesRow>(),
     ]);
+    const queuedNextClue = parsePendingNextQuestion(preferencesResult.data?.pending_next_question);
+    const shouldUseQueuedNextClue = Boolean(state.resolvedFollowupAction && queuedNextClue);
 
     return {
       memories: memories || null,
       graphSummary: graphSummary || null,
-      nextClue: latestClue,
+      nextClue: shouldUseQueuedNextClue ? queuedNextClue : latestClue,
+      usedPendingNextClue: shouldUseQueuedNextClue,
       isFlareMode: preferencesResult.data?.flare_mode ?? false,
     };
   } catch (error) {
@@ -116,6 +162,7 @@ export async function loadContextNode(
       memories: null,
       graphSummary: null,
       nextClue: null,
+      usedPendingNextClue: false,
       isFlareMode: false,
       errors: [message],
     };

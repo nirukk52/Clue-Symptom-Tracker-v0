@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { lightTheme, type Theme } from 'reagraph';
 import type { GraphData, GraphNode, GraphNodeType } from './types';
 import { GRAPH_NODE_COLORS, GRAPH_NODE_SIZES } from './types';
 
@@ -19,6 +20,18 @@ const GraphCanvas = dynamic(
   () => import('reagraph').then((mod) => mod.GraphCanvas),
   { ssr: false }
 );
+
+/**
+ * Keeps the graph panel visually aligned with the surrounding cream surface.
+ * Reagraph expects an opaque Three.js color here, so the dotted layer is drawn above it.
+ */
+const GRAPH_CANVAS_THEME: Theme = {
+  ...lightTheme,
+  canvas: {
+    ...(lightTheme.canvas ?? {}),
+    background: '#fdfbf9',
+  },
+};
 
 // =============================================================================
 // TYPES
@@ -146,7 +159,7 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
   // Empty state - no user
   if (!userId) {
     return (
-      <div className="flex flex-1 bg-[#f5f3f0] relative overflow-hidden items-center justify-center">
+      <div className="flex flex-1 bg-bg-cream relative overflow-hidden items-center justify-center">
         <EmptyState message="Sign in to see your health graph" />
       </div>
     );
@@ -155,7 +168,7 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
   // Loading state
   if (loading) {
     return (
-      <div className="flex flex-1 bg-[#f5f3f0] relative overflow-hidden items-center justify-center">
+      <div className="flex flex-1 bg-bg-cream relative overflow-hidden items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#20132e] border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-[#20132e]/60">Loading your health graph...</p>
@@ -167,7 +180,7 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
   // Error state
   if (error) {
     return (
-      <div className="flex flex-1 bg-[#f5f3f0] relative overflow-hidden items-center justify-center">
+      <div className="flex flex-1 bg-bg-cream relative overflow-hidden items-center justify-center">
         <EmptyState message={error} isError />
       </div>
     );
@@ -176,7 +189,7 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
   // Empty graph state
   if (!graphData || graphData.nodes.length === 0) {
     return (
-      <div className="flex flex-1 bg-[#f5f3f0] relative overflow-hidden items-center justify-center">
+      <div className="flex flex-1 bg-bg-cream relative overflow-hidden items-center justify-center">
         <EmptyState
           message="Start chatting to build your health graph"
           subMessage="As you share symptoms, medications, and factors, Clue will visualize patterns here."
@@ -186,16 +199,7 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
   }
 
   return (
-    <div className="flex flex-1 bg-[#f5f3f0] relative overflow-hidden">
-      {/* Dotted grid background pattern */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `radial-gradient(circle, rgba(32, 19, 46, 0.08) 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
-        }}
-      />
-
+    <div className="flex flex-1 bg-bg-cream relative overflow-hidden">
       {/* Legend */}
       <Legend />
 
@@ -205,9 +209,19 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
         edges={reagraphEdges}
         layoutType="radialOut2d"
         labelType="all"
+        theme={GRAPH_CANVAS_THEME}
         draggable
         onNodeClick={handleNodeClick}
         edgeArrowPosition="end"
+      />
+
+      {/* Dotted grid overlay sits above the canvas so the pattern remains visible. */}
+      <div
+        className="absolute inset-0 z-1 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(circle, rgba(32, 19, 46, 0.08) 1px, transparent 1px)`,
+          backgroundSize: '24px 24px',
+        }}
       />
     </div>
   );

@@ -13,11 +13,22 @@ import { SpoonBurgerIcon } from '@/components/ui/SpoonBurgerIcon';
 
 interface ChatHeaderProps {
   onMenuClick: () => void;
+  showCanvasPattern?: boolean;
 }
 
-export function ChatHeader({ onMenuClick }: ChatHeaderProps) {
+export function ChatHeader({ onMenuClick, showCanvasPattern = false }: ChatHeaderProps) {
   return (
-    <header className="flex items-center gap-2 px-4 py-3 sticky top-0 z-10 bg-bg-cream lg:hidden">
+    <header className="sticky top-0 z-10 overflow-hidden bg-bg-cream lg:hidden">
+      {showCanvasPattern && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(32, 19, 46, 0.08) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+      )}
+      <div className="relative flex items-center gap-2 px-4 py-3">
       <button
         type="button"
         className="w-10 h-10 shrink-0 flex items-center justify-center border-none bg-primary/10 text-primary cursor-pointer rounded-lg hover:bg-primary/15 focus:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-cream transition-colors"
@@ -30,6 +41,7 @@ export function ChatHeader({ onMenuClick }: ChatHeaderProps) {
         <ClueAgentLogo markSize={26} className="select-none" />
       </div>
       <div className="w-10 h-10 shrink-0" aria-hidden="true" />
+      </div>
     </header>
   );
 }

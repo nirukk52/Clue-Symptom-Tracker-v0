@@ -11,6 +11,40 @@ import { setActiveUserId } from '@/backend/agents/clue/tools/chat-tools';
 
 import type { ChatAgentStateType, ChatAgentStateUpdate } from '../state';
 
+const EXPLICIT_SEVERITY_PATTERN =
+  /\b(?:10|[0-9])(?:\s*\/\s*10|\s+out\s+of\s+10)?\b|\b(?:mild|moderate|severe)\b/i;
+
+/**
+ * Detects whether the latest user turn already included an explicit severity.
+ * Why this exists: Symptom turns without a severity should end after logging so
+ * the UI slider can capture the missing detail before the next clue appears.
+ */
+function hasExplicitSeverity(text: string): boolean {
+  return EXPLICIT_SEVERITY_PATTERN.test(text);
+}
+
+/**
+ * Decides whether the next clue should be deferred until the following turn.
+ * Why this exists: Prompting alone is too soft for pacing; the Chat Agent must
+ * deterministically suppress clue injection when severity capture is still open.
+ */
+function shouldDeferNextClueForSeverityCollection(state: ChatAgentStateType): boolean {
+  if (!state.nextClue || state.isFlareMode || state.resolvedFollowupAction) {
+    return false;
+  }
+
+  if (!state.userMessageText.trim()) {
+    return false;
+  }
+
+  const mentionedSymptoms = state.extractedEntities.some((entity) => entity.type === 'symptom');
+  if (!mentionedSymptoms) {
+    return false;
+  }
+
+  return !hasExplicitSeverity(state.userMessageText);
+}
+
 /**
  * Builds the system prompt for the new Chat Agent.
  * Why this exists: The route should only stream the model response; prompt
@@ -21,15 +55,18 @@ export async function buildReplyContextNode(
 ): Promise<ChatAgentStateUpdate> {
   try {
     setActiveUserId(state.userId);
+    const deferNextClueForSeverityCollection = shouldDeferNextClueForSeverityCollection(state);
 
     return {
+      deferNextClueForSeverityCollection,
       systemPrompt: buildSystemPrompt({
         memories: state.memories || undefined,
         graphSummary: state.graphSummary || undefined,
         isFlareMode: state.isFlareMode,
         extractedEntities: state.extractedEntities,
         turnResolution: state.turnResolution || undefined,
-        nextClue: state.nextClue || undefined,
+        nextClue: deferNextClueForSeverityCollection ? undefined : state.nextClue || undefined,
+        deferNextClueForSeverityCollection,
       }),
     };
   } catch (error) {
@@ -37,6 +74,7 @@ export async function buildReplyContextNode(
     console.error('[chat-agent/build-reply-context] Failed:', error);
 
     return {
+      deferNextClueForSeverityCollection: false,
       systemPrompt: '',
       errors: [message],
     };

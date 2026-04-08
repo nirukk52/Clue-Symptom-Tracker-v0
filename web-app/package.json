@@ -12,6 +12,7 @@
     "eval-clue-chat": "npx tsx --env-file=.env.local src/backend/scripts/eval-clue-chat.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.66",
     "@ai-sdk/google": "^3.0.6",
     "@ai-sdk/openai": "^3.0.8",
     "@ai-sdk/react": "^3.0.143",

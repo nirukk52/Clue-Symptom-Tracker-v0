@@ -27,7 +27,9 @@ import {
   executeChatAgent,
   executeGraphReconciler,
   executeInsightAgent,
+  type NextClue,
 } from '@/backend/langgraph';
+import { getChatModel, type ChatModelProvider } from '@/backend/lib/ai/providers';
 import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
 import { storeMemory } from '@/backend/lib/memory';
 import { extractTextFromUIMessage, serializeUIMessage } from '@/lib/chat-ui-messages';
@@ -42,6 +44,128 @@ function getSupabase(): SupabaseClient {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+}
+
+/**
+ * Minimal user preference row used for queued clue handoff writes.
+ * Why this exists: The route only needs the one pending clue slot and should
+ * avoid coupling turn pacing writes to the rest of the preferences schema.
+ */
+interface PendingQuestionPreferenceRow {
+  pending_next_question: string | null;
+}
+
+/**
+ * Serializes a queued next clue for the follow-up handoff slot.
+ * Why this exists: The queued clue must survive the post-turn background work so
+ * the next severity reply can deterministically consume it.
+ */
+function serializePendingNextQuestion(nextClue: NextClue): string {
+  return JSON.stringify({
+    question: nextClue.question,
+    reasoning: nextClue.reasoning,
+    priority: nextClue.priority,
+  });
+}
+
+/**
+ * Detects whether a tool result asks the client to render a rating slider.
+ * Why this exists: The post-turn handoff should queue the next clue only after a
+ * reply that intentionally stopped to collect missing severity.
+ */
+function isRatingSliderOutput(output: unknown): boolean {
+  if (!output || typeof output !== 'object') {
+    return false;
+  }
+
+  const candidate = output as { interactive?: unknown; type?: unknown };
+  return (
+    candidate.interactive === true &&
+    (candidate.type === 'severity-slider' || candidate.type === 'rating-slider')
+  );
+}
+
+/**
+ * Checks whether the assistant response included a severity collection UI.
+ * Why this exists: This is the deterministic signal that the turn should queue
+ * the next clue for later instead of asking it immediately.
+ */
+function responseRequestsSeverityFollowup(responseMessage: UIMessage): boolean {
+  return responseMessage.parts.some((part) => {
+    if (!part.type.startsWith('tool-')) {
+      return false;
+    }
+
+    if (!('state' in part) || (part.state !== 'output-available' && part.state !== 'done')) {
+      return false;
+    }
+
+    return 'output' in part && isRatingSliderOutput(part.output);
+  });
+}
+
+/**
+ * Upserts the queued next clue into user preferences.
+ * Why this exists: The clue should be available on the next turn even if the
+ * user answers the severity slider before insight hydration catches up.
+ */
+async function setPendingNextQuestion(
+  supabase: SupabaseClient,
+  userId: string,
+  nextClue: NextClue | null
+): Promise<void> {
+  const { error } = await supabase
+    .from('user_preferences')
+    .upsert(
+      {
+        user_id: userId,
+        pending_next_question: nextClue ? serializePendingNextQuestion(nextClue) : null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    );
+
+  if (error) {
+    throw new Error(`Failed to update pending next question: ${error.message}`);
+  }
+}
+
+/**
+ * Loads the latest active next-question clue from the insight queue.
+ * Why this exists: Post-turn pacing needs the freshly generated clue so the next
+ * severity reply can ask it without waiting for another background fetch.
+ */
+async function getLatestQueuedClue(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<NextClue | null> {
+  const { data, error } = await supabase
+    .from('insights')
+    .select('content, reasoning, priority')
+    .eq('user_id', userId)
+    .eq('type', 'next_question')
+    .neq('status', 'dismissed')
+    .order('priority', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load latest queued clue: ${error.message}`);
+  }
+
+  if (!data?.content) {
+    return null;
+  }
+
+  return {
+    question: data.content,
+    reasoning:
+      typeof data.reasoning === 'string' && data.reasoning.trim()
+        ? data.reasoning.trim()
+        : 'This clue was selected from the latest graph-based insight pass.',
+    priority: typeof data.priority === 'number' ? data.priority : 0,
+  };
 }
 
 /**
@@ -369,10 +493,12 @@ async function runPostTurnAgents(params: {
   conversationId?: string;
   userMessage: UIMessage;
   responseMessage: UIMessage;
+  usedPendingNextClue: boolean;
 }): Promise<void> {
-  const { userId, conversationId, userMessage, responseMessage } = params;
+  const { userId, conversationId, userMessage, responseMessage, usedPendingNextClue } = params;
   const userMessageText = extractTextFromUIMessage(userMessage);
   const assistantReply = extractTextFromUIMessage(responseMessage);
+  const queueNextClueForLater = responseRequestsSeverityFollowup(responseMessage);
 
   await persistTurnMessages({ conversationId, userId, userMessage, responseMessage });
 
@@ -395,6 +521,23 @@ async function runPostTurnAgents(params: {
   if (!insightResult.success) {
     console.error('[chat/route] Insight Agent failed:', insightResult.errors);
   }
+
+  const supabase = getSupabase();
+
+  try {
+    if (usedPendingNextClue) {
+      await setPendingNextQuestion(supabase, userId, null);
+    }
+
+    if (queueNextClueForLater) {
+      const latestQueuedClue = insightResult.success
+        ? await getLatestQueuedClue(supabase, userId)
+        : null;
+      await setPendingNextQuestion(supabase, userId, latestQueuedClue);
+    }
+  } catch (error) {
+    console.warn('[chat/route] Failed to update pending next question:', error);
+  }
 }
 
 export async function POST(req: Request) {
@@ -402,10 +545,12 @@ export async function POST(req: Request) {
     messages,
     userId,
     conversationId,
+    modelProvider,
   }: {
     messages: UIMessage[];
     userId?: string;
     conversationId?: string;
+    modelProvider?: ChatModelProvider;
   } = await req.json();
 
   const uid = userId || 'anonymous';
@@ -451,7 +596,7 @@ export async function POST(req: Request) {
   // The system prompt was built by the Chat Agent; we stream here for UX.
 
   const result = streamText({
-    model: 'openai/gpt-5.4',
+    model: getChatModel(modelProvider),
     system: systemPrompt,
     messages: await convertToModelMessages(chatState.modelMessages?.length ? chatState.modelMessages : messages),
     stopWhen: stepCountIs(5),
@@ -468,6 +613,7 @@ export async function POST(req: Request) {
           conversationId,
           userMessage: latestUserMessage,
           responseMessage,
+          usedPendingNextClue: Boolean(chatState.usedPendingNextClue),
         }).catch((err) => {
           console.error('[chat/route] Post-turn handoff failed:', err);
         });
