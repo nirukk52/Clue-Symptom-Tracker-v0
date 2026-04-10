@@ -5,7 +5,7 @@
  * Individual tools are defined in separate files under ./definitions/ for maintainability.
  */
 
-export { setActiveUserId } from './utils';
+export { withActiveUserId } from './utils';
 
 import {
   logSymptom,

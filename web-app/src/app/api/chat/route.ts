@@ -22,7 +22,7 @@ import {
 } from 'ai';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { chatTools } from '@/backend/agents/clue/tools/chat-tools';
+import { chatTools, withActiveUserId } from '@/backend/agents/clue/tools/chat-tools';
 import {
   executeChatAgent,
   executeGraphReconciler,
@@ -591,29 +591,34 @@ export async function POST(req: Request) {
   // ─────────────────────────────────────────────────────────────────────────
   // The system prompt was built by the Chat Agent; we stream here for UX.
 
-  const result = streamText({
-    model: getChatModel(modelProvider),
-    system: systemPrompt,
-    messages: await convertToModelMessages(chatState.modelMessages?.length ? chatState.modelMessages : messages),
-    stopWhen: stepCountIs(5),
-    tools: chatTools,
-  });
+  return withActiveUserId(uid, async () => {
+    const modelMessages = await convertToModelMessages(
+      chatState.modelMessages?.length ? chatState.modelMessages : messages
+    );
+    const result = streamText({
+      model: getChatModel(modelProvider),
+      system: systemPrompt,
+      messages: modelMessages,
+      stopWhen: stepCountIs(5),
+      tools: chatTools,
+    });
 
-  return result.toUIMessageStreamResponse({
-    originalMessages: messages,
-    generateMessageId: generateId,
-    onFinish: async ({ responseMessage }) => {
-      if (uid !== 'anonymous' && latestUserMessage) {
-        runPostTurnAgents({
-          userId: uid,
-          conversationId,
-          userMessage: latestUserMessage,
-          responseMessage,
-          usedPendingNextClue: Boolean(chatState.usedPendingNextClue),
-        }).catch((err) => {
-          console.error('[chat/route] Post-turn handoff failed:', err);
-        });
-      }
-    },
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      generateMessageId: generateId,
+      onFinish: async ({ responseMessage }) => {
+        if (uid !== 'anonymous' && latestUserMessage) {
+          runPostTurnAgents({
+            userId: uid,
+            conversationId,
+            userMessage: latestUserMessage,
+            responseMessage,
+            usedPendingNextClue: Boolean(chatState.usedPendingNextClue),
+          }).catch((err) => {
+            console.error('[chat/route] Post-turn handoff failed:', err);
+          });
+        }
+      },
+    });
   });
 }

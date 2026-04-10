@@ -8,6 +8,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
+import { canonicalizeMedicationName } from '@/backend/lib/openmed/client';
 import { getSupabase, getUid } from '../utils';
 
 export const logMedication = tool({
@@ -23,10 +24,11 @@ export const logMedication = tool({
   execute: async ({ medName, dosage, taken, timing, notes }) => {
     const supabase = getSupabase();
     const uid = getUid();
+    const canonicalMedicationName = canonicalizeMedicationName(medName);
 
     const { error: medError } = await supabase.from('medication_logs').insert({
       user_id: uid,
-      med_name: medName,
+      med_name: canonicalMedicationName,
       dosage: dosage ?? null,
       taken,
       timing: timing ?? null,
@@ -41,7 +43,7 @@ export const logMedication = tool({
     const { error: timelineError } = await supabase.from('timeline_entries').insert({
       user_id: uid,
       type: 'medication',
-      title: medName,
+      title: canonicalMedicationName,
       description: taken ? `Taken${dosage ? ` - ${dosage}` : ''}` : 'Skipped',
       dosage: dosage ?? null,
       status: taken ? 'current' : 'issue',
@@ -54,7 +56,7 @@ export const logMedication = tool({
     const statusText = taken ? 'Logged' : 'Noted as skipped';
     return {
       success: true,
-      message: `${statusText}: ${medName}${dosage ? ` (${dosage})` : ''}.`,
+      message: `${statusText}: ${canonicalMedicationName}${dosage ? ` (${dosage})` : ''}.`,
     };
   },
 });

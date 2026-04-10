@@ -59,6 +59,13 @@ export interface NormalizedEntity {
 // =============================================================================
 
 const OPENMED_URL = process.env.OPENMED_URL || 'http://localhost:8080';
+const MEDICATION_ALIAS_MAP = new Map<string, string>([
+  ['ibuprofin', 'Ibuprofen'],
+  ['ibuprophen', 'Ibuprofen'],
+  ['ibruprofen', 'Ibuprofen'],
+  ['paracetemol', 'Paracetamol'],
+  ['tylenon', 'Tylenol'],
+]);
 
 /**
  * Analyzes text using a specific OpenMed model.
@@ -142,7 +149,7 @@ export async function extractBiomedicalEntities(
 
     normalized.push({
       type: 'medication',
-      name: capitalizeWords(entity.text),
+      name: canonicalizeMedicationName(entity.text),
       confidence: entity.confidence,
       rawText: entity.text,
     });
@@ -181,6 +188,21 @@ function capitalizeWords(str: string): string {
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
+}
+
+/**
+ * canonicalizeMedicationName resolves common spelling variants so medication
+ * logs and OpenMed extraction land on the same graph node.
+ */
+export function canonicalizeMedicationName(value: string): string {
+  const normalizedValue = value.trim().toLowerCase().replace(/\s+/g, ' ');
+  const aliasedValue = MEDICATION_ALIAS_MAP.get(normalizedValue);
+
+  if (aliasedValue) {
+    return aliasedValue;
+  }
+
+  return capitalizeWords(normalizedValue);
 }
 
 /**

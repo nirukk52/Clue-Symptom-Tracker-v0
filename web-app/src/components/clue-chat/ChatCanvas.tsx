@@ -9,9 +9,10 @@
  * Tapping an unknown node sends the question into the chat.
  */
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { lightTheme, type Theme } from 'reagraph';
+import type { GraphCanvasRef } from 'reagraph';
 import type { GraphData, GraphNode, GraphNodeType } from './types';
 import { GRAPH_NODE_COLORS, GRAPH_NODE_SIZES } from './types';
 
@@ -69,6 +70,22 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+  const graphCanvasRef = useRef<GraphCanvasRef | null>(null);
+
+  useEffect(() => {
+    /**
+     * Why this exists: The graph needs a denser layout treatment on phone-sized
+     * screens so long clue labels do not push the visible graph out of frame.
+     */
+    const updateViewportFlag = () => {
+      setIsNarrowViewport(window.innerWidth < 768);
+    };
+
+    updateViewportFlag();
+    window.addEventListener('resize', updateViewportFlag);
+    return () => window.removeEventListener('resize', updateViewportFlag);
+  }, []);
 
   // Fetch graph data
   const fetchGraph = useCallback(async () => {
@@ -108,12 +125,12 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
 
     // Size hierarchy: clue=20, symptom/factor=12, medication/condition=10, unknown=8
     const sizeOverrides: Record<GraphNodeType, number> = {
-      clue: 20,
-      symptom: 12,
-      factor: 12,
-      medication: 10,
-      condition: 10,
-      unknown: 8,
+      clue: isNarrowViewport ? 15 : 20,
+      symptom: isNarrowViewport ? 9 : 12,
+      factor: isNarrowViewport ? 9 : 12,
+      medication: isNarrowViewport ? 8 : 10,
+      condition: isNarrowViewport ? 8 : 10,
+      unknown: isNarrowViewport ? 7 : 8,
     };
 
     const nodes: ReagraphNode[] = graphData.nodes.map((node) => {
@@ -143,7 +160,7 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
     }));
 
     return { reagraphNodes: nodes, reagraphEdges: edges };
-  }, [graphData]);
+  }, [graphData, isNarrowViewport]);
 
   // Handle node click
   const handleNodeClick = useCallback(
@@ -155,6 +172,27 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
     },
     [onAskQuestion]
   );
+
+  useEffect(() => {
+    if (!graphCanvasRef.current || reagraphNodes.length === 0) {
+      return;
+    }
+
+    /**
+     * Why this exists: Reagraph can finish layout with the camera still pointed
+     * at empty space on first paint, especially after mobile tab switches.
+     * Fitting the current nodes after mount keeps the actual graph in frame.
+     */
+    const fitGraphInView = () => {
+      graphCanvasRef.current?.fitNodesInView(
+        reagraphNodes.map((node) => node.id),
+        { animated: false, fitOnlyIfNodesNotInView: false }
+      );
+    };
+
+    const timeoutId = window.setTimeout(fitGraphInView, 80);
+    return () => window.clearTimeout(timeoutId);
+  }, [reagraphNodes, reagraphEdges, refreshTrigger]);
 
   // Empty state - no user
   if (!userId) {
@@ -203,13 +241,16 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
       {/* Legend */}
       <Legend />
 
-      {/* Graph canvas - radial layout creates hierarchy with clues near center */}
+      {/* Graph canvas - remount on data changes so mobile refreshes do not keep a stale scene. */}
       <GraphCanvas
+        ref={graphCanvasRef}
+        key={`${userId ?? 'anonymous'}:${reagraphNodes.length}:${reagraphEdges.length}:${refreshTrigger ?? 0}`}
         nodes={reagraphNodes}
         edges={reagraphEdges}
-        layoutType="radialOut2d"
-        labelType="all"
+        layoutType={isNarrowViewport ? 'forceDirected2d' : 'radialOut2d'}
+        labelType={isNarrowViewport ? 'nodes' : 'all'}
         theme={GRAPH_CANVAS_THEME}
+        animated={false}
         draggable
         onNodeClick={handleNodeClick}
         edgeArrowPosition="end"
@@ -326,3 +367,4 @@ function EmptyState({
     </div>
   );
 }
+

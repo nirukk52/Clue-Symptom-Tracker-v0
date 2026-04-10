@@ -308,6 +308,45 @@ export async function resolveUserIdentifier(emailOrHint: string): Promise<Resolv
 }
 
 /**
+ * Resolves one exact test email, creating the auth user if needed.
+ * Why this exists: Parallel scenario evals need isolated user IDs so their
+ * purges and graph writes cannot race against a single shared test account.
+ */
+export async function ensureExactUser(email: string): Promise<ResolvedUser> {
+  const supabase = getAdminSupabase();
+  const { data, error } = await supabase.auth.admin.listUsers();
+
+  if (error) {
+    throw new Error(`Failed to list auth users: ${error.message}`);
+  }
+
+  const existingUser = (data.users ?? []).find((user) => user.email === email);
+  if (existingUser?.email) {
+    return {
+      userId: existingUser.id,
+      email: existingUser.email,
+      matchedBy: 'exact',
+    };
+  }
+
+  const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+    email,
+    password: `clue-test-${crypto.randomUUID()}`,
+    email_confirm: true,
+  });
+
+  if (createError || !createdUser.user?.email) {
+    throw new Error(`Failed to create test auth user "${email}": ${createError?.message ?? 'unknown error'}`);
+  }
+
+  return {
+    userId: createdUser.user.id,
+    email: createdUser.user.email,
+    matchedBy: 'exact',
+  };
+}
+
+/**
  * Deletes rows from a user-owned table.
  * Why this exists: Scenario evals should start from clean state so graph and
  * insight assertions reflect only the replay that just ran.

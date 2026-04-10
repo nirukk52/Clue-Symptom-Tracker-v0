@@ -65,8 +65,8 @@ function createDraftId(prefix: string): string {
 }
 
 /**
- * DarkCard keeps all Bearable-inspired quick-entry cards visually consistent
- * with the app's calmer dark-sheet treatment inside the cream shell.
+ * DarkCard keeps every quick-entry section visually compact so mobile logging
+ * feels closer to the chat sliders than to a stack of oversized dashboard cards.
  */
 function DarkCard({
   icon,
@@ -82,20 +82,20 @@ function DarkCard({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[28px] border border-primary/10 bg-[#1f1f23] text-white shadow-[0_22px_48px_rgba(15,23,42,0.12)]">
-      <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4">
+    <section className="overflow-hidden rounded-2xl border border-primary/8 bg-linear-to-r from-accent-mint/10 via-white to-accent-purple/10 text-primary shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+      <div className="flex items-start justify-between gap-2 px-3 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/30 bg-black/20 text-white/80">
-            <MaterialIcon name={icon} size="md" />
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/85 text-primary/65 shadow-sm">
+            <MaterialIcon name={icon} size="xs" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-[18px] font-semibold tracking-tight">{title}</h3>
-            {subtitle ? <p className="mt-1 text-[12px] text-white/60">{subtitle}</p> : null}
+            <h3 className="text-[14px] font-semibold tracking-tight">{title}</h3>
+            {subtitle ? <p className="mt-0.5 hidden text-[11px] leading-relaxed text-text-muted sm:block">{subtitle}</p> : null}
           </div>
         </div>
         {action}
       </div>
-      <div className="px-5 py-4">{children}</div>
+      <div className="px-3 pb-3">{children}</div>
     </section>
   );
 }
@@ -122,13 +122,13 @@ function FormSheet({
   return (
     <div className="fixed inset-0 z-85 flex items-end justify-center bg-primary/35 backdrop-blur-sm sm:items-center">
       <div className="absolute inset-0" aria-hidden="true" onClick={onClose} />
-      <div className="relative z-10 flex w-full max-w-lg flex-col rounded-t-[28px] border border-primary/10 bg-[#1f1f23] text-white shadow-2xl sm:rounded-[28px]">
-        <div className="flex items-center justify-between border-b border-white/8 px-5 py-4">
+      <div className="relative z-10 flex w-full max-w-lg flex-col rounded-t-[28px] border border-primary/10 bg-bg-cream text-primary shadow-2xl sm:rounded-[28px]">
+        <div className="flex items-center justify-between border-b border-primary/8 px-5 py-4">
           <p className="text-[16px] font-semibold">{title}</p>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/6 text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/5 text-primary/60 transition hover:bg-primary/8 hover:text-primary"
             aria-label={`Close ${title}`}
           >
             <MaterialIcon name="close" size="sm" />
@@ -141,8 +141,8 @@ function FormSheet({
 }
 
 /**
- * RatingSquares renders a large-touch 1-10 selector aligned with the supplied
- * mood/sleep screenshot pattern.
+ * RatingSquares keeps mood rating in the same compact visual language as the
+ * chat slider so quick entry does not feel heavier than conversational logging.
  */
 function RatingSquares({
   value,
@@ -151,22 +151,50 @@ function RatingSquares({
   value?: number;
   onChange: (value: number) => void;
 }) {
+  const safeValue = value ?? 5;
+  const percentage = ((safeValue - 1) / 9) * 100;
+
   return (
-    <div className="grid grid-cols-5 gap-3">
-      {Array.from({ length: 10 }, (_, index) => index + 1).map((rating) => (
-        <button
-          key={rating}
-          type="button"
-          onClick={() => onChange(rating)}
-          className={`rounded-[18px] border px-4 py-6 text-center text-[28px] font-semibold transition ${
-            rating === value
-              ? 'border-accent-mint/70 bg-accent-mint/15 text-accent-mint shadow-[0_0_0_1px_rgba(184,227,214,0.3)]'
-              : 'border-white/10 bg-white/7 text-white/82 hover:border-white/20 hover:bg-white/10'
-          }`}
-        >
-          {rating}
-        </button>
-      ))}
+    <div className="from-accent-mint/20 via-accent-peach/20 to-accent-rose/30 rounded-2xl bg-linear-to-r p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-[12px] font-medium text-primary">How is your mood today?</p>
+        <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-semibold text-primary shadow-sm">
+          {safeValue}/10
+        </span>
+      </div>
+      <div className="relative">
+        <div className="from-accent-mint via-accent-peach to-accent-rose h-2.5 w-full rounded-full bg-linear-to-r opacity-40" />
+        <div
+          className="from-accent-mint via-accent-peach to-accent-rose absolute left-0 top-0 h-2.5 rounded-full bg-linear-to-r transition-all duration-150"
+          style={{ width: `${percentage}%` }}
+        />
+        <div
+          className="absolute top-1/2 size-4 -translate-y-1/2 rounded-full border-2 border-white shadow-md transition-all duration-150"
+          style={{
+            left: `calc(${percentage}% - 8px)`,
+            backgroundColor:
+              safeValue <= 3
+                ? 'var(--color-accent-mint)'
+                : safeValue <= 6
+                  ? 'var(--color-accent-peach)'
+                  : 'var(--color-accent-rose)',
+          }}
+        />
+        <input
+          type="range"
+          min={1}
+          max={10}
+          value={safeValue}
+          onChange={(event) => onChange(Number(event.target.value))}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          aria-label="Mood rating"
+        />
+      </div>
+      <div className="mt-2 flex justify-between text-[11px] text-text-muted">
+        <span>Poor</span>
+        <span>Okay</span>
+        <span>Good</span>
+      </div>
     </div>
   );
 }
@@ -190,7 +218,7 @@ function FactorRatingControl({
   ];
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {options.map((option) => {
         const isActive = option.value === rating || (option.value === undefined && rating === undefined);
 
@@ -199,10 +227,10 @@ function FactorRatingControl({
             key={option.label}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`inline-flex h-14 w-14 items-center justify-center rounded-[18px] border transition ${
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-xl border transition ${
               isActive
-                ? 'border-accent-blue/70 bg-accent-blue/15 text-accent-blue'
-                : 'border-white/10 bg-white/7 text-white/75 hover:border-white/18 hover:bg-white/10'
+                ? 'border-primary bg-primary text-white'
+                : 'border-primary/10 bg-white text-primary/65 hover:border-primary/20 hover:bg-primary/3'
             }`}
             aria-label={`Set factor intensity to ${option.label}`}
           >
@@ -213,10 +241,10 @@ function FactorRatingControl({
                 {Array.from({ length: 3 }, (_, index) => (
                   <span
                     key={`${option.label}-${index}`}
-                    className={`w-1.5 rounded-full ${
+                    className={`w-1 rounded-full ${
                       index < (option.bars ?? 0) ? 'bg-current' : 'bg-current/25'
                     }`}
-                    style={{ height: `${10 + index * 8}px` }}
+                    style={{ height: `${8 + index * 6}px` }}
                   />
                 ))}
               </span>
@@ -236,10 +264,8 @@ export function MoodEntryCard({ mood, onChange }: MoodEntryCardProps) {
     <DarkCard
       icon="mood"
       title="Mood"
-      subtitle="Log the emotional tone of today in one tap."
-      action={<MaterialIcon name="more_horiz" size="sm" className="text-white/45" />}
     >
-      <div className="space-y-4">
+      <div className="space-y-2">
         <RatingSquares
           value={mood?.rating}
           onChange={(rating) => onChange({ rating, note: mood?.note })}
@@ -248,8 +274,8 @@ export function MoodEntryCard({ mood, onChange }: MoodEntryCardProps) {
           value={mood?.note ?? ''}
           onChange={(event) => onChange(mood ? { ...mood, note: event.target.value } : { rating: 5, note: event.target.value })}
           placeholder="Optional context for your mood today..."
-          rows={2}
-          className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-[13px] text-white placeholder:text-white/35 outline-none transition focus:border-accent-mint/50 focus:bg-white/8"
+          rows={1}
+          className="w-full rounded-xl border border-primary/10 bg-white px-3 py-2.5 text-[12px] text-primary placeholder:text-text-muted/80 outline-none transition focus:border-primary/20 focus:bg-white"
         />
       </div>
     </DarkCard>
@@ -313,19 +339,17 @@ export function MedicationEntryCard({
       <DarkCard
         icon="pill"
         title="Meds / Supplements"
-        subtitle="Keep your current meds visible so daily logging stays one tap away."
-        action={<MaterialIcon name="more_horiz" size="sm" className="text-white/45" />}
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           {medications.length > 0 ? (
             medications.map((medication) => (
               <div
                 key={medication.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3"
+                className="flex items-center justify-between gap-2 rounded-xl border border-primary/8 bg-white/80 px-3 py-2.5"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold text-white">{medication.medicationName}</p>
-                  <p className="mt-1 text-[12px] text-white/58">
+                  <p className="truncate text-[13px] font-semibold text-primary">{medication.medicationName}</p>
+                  <p className="mt-0.5 text-[11px] text-text-muted">
                     {[medication.dosage, medication.timing, medication.taken ? 'Taken' : 'Skipped']
                       .filter(Boolean)
                       .join(' · ')}
@@ -335,15 +359,16 @@ export function MedicationEntryCard({
                   <button
                     type="button"
                     onClick={() => openEditor(medication)}
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-[18px] border border-dashed border-white/28 bg-white/8 text-white transition hover:border-white/40 hover:bg-white/12"
+                    className="inline-flex h-8 items-center gap-1 rounded-full border border-primary/10 bg-primary/3 px-2.5 text-[11px] font-medium text-primary transition hover:border-primary/20 hover:bg-primary/5"
                     aria-label={`Edit ${medication.medicationName}`}
                   >
-                    <MaterialIcon name="add" size="sm" />
+                    <MaterialIcon name="edit" size="xs" />
+                    Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => onRemove(medication.id)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/6 text-white/60 transition hover:bg-white/10 hover:text-white"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/5 text-primary/55 transition hover:bg-primary/8 hover:text-primary"
                     aria-label={`Remove ${medication.medicationName}`}
                   >
                     <MaterialIcon name="delete" size="sm" />
@@ -352,7 +377,7 @@ export function MedicationEntryCard({
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-white/12 bg-white/4 px-4 py-5 text-[13px] text-white/58">
+            <div className="rounded-xl border border-dashed border-primary/12 bg-white/70 px-3 py-3 text-[12px] text-text-muted">
               Add the meds or supplements you want available for fast daily logging.
             </div>
           )}
@@ -360,10 +385,10 @@ export function MedicationEntryCard({
           <button
             type="button"
             onClick={() => openEditor()}
-            className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/8 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-white/12"
+            className="mx-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3.5 text-[12px] font-semibold text-primary transition hover:border-primary/20 hover:bg-primary/3"
           >
             <MaterialIcon name="add" size="sm" />
-            Add / Edit
+            Add medication
           </button>
         </div>
       </DarkCard>
@@ -375,7 +400,7 @@ export function MedicationEntryCard({
             <input
               value={medicationName}
               onChange={(event) => setMedicationName(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-[14px] text-white outline-none transition focus:border-accent-mint/50"
+              className="w-full rounded-2xl border border-primary/10 bg-white px-4 py-3 text-[14px] text-primary outline-none transition focus:border-primary/20"
               placeholder="e.g. Bactrim"
             />
           </label>
@@ -385,7 +410,7 @@ export function MedicationEntryCard({
               <input
                 value={dosage}
                 onChange={(event) => setDosage(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-[14px] text-white outline-none transition focus:border-accent-mint/50"
+                className="w-full rounded-2xl border border-primary/10 bg-white px-4 py-3 text-[14px] text-primary outline-none transition focus:border-primary/20"
                 placeholder="1 tablet"
               />
             </label>
@@ -394,7 +419,7 @@ export function MedicationEntryCard({
               <input
                 value={timing}
                 onChange={(event) => setTiming(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-[14px] text-white outline-none transition focus:border-accent-mint/50"
+                className="w-full rounded-2xl border border-primary/10 bg-white px-4 py-3 text-[14px] text-primary outline-none transition focus:border-primary/20"
                 placeholder="Morning"
               />
             </label>
@@ -410,8 +435,8 @@ export function MedicationEntryCard({
                 onClick={() => setTaken(option.value)}
                 className={`flex-1 rounded-2xl border px-4 py-3 text-[13px] font-medium transition ${
                   taken === option.value
-                    ? 'border-accent-mint/60 bg-accent-mint/15 text-accent-mint'
-                    : 'border-white/10 bg-white/6 text-white/70'
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-primary/10 bg-white text-primary/70'
                 }`}
               >
                 {option.label}
@@ -424,14 +449,14 @@ export function MedicationEntryCard({
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               rows={2}
-              className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-[14px] text-white outline-none transition focus:border-accent-mint/50"
+              className="w-full rounded-2xl border border-primary/10 bg-white px-4 py-3 text-[14px] text-primary outline-none transition focus:border-primary/20"
               placeholder="Optional context"
             />
           </label>
           <button
             type="button"
             onClick={saveMedicationDraft}
-            className="w-full rounded-full bg-white px-4 py-3 text-[14px] font-semibold text-primary transition hover:bg-white/90"
+            className="w-full rounded-full bg-primary px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-primary/92"
           >
             Save medication
           </button>
@@ -457,32 +482,20 @@ function renderFactorRow(params: {
   return (
     <div
       key={definition.key}
-      className="rounded-2xl border border-white/8 bg-white/4 px-4 py-3"
+      className="rounded-xl border border-primary/8 bg-white/80 px-3 py-2.5"
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/8 text-white/75">
-            <MaterialIcon name={definition.icon} size="sm" />
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/4 text-primary/60">
+            <MaterialIcon name={definition.icon} size="xs" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-white">{definition.label}</p>
-            <p className="mt-1 text-[11px] text-white/55">{category.label}</p>
+            <p className="truncate text-[12px] font-semibold text-primary">{definition.label}</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-[0.03em] text-text-muted">{category.label}</p>
           </div>
         </div>
-        {currentFactor ? (
-          <button
-            type="button"
-            onClick={() => onRemoveFactor(currentFactor.id)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/6 text-white/60 transition hover:bg-white/10 hover:text-white"
-            aria-label={`Remove ${definition.label}`}
-          >
-            <MaterialIcon name="close" size="sm" />
-          </button>
-        ) : null}
-      </div>
-
-      <div className="mt-3">
-        {definition.supportsRating ? (
+        <div className="shrink-0">
+          {definition.supportsRating ? (
           <FactorRatingControl
             rating={currentFactor?.rating}
             onChange={(rating) => {
@@ -502,7 +515,7 @@ function renderFactorRow(params: {
               });
             }}
           />
-        ) : (
+          ) : (
           <button
             type="button"
             onClick={() => {
@@ -519,15 +532,16 @@ function renderFactorRow(params: {
                 factorName: definition.label,
               });
             }}
-            className={`inline-flex rounded-full border px-4 py-2 text-[12px] font-medium transition ${
+            className={`inline-flex h-8 rounded-full border px-3 text-[11px] font-medium transition ${
               currentFactor
-                ? 'border-accent-mint/60 bg-accent-mint/15 text-accent-mint'
-                : 'border-white/12 bg-white/6 text-white/75 hover:border-white/20 hover:bg-white/10'
+                ? 'border-primary bg-primary text-white'
+                : 'border-primary/12 bg-white text-primary/75 hover:border-primary/20 hover:bg-primary/3'
             }`}
           >
             {currentFactor ? 'Logged for today' : 'Tap to log'}
           </button>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -567,19 +581,19 @@ export function SleepEntryCard({
       <DarkCard
         icon="hotel"
         title="Sleep"
-        subtitle="Keep sleep quality and sleep factors together on low-energy days."
         action={
           <button
             type="button"
             onClick={() => setIsPickerOpen(true)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/6 text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="inline-flex h-8 items-center gap-1 rounded-full border border-primary/10 bg-white px-2.5 text-[11px] font-medium text-primary transition hover:border-primary/20 hover:bg-primary/3"
             aria-label="Edit sleep factors"
           >
-            <MaterialIcon name="add" size="sm" />
+            <MaterialIcon name="tune" size="xs" />
+            Edit
           </button>
         }
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           {sleepOptions.map((item) =>
             renderFactorRow({
               definition: item,
@@ -653,10 +667,8 @@ export function FactorsEntryCard({
       <DarkCard
         icon="neurology"
         title="Other Factors"
-        subtitle="Keep likely triggers and supports visible without turning tracking into a chore."
-        action={<MaterialIcon name="more_horiz" size="sm" className="text-white/45" />}
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           {visibleCategories.map((category) => {
             const isExpanded = expandedCategoryKey === category.key;
             const visibleItems = category.items.filter((item) => {
@@ -665,25 +677,25 @@ export function FactorsEntryCard({
             });
 
             return (
-              <div key={category.key} className="overflow-hidden rounded-2xl border border-white/8 bg-white/4">
+              <div key={category.key} className="overflow-hidden rounded-xl border border-primary/8 bg-white/75">
                 <button
                   type="button"
                   onClick={() => setExpandedCategoryKey(isExpanded ? null : category.key)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/8 text-white/75">
-                      <MaterialIcon name={category.icon} size="sm" />
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/4 text-primary/60">
+                      <MaterialIcon name={category.icon} size="xs" />
                     </span>
-                    <span className="truncate text-[15px] font-semibold uppercase tracking-[0.04em] text-white/82">
+                    <span className="truncate text-[12px] font-semibold uppercase tracking-[0.04em] text-primary/80">
                       {category.label}
                     </span>
                   </div>
-                  <MaterialIcon name={isExpanded ? 'expand_less' : 'expand_more'} size="sm" className="text-white/75" />
+                  <MaterialIcon name={isExpanded ? 'expand_less' : 'expand_more'} size="sm" className="text-primary/55" />
                 </button>
 
                 {isExpanded ? (
-                  <div className="space-y-3 border-t border-white/8 px-4 py-4">
+                  <div className="space-y-2 border-t border-primary/8 px-3 py-2.5">
                     {visibleItems.map((item) =>
                       renderFactorRow({
                         definition: item,
@@ -697,7 +709,7 @@ export function FactorsEntryCard({
                       <button
                         type="button"
                         onClick={() => setItemPickerCategoryKey(category.key)}
-                        className="inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-[12px] font-medium text-white/85 transition hover:bg-white/12"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 text-[11px] font-medium text-primary transition hover:border-primary/20 hover:bg-primary/3"
                       >
                         <MaterialIcon name="add_circle" size="xs" />
                         Add item
@@ -705,7 +717,7 @@ export function FactorsEntryCard({
                       <button
                         type="button"
                         onClick={() => onToggleCategoryVisibility(category.key)}
-                        className="inline-flex items-center gap-2 rounded-full bg-white/6 px-4 py-2 text-[12px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary/5 px-3 text-[11px] font-medium text-primary/65 transition hover:bg-primary/8 hover:text-primary"
                       >
                         <MaterialIcon name="visibility_off" size="xs" />
                         Hide category
@@ -720,10 +732,10 @@ export function FactorsEntryCard({
           <button
             type="button"
             onClick={() => setIsCategoryPickerOpen(true)}
-            className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/8 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-white/12"
+            className="mx-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3.5 text-[12px] font-semibold text-primary transition hover:border-primary/20 hover:bg-primary/3"
           >
             <MaterialIcon name="add" size="sm" />
-            Add / Edit
+            Add category
           </button>
         </div>
       </DarkCard>
@@ -835,25 +847,23 @@ export function MeasurementsEntryCard({
       <DarkCard
         icon="favorite"
         title="Health Measurements"
-        subtitle="Keep the metrics you care about one tap away."
-        action={<MaterialIcon name="more_horiz" size="sm" className="text-white/45" />}
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           {visibleMetrics.map((metric) => {
             const currentMeasurement = measurements.find((measurement) => measurement.metricKey === metric.key);
 
             return (
               <div
                 key={metric.key}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3"
+                className="flex items-center justify-between gap-2 rounded-xl border border-primary/8 bg-white/80 px-3 py-2.5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/8 text-accent-mint">
-                    <MaterialIcon name={metric.icon} size="sm" />
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent-mint/30 text-primary/70">
+                    <MaterialIcon name={metric.icon} size="xs" />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold text-white">{metric.label}</p>
-                    <p className="mt-1 text-[12px] text-white/58">
+                    <p className="truncate text-[13px] font-semibold text-primary">{metric.label}</p>
+                    <p className="mt-0.5 text-[11px] text-text-muted">
                       {currentMeasurement ? `${currentMeasurement.value} ${metric.unit}` : metric.unit}
                     </p>
                   </div>
@@ -862,16 +872,17 @@ export function MeasurementsEntryCard({
                   <button
                     type="button"
                     onClick={() => openMetricEditor(metric.key)}
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-[18px] border border-dashed border-white/28 bg-white/8 text-white transition hover:border-white/40 hover:bg-white/12"
+                    className="inline-flex h-8 items-center gap-1 rounded-full border border-primary/10 bg-primary/3 px-2.5 text-[11px] font-medium text-primary transition hover:border-primary/20 hover:bg-primary/5"
                     aria-label={`Log ${metric.label}`}
                   >
-                    <MaterialIcon name="add" size="sm" />
+                    <MaterialIcon name={currentMeasurement ? 'edit' : 'add'} size="xs" />
+                    {currentMeasurement ? 'Edit' : 'Log'}
                   </button>
                   {currentMeasurement ? (
                     <button
                       type="button"
                       onClick={() => onRemoveMeasurement(currentMeasurement.id)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/6 text-white/60 transition hover:bg-white/10 hover:text-white"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/5 text-primary/55 transition hover:bg-primary/8 hover:text-primary"
                       aria-label={`Remove ${metric.label}`}
                     >
                       <MaterialIcon name="delete" size="sm" />
@@ -885,10 +896,10 @@ export function MeasurementsEntryCard({
           <button
             type="button"
             onClick={() => setIsPickerOpen(true)}
-            className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/8 px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-white/12"
+            className="mx-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3.5 text-[12px] font-semibold text-primary transition hover:border-primary/20 hover:bg-primary/3"
           >
             <MaterialIcon name="add" size="sm" />
-            Add / Edit
+            Add metric
           </button>
         </div>
       </DarkCard>
@@ -914,7 +925,7 @@ export function MeasurementsEntryCard({
               value={value}
               onChange={(event) => setValue(event.target.value)}
               inputMode="decimal"
-              className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-[14px] text-white outline-none transition focus:border-accent-mint/50"
+              className="w-full rounded-2xl border border-primary/10 bg-white px-4 py-3 text-[14px] text-primary outline-none transition focus:border-primary/20"
               placeholder={editingMetricDefinition?.unit}
             />
           </label>
@@ -924,14 +935,14 @@ export function MeasurementsEntryCard({
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               rows={2}
-              className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-[14px] text-white outline-none transition focus:border-accent-mint/50"
+              className="w-full rounded-2xl border border-primary/10 bg-white px-4 py-3 text-[14px] text-primary outline-none transition focus:border-primary/20"
               placeholder="Optional context"
             />
           </label>
           <button
             type="button"
             onClick={saveMeasurementDraft}
-            className="w-full rounded-full bg-white px-4 py-3 text-[14px] font-semibold text-primary transition hover:bg-white/90"
+            className="w-full rounded-full bg-primary px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-primary/92"
           >
             Save measurement
           </button>

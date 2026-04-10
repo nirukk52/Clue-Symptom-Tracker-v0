@@ -33,11 +33,10 @@ async function getRecentClueTexts(userId: string): Promise<string[]> {
   );
 
   const { data, error } = await supabase
-    .from('insights')
-    .select('content')
+    .from('graph_nodes')
+    .select('question_text')
     .eq('user_id', userId)
-    .eq('type', 'next_question')
-    .neq('status', 'dismissed')
+    .eq('type', 'unknown')
     .order('created_at', { ascending: false })
     .limit(5);
 
@@ -46,8 +45,8 @@ async function getRecentClueTexts(userId: string): Promise<string[]> {
     return [];
   }
 
-  return ((data as Array<{ content: string | null }> | null) ?? [])
-    .map((row) => row.content ?? '')
+  return ((data as Array<{ question_text: string | null }> | null) ?? [])
+    .map((row) => row.question_text ?? '')
     .filter(Boolean);
 }
 

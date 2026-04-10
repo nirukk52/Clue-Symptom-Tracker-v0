@@ -99,6 +99,20 @@ function parseNumericReply(text: string): number | null {
 }
 
 /**
+ * Parses a short qualitative slider reply like "poor" or "good".
+ * Why this exists: Low-energy follow-ups for sleep and mood often use words
+ * instead of numbers, but they still need deterministic context recovery.
+ */
+function parseQualitativeReply(text: string): string | null {
+  const normalized = text.trim().toLowerCase();
+  if (['poor', 'fair', 'okay', 'ok', 'good'].includes(normalized)) {
+    return normalized === 'ok' ? 'okay' : normalized;
+  }
+
+  return null;
+}
+
+/**
  * Infers the metric or symptom named in the assistant's previous question.
  * Why this exists: The Chat Agent should bind short answers back to the same
  * symptom/factor the assistant already narrowed down.
@@ -214,12 +228,42 @@ export async function resolveFollowupTurnNode(
     const previousAssistantText = getMessageText(previousAssistantMessage);
     const previousUserText = getMessageText(previousUserMessage);
     const rating = parseNumericReply(latestUserText);
+    const qualitativeReply = parseQualitativeReply(latestUserText);
     const assistantLooksLikeRatingQuestion =
       /[01]-10|0-10|1-10|severity|rate|how bad|how strong|pain level/i.test(previousAssistantText);
+    const assistantLooksLikeQualitativeQuestion =
+      /\bpoor\b|\bfair\b|\bokay\b|\bgood\b/.test(previousAssistantText.toLowerCase());
     const fallbackMetric = inferMetricFromPreviousUserReply(previousUserText);
     const shortFollowupLabel = isShortFollowupLabel(previousUserText);
 
-    if (rating === null || (!assistantLooksLikeRatingQuestion && !fallbackMetric && !shortFollowupLabel)) {
+    if (
+      rating === null &&
+      qualitativeReply === null
+    ) {
+      return {
+        modelMessages: state.messages,
+        turnResolution: null,
+        resolvedFollowupAction: null,
+      };
+    }
+
+    if (
+      rating === null &&
+      (!assistantLooksLikeQualitativeQuestion || !inferQuestionMetric(previousAssistantText))
+    ) {
+      return {
+        modelMessages: state.messages,
+        turnResolution: null,
+        resolvedFollowupAction: null,
+      };
+    }
+
+    if (
+      rating !== null &&
+      !assistantLooksLikeRatingQuestion &&
+      !fallbackMetric &&
+      !shortFollowupLabel
+    ) {
       return {
         modelMessages: state.messages,
         turnResolution: null,
@@ -230,6 +274,33 @@ export async function resolveFollowupTurnNode(
     const metric = assistantLooksLikeRatingQuestion
       ? inferQuestionMetric(previousAssistantText)
       : fallbackMetric;
+
+    if (qualitativeReply && assistantLooksLikeQualitativeQuestion) {
+      const qualitativeMetric = inferQuestionMetric(previousAssistantText);
+      if (!qualitativeMetric) {
+        return {
+          modelMessages: state.messages,
+          turnResolution: null,
+          resolvedFollowupAction: null,
+        };
+      }
+
+      const humanizedReply =
+        qualitativeMetric.toLowerCase() === 'sleep'
+          ? `${qualitativeReply} sleep quality`
+          : `${qualitativeReply} ${qualitativeMetric}`;
+
+      return {
+        modelMessages: replaceLatestUserText(
+          state.messages,
+          `My answer to your previous ${qualitativeMetric} follow-up is ${humanizedReply}. This is about ${qualitativeMetric}, not a different symptom or factor.`,
+          latestUserMessage.id
+        ),
+        turnResolution: `The latest short reply means the user's ${qualitativeMetric} should be interpreted as "${humanizedReply}".`,
+        resolvedFollowupAction: null,
+      };
+    }
+
     const resolvedSymptomName =
       metric?.toLowerCase() === 'energy'
         ? 'Fatigue'

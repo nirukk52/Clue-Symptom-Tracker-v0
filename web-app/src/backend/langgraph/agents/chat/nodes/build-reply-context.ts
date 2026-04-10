@@ -7,7 +7,6 @@
  */
 
 import { buildSystemPrompt } from '@/backend/agents/clue/prompts/system';
-import { setActiveUserId } from '@/backend/agents/clue/tools/chat-tools';
 
 import type { ChatAgentStateType, ChatAgentStateUpdate } from '../state';
 
@@ -21,6 +20,20 @@ const EXPLICIT_SEVERITY_PATTERN =
  */
 function hasExplicitSeverity(text: string): boolean {
   return EXPLICIT_SEVERITY_PATTERN.test(text);
+}
+
+/**
+ * Detects terse follow-up answers like "yes", "earlier today", or "meal and stress".
+ * Why this exists: These replies usually complete the current logging thread and
+ * should not have a queued clue appended into the same assistant message.
+ */
+function isShortFollowupReply(text: string): boolean {
+  const normalized = text.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  return normalized.split(/\s+/).length <= 4;
 }
 
 /**
@@ -39,7 +52,7 @@ function shouldDeferNextClueForSeverityCollection(state: ChatAgentStateType): bo
 
   const mentionedSymptoms = state.extractedEntities.some((entity) => entity.type === 'symptom');
   if (!mentionedSymptoms) {
-    return false;
+    return isShortFollowupReply(state.userMessageText);
   }
 
   return !hasExplicitSeverity(state.userMessageText);
@@ -54,7 +67,6 @@ export async function buildReplyContextNode(
   state: ChatAgentStateType
 ): Promise<ChatAgentStateUpdate> {
   try {
-    setActiveUserId(state.userId);
     const deferNextClueForSeverityCollection = shouldDeferNextClueForSeverityCollection(state);
 
     return {

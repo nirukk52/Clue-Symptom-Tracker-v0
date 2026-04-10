@@ -10,6 +10,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { executeInsightAgent } from '@/backend/langgraph';
 import { upsertGraphNode } from '@/backend/lib/graph';
+import { canonicalizeMedicationName } from '@/backend/lib/openmed/client';
 import type {
   QuickEntryFactorDraft,
   QuickEntryMeasurementDraft,
@@ -304,10 +305,11 @@ async function saveMedication(params: {
   source: QuickEntrySource;
 }): Promise<void> {
   const { supabase, userId, medication, source } = params;
+  const canonicalMedicationName = canonicalizeMedicationName(medication.medicationName);
 
   const { error: medicationError } = await supabase.from('medication_logs').insert({
     user_id: userId,
-    med_name: medication.medicationName,
+    med_name: canonicalMedicationName,
     dosage: medication.dosage?.trim() || null,
     taken: medication.taken,
     timing: medication.timing?.trim() || null,
@@ -318,7 +320,7 @@ async function saveMedication(params: {
   if (medicationError && isMissingColumnError(medicationError.message)) {
     const { error: fallbackMedicationError } = await supabase.from('medication_logs').insert({
       user_id: userId,
-      med_name: medication.medicationName,
+      med_name: canonicalMedicationName,
       dosage: medication.dosage?.trim() || null,
       taken: medication.taken,
       timing: medication.timing?.trim() || null,
@@ -335,7 +337,7 @@ async function saveMedication(params: {
   let { error: timelineError } = await supabase.from('timeline_entries').insert({
     user_id: userId,
     type: 'medication',
-    title: medication.medicationName,
+    title: canonicalMedicationName,
     description: buildMedicationTimelineDescription(medication),
     dosage: medication.dosage?.trim() || null,
     status: medication.taken ? 'current' : 'issue',
@@ -346,7 +348,7 @@ async function saveMedication(params: {
     const fallbackResult = await supabase.from('timeline_entries').insert({
       user_id: userId,
       type: 'medication',
-      title: medication.medicationName,
+      title: canonicalMedicationName,
       description: buildMedicationTimelineDescription(medication),
       dosage: medication.dosage?.trim() || null,
       status: medication.taken ? 'current' : 'issue',
@@ -360,7 +362,7 @@ async function saveMedication(params: {
 
   await upsertGraphNode(userId, {
     type: 'medication',
-    name: medication.medicationName,
+    name: canonicalMedicationName,
     subLabel: medication.dosage?.trim() || (medication.taken ? 'Taken today' : 'Skipped today'),
     data: {
       latestDosage: medication.dosage?.trim() || null,

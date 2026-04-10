@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { models } from '../ai/providers';
 import type { AtomicFact } from '../memory';
 import type { GraphNodeType } from '@/components/clue-chat/types';
+import { canonicalizeMedicationName } from '@/backend/lib/openmed/client';
 
 // =============================================================================
 // TYPES
@@ -104,7 +105,11 @@ export async function extractEntities(
       prompt: `${ENTITY_EXTRACTION_PROMPT}\n\nUSER MESSAGES:\n${conversationText}`,
     });
 
-    return result.object.entities as ExtractedEntity[];
+    return (result.object.entities as ExtractedEntity[]).map((entity) =>
+      entity.type === 'medication'
+        ? { ...entity, name: canonicalizeMedicationName(entity.name) }
+        : entity
+    );
   } catch (error) {
     console.error('[graph] Entity extraction failed:', error);
     return [];
@@ -135,7 +140,10 @@ export function factsToEntities(facts: AtomicFact[]): ExtractedEntity[] {
 
       entities.push({
         type: fact.category as GraphNodeType,
-        name: capitalize(entityName),
+        name:
+          fact.category === 'medication'
+            ? canonicalizeMedicationName(entityName)
+            : capitalize(entityName),
         data: JSON.stringify({ sourceFact: fact.fact }),
       });
     }

@@ -11,6 +11,7 @@ import { readFile } from 'node:fs/promises';
 import {
   buildUserStateSnapshot,
   createConversation,
+  ensureExactUser,
   purgeUserState,
   resolveUserIdentifier,
   sendChatTurn,
@@ -31,6 +32,8 @@ interface EvalConfig {
   emailOrHint: string;
   scenarioIds: string[];
   runAll: boolean;
+  parallel: boolean;
+  workers: number;
   baseUrl: string;
   pauseMs: number;
   settleMs: number;
@@ -129,6 +132,7 @@ interface ScenarioTurn {
  */
 interface TestScenario {
   persona_id: string;
+  test_user_email: string;
   persona_name: string;
   user_first_reply: string;
   expected_agent_sequence: ScenarioTurn[];
@@ -166,11 +170,14 @@ function printUsage(): void {
   console.log(`Usage:
   npm run eval-clue-chat -- --email "<email-or-hint>" --scenario "<persona_id>"
   npm run eval-clue-chat -- --email "<email-or-hint>" --all
+  npm run eval-clue-chat -- --all --parallel
 
 Options:
-  --email <value>       Required. Exact email or a unique partial lookup hint.
+  --email <value>       Required for shared-user serial runs. Ignored by --parallel.
   --scenario <value>    Optional. Repeat to run specific persona IDs.
   --all                 Optional. Run every scenario in test-cases.md.
+  --parallel            Optional. Run scenarios in parallel with per-scenario users.
+  --workers <value>     Optional. Parallel worker count. Defaults to 3.
   --base-url <value>    Optional. Defaults to http://localhost:3000
   --pause-ms <value>    Optional. Delay between turns. Defaults to 2500.
   --settle-ms <value>   Optional. Final wait for post-turn agents. Defaults to 6000.
@@ -189,6 +196,8 @@ function parseArgs(argv: string[]): EvalConfig {
     emailOrHint: '',
     scenarioIds: [],
     runAll: false,
+    parallel: false,
+    workers: 3,
     baseUrl: 'http://localhost:3000',
     pauseMs: 2500,
     settleMs: 6000,
@@ -215,6 +224,17 @@ function parseArgs(argv: string[]): EvalConfig {
 
     if (arg === '--all') {
       config.runAll = true;
+      continue;
+    }
+
+    if (arg === '--parallel') {
+      config.parallel = true;
+      continue;
+    }
+
+    if (arg === '--workers') {
+      config.workers = Number(argv[index + 1] ?? config.workers);
+      index += 1;
       continue;
     }
 
@@ -247,9 +267,13 @@ function parseArgs(argv: string[]): EvalConfig {
     }
   }
 
-  if (!config.emailOrHint || (!config.runAll && config.scenarioIds.length === 0)) {
+  if ((!config.parallel && !config.emailOrHint) || (!config.runAll && config.scenarioIds.length === 0)) {
     printUsage();
-    throw new Error('Pass --email and either --all or at least one --scenario.');
+    throw new Error('Pass either --email for serial runs or --parallel, plus either --all or at least one --scenario.');
+  }
+
+  if (!Number.isInteger(config.workers) || config.workers < 1) {
+    throw new Error('--workers must be a positive integer.');
   }
 
   return config;
@@ -663,28 +687,80 @@ async function runScenarioReplay(
   scenario: TestScenario,
   config: EvalConfig,
   userId: string,
-  email: string
+  email: string,
+  logPrefix = ''
 ): Promise<UserStateSnapshot> {
   if (!config.keepData) {
     const deletedCount = await purgeUserState(userId);
-    console.log(`  Purged ${deletedCount} row(s) before replay.`);
+    console.log(`${logPrefix}Purged ${deletedCount} row(s) before replay.`);
   }
 
   const messages = getReplayMessages(scenario);
   const conversationId = await createConversation(config.baseUrl, userId);
-  console.log(`  conversationId=${conversationId}`);
+  console.log(`${logPrefix}conversationId=${conversationId}`);
 
   for (const message of messages) {
     const raw = await sendChatTurn(config.baseUrl, userId, conversationId, message);
-    console.log(`  sent: ${message}`);
-    console.log(`  stream preview: ${raw.slice(0, 160).replace(/\n/g, ' ')}`);
+    console.log(`${logPrefix}sent: ${message}`);
+    console.log(`${logPrefix}stream preview: ${raw.slice(0, 160).replace(/\n/g, ' ')}`);
     await sleep(config.pauseMs);
   }
 
-  console.log(`  Waiting ${config.settleMs}ms for post-turn agents...`);
+  console.log(`${logPrefix}Waiting ${config.settleMs}ms for post-turn agents...`);
   await sleep(config.settleMs);
 
   return buildUserStateSnapshot(userId, email, config.baseUrl);
+}
+
+/**
+ * Resolves the auth user for one scenario run.
+ * Why this exists: Serial runs keep using the shared test user, while parallel
+ * runs need isolated scenario-owned auth identities to avoid data races.
+ */
+async function resolveScenarioUser(
+  scenario: TestScenario,
+  config: EvalConfig,
+  sharedResolvedUser: Awaited<ReturnType<typeof resolveUserIdentifier>> | null
+): Promise<Awaited<ReturnType<typeof ensureExactUser>>> {
+  if (config.parallel) {
+    return ensureExactUser(scenario.test_user_email);
+  }
+
+  if (sharedResolvedUser) {
+    return sharedResolvedUser;
+  }
+
+  return ensureExactUser(scenario.test_user_email);
+}
+
+/**
+ * Replays and scores one scenario with the appropriate user isolation strategy.
+ * Why this exists: The suite should share one implementation for both serial
+ * and parallel modes so evaluation logic stays consistent.
+ */
+async function runAndEvaluateScenario(
+  scenario: TestScenario,
+  config: EvalConfig,
+  sharedResolvedUser: Awaited<ReturnType<typeof resolveUserIdentifier>> | null
+): Promise<ScenarioEvalResult> {
+  const resolvedUser = await resolveScenarioUser(scenario, config, sharedResolvedUser);
+  const logPrefix = config.parallel ? `  [${scenario.persona_id}] ` : '  ';
+
+  console.log(`\nRunning ${scenario.persona_id}...`);
+  if (config.parallel) {
+    console.log(`${logPrefix}user=${resolvedUser.email}`);
+  }
+
+  const snapshot = await runScenarioReplay(
+    scenario,
+    config,
+    resolvedUser.userId,
+    resolvedUser.email,
+    logPrefix
+  );
+  const result = evaluateScenarioState(scenario, snapshot);
+  printScenarioResult(result);
+  return result;
 }
 
 /**
@@ -718,25 +794,45 @@ async function main(): Promise<void> {
   const config = parseArgs(process.argv.slice(2));
   const catalog = await loadScenarioCatalog();
   const scenarios = selectScenarios(catalog, config);
-  const resolvedUser = await resolveUserIdentifier(config.emailOrHint);
+  const resolvedUser = config.parallel ? null : await resolveUserIdentifier(config.emailOrHint);
 
-  console.log(`Resolved user: ${resolvedUser.email} (${resolvedUser.userId}) via ${resolvedUser.matchedBy} match`);
+  if (resolvedUser) {
+    console.log(`Resolved user: ${resolvedUser.email} (${resolvedUser.userId}) via ${resolvedUser.matchedBy} match`);
+  } else {
+    console.log('Resolved users: scenario-owned exact emails (parallel mode)');
+  }
   console.log(`Base URL: ${config.baseUrl}`);
   console.log(`Scenarios: ${scenarios.length}`);
+  if (config.parallel) {
+    console.log(`Workers: ${Math.min(config.workers, scenarios.length)}`);
+  }
 
-  const results: ScenarioEvalResult[] = [];
+  let results: ScenarioEvalResult[] = [];
 
-  for (const scenario of scenarios) {
-    console.log(`\nRunning ${scenario.persona_id}...`);
-    const snapshot = await runScenarioReplay(
-      scenario,
-      config,
-      resolvedUser.userId,
-      resolvedUser.email
-    );
-    const result = evaluateScenarioState(scenario, snapshot);
-    results.push(result);
-    printScenarioResult(result);
+  if (!config.parallel) {
+    results = [];
+    for (const scenario of scenarios) {
+      results.push(await runAndEvaluateScenario(scenario, config, resolvedUser));
+    }
+  } else {
+    const orderedResults: ScenarioEvalResult[] = new Array(scenarios.length);
+    let nextScenarioIndex = 0;
+    const workerCount = Math.min(config.workers, scenarios.length);
+
+    async function runWorker(): Promise<void> {
+      while (nextScenarioIndex < scenarios.length) {
+        const scenarioIndex = nextScenarioIndex;
+        nextScenarioIndex += 1;
+        orderedResults[scenarioIndex] = await runAndEvaluateScenario(
+          scenarios[scenarioIndex],
+          config,
+          resolvedUser
+        );
+      }
+    }
+
+    await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+    results = orderedResults;
   }
 
   const passedCount = results.filter((result) => result.passed).length;

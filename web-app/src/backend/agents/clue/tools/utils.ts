@@ -1,10 +1,11 @@
 /**
  * Shared utilities for Clue chat tools
  *
- * Why this exists: Provides shared Supabase client and user ID management
- * across all tool definitions, preventing code duplication.
+ * Why this exists: Provides shared Supabase client and request-scoped user ID
+ * access across all tool definitions, preventing cross-request leakage.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { createClient } from '@supabase/supabase-js';
 
 /** Server-side Supabase client for tool operations (lazy-initialized for build safety) */
@@ -15,16 +16,22 @@ export function getSupabase() {
   );
 }
 
-/**
- * Actual user ID set by the API route before tool execution.
- * Prevents GPT-4o from fabricating user IDs in tool calls.
- */
-let _activeUserId = 'anonymous';
+const activeUserIdStorage = new AsyncLocalStorage<string>();
 
-export function setActiveUserId(uid: string) {
-  _activeUserId = uid;
+/**
+ * Runs one callback inside a request-scoped tool user context.
+ * Why this exists: Parallel chat requests must not share one mutable global
+ * user ID or tool writes can bleed across conversations.
+ */
+export function withActiveUserId<T>(uid: string, run: () => T): T {
+  return activeUserIdStorage.run(uid, run);
 }
 
+/**
+ * Returns the current request-scoped tool user ID.
+ * Why this exists: Tool definitions need a deterministic user target without
+ * trusting the model to supply one in every tool call.
+ */
 export function getUid() {
-  return _activeUserId;
+  return activeUserIdStorage.getStore() ?? 'anonymous';
 }

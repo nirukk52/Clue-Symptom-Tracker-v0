@@ -470,29 +470,29 @@ export function QuickEntryPanel({
             : 'relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-bg-cream shadow-xl sm:max-w-3xl sm:rounded-3xl'
         }
       >
-        <div className="flex items-center justify-between border-b border-primary/8 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-primary/8 px-4 py-3">
           <div>
             <div className="flex items-center gap-2">
               <MaterialIcon name="add_circle" size="sm" className="text-primary/70" />
-              <h2 className="text-[16px] font-semibold text-primary">Quick Entry</h2>
+              <h2 className="text-[15px] font-semibold text-primary">Quick Entry</h2>
             </div>
-            <p className="mt-0.5 text-[12px] text-text-muted">
+            <p className="mt-0.5 text-[11px] leading-relaxed text-text-muted">
               Structured logging for low-energy days, without the chat overhead.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition hover:bg-primary/5 hover:text-primary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-primary/5 hover:text-primary"
             aria-label={isInline ? 'Return to chat' : 'Close quick entry'}
           >
             <MaterialIcon name="close" size="sm" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex-1 overflow-y-auto px-3 py-3">
           {!userId ? (
-            <div className="rounded-[28px] border border-primary/10 bg-white px-5 py-6 text-center shadow-[0_18px_36px_rgba(15,23,42,0.06)]">
+            <div className="rounded-2xl border border-primary/10 bg-white px-5 py-6 text-center shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
               <p className="text-[16px] font-semibold text-primary">Sign in to use structured quick entry</p>
               <p className="mt-2 text-[13px] leading-relaxed text-text-muted">
                 Quick entry now saves directly to your structured history, timeline, and canvas. Once signed in, this tab will load your current day automatically.
@@ -501,7 +501,7 @@ export function QuickEntryPanel({
           ) : isLoading ? (
             <div className="flex items-center justify-center py-12 text-[13px] text-text-muted">Loading quick entry...</div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <MoodEntryCard mood={snapshot.mood} onChange={(nextMood) => setSnapshot((current) => ({ ...current, mood: nextMood }))} />
               <MedicationEntryCard medications={snapshot.medications} onUpsert={upsertMedication} onRemove={removeMedication} />
               <SleepEntryCard
@@ -531,7 +531,7 @@ export function QuickEntryPanel({
           )}
         </div>
 
-        <div className="border-t border-primary/8 px-5 py-4">
+        <div className="border-t border-primary/8 px-4 py-3">
           {errorMessage ? (
             <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">
               {errorMessage}

@@ -6,6 +6,7 @@
  */
 
 import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
+import { canonicalizeMedicationName } from '@/backend/lib/openmed/client';
 import { extractBiomedicalEntities, extractFactors } from '@/backend/lib/openmed';
 
 import type {
@@ -15,6 +16,19 @@ import type {
 } from '../state';
 
 const MIN_OPENMED_CONFIDENCE = 0.75;
+const FACTOR_ONLY_SYMPTOM_NAMES = new Set([
+  'cycle',
+  'energy',
+  'food',
+  'hydration',
+  'meal',
+  'mood',
+  'period',
+  'sleep',
+  'stress',
+]);
+const MOOD_CONTEXT_PATTERN =
+  /\bmood\b|\bfeel(?:ing)?\b|\bhappy\b|\bsad\b|\bdown\b|\banxious\b|\bdepressed\b|\birritable\b/;
 
 /**
  * Converts factor extraction output into graph-ready factor entities.
@@ -23,11 +37,13 @@ const MIN_OPENMED_CONFIDENCE = 0.75;
  */
 function factorValuesToEntities(
   factors: Awaited<ReturnType<typeof extractFactors>>,
+  sourceText: string,
   timestamp?: string
 ): ReconciledEntity[] {
   const entities: ReconciledEntity[] = [];
+  const normalizedText = sourceText.toLowerCase();
 
-  if (factors.sleep_hours !== null) {
+  if (factors.sleep_hours !== null && /\bsleep(?:ing)?\b|\bslept\b|\bbed\b|\bnap\b/.test(normalizedText)) {
     entities.push({
       type: 'factor',
       name: 'Sleep',
@@ -37,7 +53,7 @@ function factorValuesToEntities(
     });
   }
 
-  if (factors.stress_level !== null) {
+  if (factors.stress_level !== null && /\bstress(?:ed)?\b|\boverwhelm(?:ed)?\b/.test(normalizedText)) {
     entities.push({
       type: 'factor',
       name: 'Stress',
@@ -47,7 +63,7 @@ function factorValuesToEntities(
     });
   }
 
-  if (factors.energy_level !== null) {
+  if (factors.energy_level !== null && /\benergy\b/.test(normalizedText)) {
     entities.push({
       type: 'factor',
       name: 'Energy',
@@ -57,7 +73,7 @@ function factorValuesToEntities(
     });
   }
 
-  if (factors.mood_rating !== null) {
+  if (factors.mood_rating !== null && MOOD_CONTEXT_PATTERN.test(normalizedText)) {
     entities.push({
       type: 'factor',
       name: 'Mood',
@@ -78,6 +94,7 @@ function factorValuesToEntities(
 function extractMentionedFactorEntities(text: string, timestamp?: string): ReconciledEntity[] {
   const normalizedText = text.toLowerCase();
   const factorMatchers: Array<{ name: string; pattern: RegExp }> = [
+    { name: 'Sleep', pattern: /\bsleep(?:ing)?\b|\bslept\b|\binsomnia\b/ },
     { name: 'Meal', pattern: /\bmeal(s)?\b|\bfood\b/ },
     { name: 'Stress', pattern: /\bstress(ed)?\b/ },
     { name: 'Cycle', pattern: /\bcycle\b|\bperiod\b|\bhormone(s)?\b/ },
@@ -113,6 +130,28 @@ function tokenizeLabel(value: string): string[] {
     .split(/[^a-z0-9]+/)
     .map((part) => part.trim())
     .filter(Boolean);
+}
+
+/**
+ * Detects a bare numeric follow-up reply such as "6" or "7/10".
+ * Why this exists: Severity-only replies should not be reinterpreted as mood or
+ * energy factors during the graph recovery pass.
+ */
+function isBareNumericReply(value: string): boolean {
+  return /^([0-9]|10)(?:\s*\/\s*10)?$/.test(value.trim());
+}
+
+/**
+ * Filters out symptom candidates that are actually factor concepts.
+ * Why this exists: OpenMed can recover tokens like "stress" from user text, but
+ * in this graph model those belong as factors instead of symptom nodes.
+ */
+function isFactorLikeSymptom(entity: ReconciledEntity): boolean {
+  if (entity.type !== 'symptom') {
+    return false;
+  }
+
+  return FACTOR_ONLY_SYMPTOM_NAMES.has(entity.name.trim().toLowerCase());
 }
 
 /**
@@ -164,7 +203,7 @@ function buildLogEntities(state: GraphReconcilerStateType): ReconciledEntity[] {
 
   const medicationEntities = state.recentLogs.medicationLogs.map<ReconciledEntity>((log) => ({
     type: 'medication',
-    name: log.medication_name,
+    name: canonicalizeMedicationName(log.medication_name),
     source: 'log',
     timestamp: log.logged_at,
     notes: log.notes,
@@ -192,6 +231,11 @@ function filterGapEntities(
   recoveredEntities: ReconciledEntity[]
 ): ReconciledEntity[] {
   const logKeys = new Set(logEntities.map(entityKey));
+  const factorNames = new Set(
+    [...logEntities, ...recoveredEntities]
+      .filter((entity) => entity.type === 'factor')
+      .map((entity) => entity.name.trim().toLowerCase())
+  );
   const seenRecovered = new Set<string>();
 
   return recoveredEntities.filter((entity) => {
@@ -204,6 +248,14 @@ function filterGapEntities(
     }
 
     if (entity.source === 'openmed' && entity.provisional && isCoveredByLoggedSymptom(entity, logEntities)) {
+      return false;
+    }
+
+    if (isFactorLikeSymptom(entity)) {
+      return false;
+    }
+
+    if (entity.type === 'symptom' && factorNames.has(entity.name.trim().toLowerCase())) {
       return false;
     }
 
@@ -227,9 +279,14 @@ export async function extractEntitiesNode(
 ): Promise<GraphReconcilerStateUpdate> {
   try {
     const logEntities = buildLogEntities(state);
-    const userOnlyText = state.recentMessages
-      .filter((message) => message.role === 'user')
+    const userMessages = state.recentMessages.filter((message) => message.role === 'user');
+    const userOnlyText = userMessages
       .map((message) => message.content)
+      .join('\n')
+      .trim();
+    const factorExtractionText = userMessages
+      .map((message) => message.content.trim())
+      .filter((content) => content.length > 0 && !isBareNumericReply(content))
       .join('\n')
       .trim();
     const latestTimestamp =
@@ -240,8 +297,8 @@ export async function extractEntitiesNode(
 
     const [biomedicalEntities, factorValues] = await Promise.all([
       userOnlyText ? extractBiomedicalEntities(userOnlyText) : Promise.resolve([]),
-      userOnlyText
-        ? extractFactors(userOnlyText)
+      factorExtractionText
+        ? extractFactors(factorExtractionText)
         : Promise.resolve({
             sleep_hours: null,
             stress_level: null,
@@ -262,7 +319,7 @@ export async function extractEntitiesNode(
         rawText: entity.rawText,
       })),
       ...extractMentionedFactorEntities(userOnlyText, latestTimestamp),
-      ...factorValuesToEntities(factorValues, latestTimestamp),
+      ...factorValuesToEntities(factorValues, factorExtractionText, latestTimestamp),
     ];
 
     return {
