@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import {
   getQuickEntrySnapshot,
+  getSavedMedicationsForUser,
   saveQuickEntrySnapshot,
   type QuickEntrySource,
 } from '@/backend/lib/quick-entry';
@@ -93,8 +94,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    const snapshot = await getQuickEntrySnapshot({ userId, targetDate });
-    return Response.json({ snapshot });
+    const [snapshot, savedMedications] = await Promise.all([
+      getQuickEntrySnapshot({ userId, targetDate }),
+      getSavedMedicationsForUser({ userId }),
+    ]);
+    return Response.json({ snapshot, savedMedications });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to load quick entry snapshot.';
     console.error('[api/quick-entry] GET failed:', error);
@@ -117,12 +121,15 @@ export async function POST(req: Request) {
       snapshot: body.snapshot as QuickEntrySnapshot,
     });
 
-    const snapshot = await getQuickEntrySnapshot({
-      userId: body.userId,
-      targetDate: body.targetDate,
-    });
+    const [snapshot, savedMedications] = await Promise.all([
+      getQuickEntrySnapshot({
+        userId: body.userId,
+        targetDate: body.targetDate,
+      }),
+      getSavedMedicationsForUser({ userId: body.userId }),
+    ]);
 
-    return Response.json({ success: true, snapshot });
+    return Response.json({ success: true, snapshot, savedMedications });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return Response.json(

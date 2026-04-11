@@ -15,9 +15,11 @@ import type {
   QuickEntryFactorDraft,
   QuickEntryMeasurementDraft,
   QuickEntryMedicationDraft,
+  QuickEntrySavedMedication,
   QuickEntryMoodDraft,
   QuickEntrySnapshot,
 } from '@/lib/quick-entry';
+import { toQuickEntrySavedMedication } from '@/lib/quick-entry';
 
 /**
  * QuickEntrySource tracks where a structured save originated so edits can
@@ -96,6 +98,29 @@ function getDayBounds(targetDate?: string): { start: string; end: string } {
     start: startDate.toISOString(),
     end: endDate.toISOString(),
   };
+}
+
+/**
+ * buildMoodTimestamp combines the selected quick-entry day with the optional
+ * mood time so the saved log can reflect when the user says the mood applied.
+ */
+function buildMoodTimestamp(mood: QuickEntryMoodDraft, targetDate?: string): string | undefined {
+  if (!mood.time) {
+    return undefined;
+  }
+
+  const baseDate = targetDate ? new Date(`${targetDate}T12:00:00.000Z`) : new Date();
+  const [hoursString, minutesString] = mood.time.split(':');
+  const hours = Number(hoursString);
+  const minutes = Number(minutesString);
+
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+    return undefined;
+  }
+
+  const timestamp = new Date(baseDate);
+  timestamp.setHours(hours, minutes, 0, 0);
+  return timestamp.toISOString();
 }
 
 /**
@@ -236,13 +261,16 @@ async function saveMood(params: {
   userId: string;
   mood: QuickEntryMoodDraft;
   source: QuickEntrySource;
+  targetDate?: string;
 }): Promise<void> {
-  const { supabase, userId, mood, source } = params;
+  const { supabase, userId, mood, source, targetDate } = params;
+  const moodTimestamp = buildMoodTimestamp(mood, targetDate);
 
   const { error: moodError } = await supabase.from('mood_logs').insert({
     user_id: userId,
     rating: mood.rating,
     note: mood.note?.trim() || null,
+    logged_at: moodTimestamp,
     source,
   });
 
@@ -251,6 +279,7 @@ async function saveMood(params: {
       user_id: userId,
       rating: mood.rating,
       note: mood.note?.trim() || null,
+      logged_at: moodTimestamp,
     });
 
     if (fallbackMoodError) {
@@ -265,6 +294,7 @@ async function saveMood(params: {
     type: 'mood',
     title: `Mood ${mood.rating}/10`,
     description: buildMoodTimelineDescription(mood),
+    entry_time: moodTimestamp,
     source,
   });
 
@@ -274,6 +304,7 @@ async function saveMood(params: {
       type: 'mood',
       title: `Mood ${mood.rating}/10`,
       description: buildMoodTimelineDescription(mood),
+      entry_time: moodTimestamp,
     });
     timelineError = fallbackResult.error;
   }
@@ -543,7 +574,7 @@ export async function saveQuickEntrySnapshot(params: {
   });
 
   if (snapshot.mood) {
-    await saveMood({ supabase, userId, mood: snapshot.mood, source });
+    await saveMood({ supabase, userId, mood: snapshot.mood, source, targetDate });
   }
 
   for (const medication of snapshot.medications) {
@@ -577,7 +608,7 @@ async function getLatestMoodForDay(params: {
   const { supabase, userId, start, end } = params;
   const { data, error } = await supabase
     .from('mood_logs')
-    .select('rating, note')
+    .select('rating, note, logged_at')
     .eq('user_id', userId)
     .gte('logged_at', start)
     .lte('logged_at', end)
@@ -591,6 +622,7 @@ async function getLatestMoodForDay(params: {
 
   return {
     rating: data.rating,
+    time: typeof data.logged_at === 'string' ? data.logged_at.slice(11, 16) : undefined,
     note: data.note ?? undefined,
   };
 }
@@ -625,6 +657,48 @@ async function getMedicationsForDay(params: {
     timing: row.timing ?? undefined,
     notes: row.notes ?? undefined,
   }));
+}
+
+/**
+ * getSavedMedicationsForUser rebuilds reusable medication shortcuts from the
+ * user's historical medication logs so quick entry can surface one-tap add rows.
+ */
+export async function getSavedMedicationsForUser(params: {
+  userId: string;
+}): Promise<QuickEntrySavedMedication[]> {
+  const { userId } = params;
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('medication_logs')
+    .select('med_name, dosage, timing, notes, logged_at')
+    .eq('user_id', userId)
+    .order('logged_at', { ascending: false })
+    .limit(250);
+
+  if (error || !data) {
+    return [];
+  }
+
+  const seenMedicationIds = new Set<string>();
+  const savedMedications: QuickEntrySavedMedication[] = [];
+
+  for (const row of data) {
+    const medication = toQuickEntrySavedMedication({
+      medicationName: row.med_name,
+      dosage: row.dosage ?? undefined,
+      timing: row.timing ?? undefined,
+      notes: row.notes ?? undefined,
+    });
+
+    if (seenMedicationIds.has(medication.id)) {
+      continue;
+    }
+
+    seenMedicationIds.add(medication.id);
+    savedMedications.push(medication);
+  }
+
+  return savedMedications;
 }
 
 /**

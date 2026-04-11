@@ -1,10 +1,12 @@
 ---
 name: frontend-design
-description: Create distinctive, production-grade frontend interfaces for the Clue Symptom Tracker. Use Podia-inspired warm, approachable aesthetics with energy-conscious design for chronic illness users. Generates pixel-perfect React Native code using NativeWind.
+description: Create distinctive, production-grade frontend interfaces, components, and widgets for the Clue Symptom Tracker. Use for `web-app` UI work in Next.js, React, TypeScript, and Tailwind when designing or refining cards, forms, pickers, chat surfaces, and compact health-tracking widgets for chronic illness users. Enforce Podia-inspired warmth, energy-conscious interaction design, and polished stateful component behavior.
 license: Complete terms in LICENSE.txt
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces for Clue. The design language is **Podia-inspired**: warm, approachable, and energy-conscious for users with chronic illness and brain fog.
+
+Primary implementation target: `web-app` using Next.js, React, TypeScript, and Tailwind. Do not assume React Native or NativeWind unless the task explicitly asks for it.
 
 ## Architecture note (agent-driven UI)
 
@@ -88,6 +90,49 @@ card: "0 2px 12px -2px rgba(32, 20, 69, 0.05)"
 ```
 
 ## Component Patterns
+
+### Compact Widget Rulebook
+
+Use these rules for quick-entry cards, inline trackers, chat widgets, and other compact interactive UI:
+
+- Prefer one self-contained inner surface instead of stacking extra outer card chrome around a small control.
+- Make controls content-hugging by default. Do not let selects, pills, or badges stretch unless the layout truly benefits from it.
+- For stubborn native selects, render a visible text-plus-chevron shell and use an invisible select overlay only for interaction.
+- Keep left and right padding visually balanced. Do not fake symmetry with absolute arrow positioning that steals one side's space.
+- In dense rows, let metadata controls hug content and let the primary CTA take the remaining width.
+- Tighten internal spacing before shrinking tap targets.
+- For medication trackers, keep one visible row per medication name, keep dose chips and the add button on one horizontal strip, and anchor any total summary pill on the far right instead of letting controls wrap into a second row.
+- If the user says "nothing changed", stop nudging the same CSS assumption and change the layout structure causing the problem.
+
+### Stateful CTA Pattern
+
+For widgets that require an explicit user choice before committing data:
+
+- Show a disabled CTA by default.
+- Enable it only after an explicit user action, not because a default value exists or previously saved data was loaded.
+- Make the enabled label specific to the pending action.
+- Good: `Log 6/10 at 11:51 PM`
+- Bad: generic `Done` when the button is actually committing data.
+- Prefer a strong enabled state: solid primary background, white text, and a check icon when the action is ready.
+- Disabled state should look intentionally unavailable, not broken.
+
+### Draft vs Persisted State
+
+When a widget mixes supporting fields with one decisive primary input:
+
+- Keep draft sub-state local until the decisive action happens.
+- Do not auto-create a structured payload just because the user typed context or changed a time picker.
+- A note field or time control should not silently imply a selected rating, symptom, or answer.
+- Persist supporting fields once a real primary choice exists.
+
+### Logging Widget Structure
+
+For health-tracking widgets like mood, symptoms, or factors:
+
+- Put optional metadata like time in the header where users already scan.
+- Put the freeform context field below the primary control.
+- Put the final CTA below supporting inputs unless an inline action clearly reads better.
+- Use neutral, non-judgmental copy for the control labels and state names.
 
 ### Pill Chips (Selection)
 
@@ -186,6 +231,8 @@ card: "0 2px 12px -2px rgba(32, 20, 69, 0.05)"
 4. **Gentle transitions**: Soft animations, no jarring movements
 5. **Clear hierarchy**: One primary CTA per screen, secondary actions subtle
 6. **Forgiving interactions**: Easy to undo, skip, or "do later"
+7. **Content-hugging metadata**: Small controls like time, status, or filters should usually hug content instead of stretching across the row
+8. **Explicit intent before save**: A widget should not appear "ready to log" until the user has made the primary selection
 
 ## Screen Structure
 

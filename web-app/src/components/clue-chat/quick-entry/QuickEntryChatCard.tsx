@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-import type { QuickEntrySnapshot } from '@/lib/quick-entry';
+import type { QuickEntryMedicationGroup, QuickEntrySnapshot, QuickEntrySavedMedication } from '@/lib/quick-entry';
 
 import {
   FactorsEntryCard,
@@ -39,6 +39,8 @@ export function QuickEntryChatCard({
   const [visibleMeasurementKeys, setVisibleMeasurementKeys] = useState<string[]>(['heart-rate', 'weight', 'step-count']);
   const [visibleSleepItemKeys, setVisibleSleepItemKeys] = useState<string[]>(['sleep-quality', 'early-bedtime', 'late-bedtime', 'time-in-bed']);
   const [visibleFactorItemKeysByCategory, setVisibleFactorItemKeysByCategory] = useState<Partial<Record<string, string[]>>>({});
+  const [medicationGroups, setMedicationGroups] = useState<QuickEntryMedicationGroup[]>([]);
+  const [savedMedications] = useState<QuickEntrySavedMedication[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   /**
@@ -91,6 +93,9 @@ export function QuickEntryChatCard({
       {entryKind === 'medication' ? (
         <MedicationEntryCard
           medications={snapshot.medications}
+          savedMedications={savedMedications}
+          medicationGroups={medicationGroups}
+          onMedicationGroupsChange={setMedicationGroups}
           onUpsert={(medication) =>
             setSnapshot((current) => ({
               ...current,

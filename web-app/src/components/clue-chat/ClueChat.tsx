@@ -165,8 +165,10 @@ export function ClueChat({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Default to 'chat' nav tab
   const [activeNavId, setActiveNavId] = useState<string>('chat');
-  // Sub-tab within chat/insights tabs for the mobile switcher and desktop input state.
+  // Sub-tab within chat/insights tabs for the mobile three-pane switcher.
   const [activeSubTab, setActiveSubTab] = useState<ChatInputSubTab>('chat');
+  // Desktop keeps chat visible and uses the composer pill to swap the right rail only.
+  const [activeDesktopPanel, setActiveDesktopPanel] = useState<ChatInputSubTab>('canvas');
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   // Modal visibility state for pop-up panels
@@ -624,6 +626,19 @@ export function ClueChat({
     setSidebarOpen(false);
     // Reset sub-tab to 'chat' when switching nav items
     setActiveSubTab('chat');
+    setActiveDesktopPanel('canvas');
+  }, []);
+
+  /**
+   * handleDesktopPanelChange keeps the desktop pill limited to the right-rail
+   * destinations while still reusing the shared ChatInput tab component.
+   */
+  const handleDesktopPanelChange = useCallback((tab: ChatInputSubTab) => {
+    if (tab === 'chat') {
+      return;
+    }
+
+    setActiveDesktopPanel(tab);
   }, []);
 
   /**
@@ -789,13 +804,34 @@ export function ClueChat({
   }
 
   /**
+   * renderDesktopSidePanel swaps the desktop secondary rail between structured
+   * quick entry and the current canvas-style destination.
+   */
+  function renderDesktopSidePanel() {
+    const panelContent =
+      activeDesktopPanel === 'quick-entry' ? (
+        <QuickEntryPanel
+          isOpen={true}
+          onClose={() => setActiveDesktopPanel('canvas')}
+          variant="inline"
+          userId={supabaseUserId.current ?? undefined}
+          onSaved={() => setGraphRefreshTrigger((prev) => prev + 1)}
+        />
+      ) : (
+        renderCanvas()
+      );
+
+    return <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">{panelContent}</div>;
+  }
+
+  /**
    * Renders the full-width view for non-split nav tabs (Timeline, Doctor Summary).
    * Why: These views need the full viewport width to be useful on all screen sizes.
    */
   function renderFullWidthView() {
     if (activeNavId === 'timeline') {
       return (
-        <div className="flex flex-1 flex-col min-h-screen min-h-svh w-full overflow-hidden">
+        <div className="flex flex-1 flex-col min-h-screen min-h-svh lg:h-svh lg:min-h-0 w-full overflow-hidden">
           <ChatHeader onMenuClick={handleMenuClick} />
           <TimelineView userId={supabaseUserId.current ?? undefined} />
         </div>
@@ -803,7 +839,7 @@ export function ClueChat({
     }
     if (activeNavId === 'doctor-pack') {
       return (
-        <div className="flex flex-1 flex-col min-h-screen min-h-svh w-full overflow-hidden">
+        <div className="flex flex-1 flex-col min-h-screen min-h-svh lg:h-svh lg:min-h-0 w-full overflow-hidden">
           <ChatHeader onMenuClick={handleMenuClick} />
           <DoctorSummaryPanel />
         </div>
@@ -815,7 +851,7 @@ export function ClueChat({
   const activeUser = loggedInUser ?? user;
 
   return (
-    <div className="relative flex min-h-screen min-h-svh bg-bg-cream">
+    <div className="relative flex min-h-screen min-h-svh bg-bg-cream lg:h-svh lg:overflow-hidden">
       {/* Auth gate overlay */}
       {showAuthGate && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-primary/40 backdrop-blur-sm">
@@ -927,17 +963,22 @@ export function ClueChat({
             <ChatInput
               onSendMessage={handleSendMessage}
               disabled={isTyping}
-              activeSubTab="chat"
-              onSubTabChange={setActiveSubTab}
-              showSubTabPill={false}
+              activeSubTab={activeDesktopPanel}
+              onSubTabChange={handleDesktopPanelChange}
+              showSubTabPill={true}
+              subTabs={[
+                { id: 'quick-entry', label: 'Quick Entry' },
+                { id: 'canvas', label: 'Canvas' },
+              ]}
+              hideComposerWhenSubTabIsNotChat={false}
               modelProvider={modelProvider}
               onModelProviderChange={setModelProvider}
             />
           </div>
 
-          {/* Desktop: canvas panel — always visible */}
-          <div className="hidden flex-1 overflow-hidden lg:flex lg:h-svh lg:min-h-0">
-            {renderCanvas()}
+          {/* Desktop: right panel — toggles between quick entry and canvas */}
+          <div className="hidden flex-1 overflow-hidden lg:flex lg:h-svh lg:min-h-0 lg:flex-col">
+            {renderDesktopSidePanel()}
           </div>
         </>
       )}

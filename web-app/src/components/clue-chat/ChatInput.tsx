@@ -32,6 +32,10 @@ interface ChatInputProps {
   onSubTabChange: (tab: ChatInputSubTab) => void;
   /** Whether to show the bottom sub-tab pill (only for chat and insights nav) */
   showSubTabPill: boolean;
+  /** Tabs to show in the bottom pill for the current layout. */
+  subTabs?: ReadonlyArray<{ id: ChatInputSubTab; label: string }>;
+  /** Whether non-chat tabs should replace the composer instead of just retargeting another panel. */
+  hideComposerWhenSubTabIsNotChat?: boolean;
 }
 
 export function ChatInput({
@@ -43,16 +47,17 @@ export function ChatInput({
   activeSubTab,
   onSubTabChange,
   showSubTabPill,
+  subTabs = [
+    { id: 'chat', label: 'Chat' },
+    { id: 'quick-entry', label: 'Quick Entry' },
+    { id: 'canvas', label: 'Canvas' },
+  ],
+  hideComposerWhenSubTabIsNotChat = true,
 }: ChatInputProps) {
   const [inputValue, setInputValue] = useState('');
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const subTabs: ReadonlyArray<{ id: ChatInputSubTab; label: string }> = [
-    { id: 'chat', label: 'Chat' },
-    { id: 'quick-entry', label: 'Quick Entry' },
-    { id: 'canvas', label: 'Canvas' },
-  ];
   const modelOptions: ReadonlyArray<{ id: ChatModelProvider; label: string }> = [
     { id: 'chatgpt', label: 'ChatGPT' },
     { id: 'gemini', label: 'Gemini' },
@@ -90,8 +95,8 @@ export function ChatInput({
     [handleSend]
   );
 
-  // Only the chat tab needs the freeform composer; alternate tabs show their own UI.
-  const isComposerHidden = activeSubTab !== 'chat';
+  // Mobile swaps the full pane on non-chat tabs, while desktop keeps the composer visible.
+  const isComposerHidden = hideComposerWhenSubTabIsNotChat && activeSubTab !== 'chat';
   const activeSubTabIndex = subTabs.findIndex((tab) => tab.id === activeSubTab);
 
   return (
@@ -185,7 +190,7 @@ export function ChatInput({
               <div
                 className="absolute left-1 top-1 bottom-1 bg-white rounded-full shadow-sm transition-all duration-300 ease-out"
                 style={{
-                  width: 'calc((100% - 8px) / 3)',
+                  width: `calc((100% - 8px) / ${subTabs.length})`,
                   transform: `translateX(${Math.max(activeSubTabIndex, 0) * 100}%)`,
                 }}
               />

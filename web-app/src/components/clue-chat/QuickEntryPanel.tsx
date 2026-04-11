@@ -1,16 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import {
-  buildQuickEntrySummary,
   DEFAULT_VISIBLE_FACTOR_CATEGORY_KEYS,
   DEFAULT_VISIBLE_MEASUREMENT_KEYS,
   type QuickEntryFactorDraft,
   type QuickEntryMeasurementDraft,
+  type QuickEntryMedicationGroup,
   type QuickEntryMedicationDraft,
+  type QuickEntrySavedMedication,
   type QuickEntrySnapshot,
+  toQuickEntrySavedMedication,
 } from '@/lib/quick-entry';
 
 import {
@@ -37,6 +39,8 @@ const VISIBLE_FACTOR_CATEGORIES_STORAGE_KEY = 'clue_quick_entry_visible_factor_c
 const VISIBLE_MEASUREMENTS_STORAGE_KEY = 'clue_quick_entry_visible_measurements';
 const VISIBLE_SLEEP_ITEMS_STORAGE_KEY = 'clue_quick_entry_visible_sleep_items';
 const VISIBLE_FACTOR_ITEMS_STORAGE_KEY = 'clue_quick_entry_visible_factor_items';
+const MEDICATION_GROUPS_STORAGE_KEY = 'clue_quick_entry_medication_groups';
+const AUTOSAVE_DELAY_MS = 450;
 
 /**
  * EMPTY_SNAPSHOT keeps quick-entry state creation deterministic.
@@ -47,6 +51,13 @@ const EMPTY_SNAPSHOT: QuickEntrySnapshot = {
   factors: [],
   measurements: [],
 };
+
+/**
+ * getSnapshotKey gives autosave a stable way to compare structured drafts.
+ */
+function getSnapshotKey(snapshot: QuickEntrySnapshot): string {
+  return JSON.stringify(snapshot);
+}
 
 /**
  * readStoredArray rehydrates one local visibility preference while staying safe
@@ -108,6 +119,50 @@ function writeStoredValue(storageKey: string, value: unknown): void {
 }
 
 /**
+ * readStoredMedicationGroups restores locally persisted medication bundles while
+ * discarding malformed entries.
+ */
+function readStoredMedicationGroups(storageKey: string): QuickEntryMedicationGroup[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    return parsedValue.flatMap((group): QuickEntryMedicationGroup[] => {
+      if (
+        !group ||
+        typeof group !== 'object' ||
+        typeof group.id !== 'string' ||
+        typeof group.name !== 'string' ||
+        !Array.isArray(group.medicationIds)
+      ) {
+        return [];
+      }
+
+      return [
+        {
+          id: group.id,
+          name: group.name,
+          medicationIds: group.medicationIds.filter((medicationId): medicationId is string => typeof medicationId === 'string'),
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
  * mergeCategoryVisibility ensures categories with saved factors stay visible
  * even if the user never explicitly added them through the picker.
  */
@@ -145,6 +200,56 @@ function mergeMeasurementVisibility(snapshot: QuickEntrySnapshot, currentKeys: s
   return Array.from(new Set([...currentKeys, ...savedKeys]));
 }
 
+/**
+ * mergeSavedMedications folds current-day meds into the reusable medication list
+ * so the card can keep surfacing previously logged shortcuts.
+ */
+function mergeSavedMedications(
+  savedMedications: QuickEntrySavedMedication[],
+  medications: QuickEntryMedicationDraft[]
+): QuickEntrySavedMedication[] {
+  const mergedById = new Map<string, QuickEntrySavedMedication>();
+
+  for (const medication of savedMedications) {
+    mergedById.set(medication.id, medication);
+  }
+
+  for (const medication of medications) {
+    const savedMedication = toQuickEntrySavedMedication(medication);
+    mergedById.set(savedMedication.id, savedMedication);
+  }
+
+  return Array.from(mergedById.values()).sort((leftMedication, rightMedication) =>
+    leftMedication.medicationName.localeCompare(rightMedication.medicationName)
+  );
+}
+
+/**
+ * sanitizeMedicationGroups removes empty or dangling medication references after
+ * the reusable medication list has been rebuilt from saved history.
+ */
+function sanitizeMedicationGroups(
+  medicationGroups: QuickEntryMedicationGroup[],
+  savedMedications: QuickEntrySavedMedication[]
+): QuickEntryMedicationGroup[] {
+  const savedMedicationIds = new Set(savedMedications.map((medication) => medication.id));
+
+  return medicationGroups.flatMap((group) => {
+    const medicationIds = group.medicationIds.filter((medicationId) => savedMedicationIds.has(medicationId));
+    if (!group.name.trim() || medicationIds.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        ...group,
+        name: group.name.trim(),
+        medicationIds: Array.from(new Set(medicationIds)),
+      },
+    ];
+  });
+}
+
 export function QuickEntryPanel({
   isOpen,
   onClose,
@@ -154,14 +259,48 @@ export function QuickEntryPanel({
 }: QuickEntryPanelProps) {
   const isInline = variant === 'inline';
   const [snapshot, setSnapshot] = useState<QuickEntrySnapshot>(EMPTY_SNAPSHOT);
+  const [lastSavedSnapshotKey, setLastSavedSnapshotKey] = useState(() => getSnapshotKey(EMPTY_SNAPSHOT));
+  const [savedMedications, setSavedMedications] = useState<QuickEntrySavedMedication[]>([]);
+  const [medicationGroups, setMedicationGroups] = useState<QuickEntryMedicationGroup[]>([]);
   const [visibleCategoryKeys, setVisibleCategoryKeys] = useState<string[]>(DEFAULT_VISIBLE_FACTOR_CATEGORY_KEYS.filter((key) => key !== 'sleep'));
   const [visibleMeasurementKeys, setVisibleMeasurementKeys] = useState<string[]>(DEFAULT_VISIBLE_MEASUREMENT_KEYS);
   const [visibleSleepItemKeys, setVisibleSleepItemKeys] = useState<string[]>(['sleep-quality', 'early-bedtime', 'late-bedtime', 'time-in-bed', 'nap-time']);
   const [visibleFactorItemKeysByCategory, setVisibleFactorItemKeysByCategory] = useState<Partial<Record<string, string[]>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [savedSummary, setSavedSummary] = useState<string | null>(null);
+  const [failedSnapshotKey, setFailedSnapshotKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const autoSaveTimeoutRef = useRef<number | null>(null);
+  const hasLoadedSnapshotRef = useRef(false);
+  const isMountedRef = useRef(true);
+  const isSavingRef = useRef(false);
+  const snapshotKey = useMemo(() => getSnapshotKey(snapshot), [snapshot]);
+  const latestSnapshotRef = useRef(snapshot);
+  const latestSnapshotKeyRef = useRef(snapshotKey);
+  const lastSavedSnapshotKeyRef = useRef(lastSavedSnapshotKey);
+  const failedSnapshotKeyRef = useRef<string | null>(failedSnapshotKey);
+
+  useEffect(() => {
+    latestSnapshotRef.current = snapshot;
+    latestSnapshotKeyRef.current = snapshotKey;
+  }, [snapshot, snapshotKey]);
+
+  useEffect(() => {
+    lastSavedSnapshotKeyRef.current = lastSavedSnapshotKey;
+  }, [lastSavedSnapshotKey]);
+
+  useEffect(() => {
+    failedSnapshotKeyRef.current = failedSnapshotKey;
+  }, [failedSnapshotKey]);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (autoSaveTimeoutRef.current) {
+        window.clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /**
    * loadSnapshot hydrates the current day's structured quick-entry state and
@@ -172,6 +311,7 @@ export function QuickEntryPanel({
       return;
     }
 
+    hasLoadedSnapshotRef.current = false;
     setIsLoading(true);
     setErrorMessage(null);
 
@@ -179,7 +319,11 @@ export function QuickEntryPanel({
       const response = await fetch(`/api/quick-entry?userId=${encodeURIComponent(userId)}`, {
         cache: 'no-store',
       });
-      const data = await response.json() as { snapshot?: QuickEntrySnapshot; error?: string };
+      const data = await response.json() as {
+        snapshot?: QuickEntrySnapshot;
+        savedMedications?: QuickEntrySavedMedication[];
+        error?: string;
+      };
 
       if (!response.ok || !data.snapshot) {
         throw new Error(data.error || 'Failed to load quick entry state.');
@@ -189,6 +333,9 @@ export function QuickEntryPanel({
       const storedMeasurementKeys = readStoredArray(VISIBLE_MEASUREMENTS_STORAGE_KEY, DEFAULT_VISIBLE_MEASUREMENT_KEYS);
       const storedSleepItemKeys = readStoredArray(VISIBLE_SLEEP_ITEMS_STORAGE_KEY, ['sleep-quality', 'early-bedtime', 'late-bedtime', 'time-in-bed', 'nap-time']);
       const storedFactorItemKeys = readStoredRecord(VISIBLE_FACTOR_ITEMS_STORAGE_KEY);
+      const storedMedicationGroups = readStoredMedicationGroups(MEDICATION_GROUPS_STORAGE_KEY);
+      const mergedSavedMedications = mergeSavedMedications(data.savedMedications ?? [], data.snapshot.medications);
+      const sanitizedMedicationGroups = sanitizeMedicationGroups(storedMedicationGroups, mergedSavedMedications);
 
       const mergedCategoryKeys = mergeCategoryVisibility(data.snapshot, storedCategoryKeys);
       const mergedMeasurementKeys = mergeMeasurementVisibility(data.snapshot, storedMeasurementKeys);
@@ -199,8 +346,17 @@ export function QuickEntryPanel({
         ])
       );
       const mergedFactorItemKeys = mergeFactorItemVisibility(data.snapshot, storedFactorItemKeys);
+      const loadedSnapshotKey = getSnapshotKey(data.snapshot);
 
       setSnapshot(data.snapshot);
+      latestSnapshotRef.current = data.snapshot;
+      latestSnapshotKeyRef.current = loadedSnapshotKey;
+      lastSavedSnapshotKeyRef.current = loadedSnapshotKey;
+      setLastSavedSnapshotKey(loadedSnapshotKey);
+      failedSnapshotKeyRef.current = null;
+      setFailedSnapshotKey(null);
+      setSavedMedications(mergedSavedMedications);
+      setMedicationGroups(sanitizedMedicationGroups);
       setVisibleCategoryKeys(mergedCategoryKeys);
       setVisibleMeasurementKeys(mergedMeasurementKeys);
       setVisibleSleepItemKeys(mergedSleepItemKeys);
@@ -210,10 +366,12 @@ export function QuickEntryPanel({
       writeStoredValue(VISIBLE_MEASUREMENTS_STORAGE_KEY, mergedMeasurementKeys);
       writeStoredValue(VISIBLE_SLEEP_ITEMS_STORAGE_KEY, mergedSleepItemKeys);
       writeStoredValue(VISIBLE_FACTOR_ITEMS_STORAGE_KEY, mergedFactorItemKeys);
+      writeStoredValue(MEDICATION_GROUPS_STORAGE_KEY, sanitizedMedicationGroups);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load quick entry state.';
       setErrorMessage(message);
     } finally {
+      hasLoadedSnapshotRef.current = true;
       setIsLoading(false);
     }
   }, [isOpen, userId]);
@@ -383,17 +541,21 @@ export function QuickEntryPanel({
   }
 
   /**
-   * handleSave persists the full structured snapshot through the deterministic
-   * quick-entry API and refreshes the graph/timeline-facing state.
+   * persistSnapshot writes the current quick-entry draft without requiring an
+   * explicit submit tap, which keeps the panel aligned with low-energy usage.
    */
-  const handleSave = useCallback(async () => {
+  const persistSnapshot = useCallback(async (nextSnapshot: QuickEntrySnapshot, snapshotKeyToSave: string) => {
     if (!userId) {
       setErrorMessage('Sign in to save quick entry data.');
       return;
     }
 
+    if (isSavingRef.current) {
+      return;
+    }
+
+    isSavingRef.current = true;
     setIsSaving(true);
-    setSavedSummary(null);
     setErrorMessage(null);
 
     try {
@@ -403,40 +565,87 @@ export function QuickEntryPanel({
         body: JSON.stringify({
           userId,
           source: 'quick_entry',
-          snapshot,
+          snapshot: nextSnapshot,
         }),
       });
-      const data = await response.json() as { snapshot?: QuickEntrySnapshot; error?: string };
+      const data = await response.json() as {
+        snapshot?: QuickEntrySnapshot;
+        savedMedications?: QuickEntrySavedMedication[];
+        error?: string;
+      };
 
       if (!response.ok || !data.snapshot) {
         throw new Error(data.error || 'Failed to save quick entry.');
       }
 
-      setSnapshot(data.snapshot);
-      setSavedSummary(buildQuickEntrySummary(data.snapshot));
-      onSaved?.();
+      const mergedSavedMedicationState = mergeSavedMedications(data.savedMedications ?? [], data.snapshot.medications);
+      const sanitizedMedicationGroupState = sanitizeMedicationGroups(medicationGroups, mergedSavedMedicationState);
+      const savedSnapshotKey = getSnapshotKey(data.snapshot);
 
-      if (!isInline) {
-        window.setTimeout(() => {
-          onClose();
-        }, 1200);
+      if (latestSnapshotKeyRef.current === snapshotKeyToSave) {
+        latestSnapshotRef.current = data.snapshot;
+        latestSnapshotKeyRef.current = savedSnapshotKey;
+        setSnapshot(data.snapshot);
+        lastSavedSnapshotKeyRef.current = savedSnapshotKey;
+        setLastSavedSnapshotKey(savedSnapshotKey);
+      } else {
+        lastSavedSnapshotKeyRef.current = snapshotKeyToSave;
+        setLastSavedSnapshotKey(snapshotKeyToSave);
       }
+
+      setSavedMedications(mergedSavedMedicationState);
+      setMedicationGroups(sanitizedMedicationGroupState);
+      writeStoredValue(MEDICATION_GROUPS_STORAGE_KEY, sanitizedMedicationGroupState);
+      failedSnapshotKeyRef.current = null;
+      setFailedSnapshotKey(null);
+      onSaved?.();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save quick entry.';
+      failedSnapshotKeyRef.current = snapshotKeyToSave;
+      setFailedSnapshotKey(snapshotKeyToSave);
       setErrorMessage(message);
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
-    }
-  }, [isInline, onClose, onSaved, snapshot, userId]);
 
-  const hasAnyInput = useMemo(
-    () =>
-      Boolean(snapshot.mood) ||
-      snapshot.medications.length > 0 ||
-      snapshot.factors.length > 0 ||
-      snapshot.measurements.length > 0,
-    [snapshot]
-  );
+      if (
+        isMountedRef.current &&
+        latestSnapshotKeyRef.current !== lastSavedSnapshotKeyRef.current &&
+        failedSnapshotKeyRef.current !== latestSnapshotKeyRef.current
+      ) {
+        if (autoSaveTimeoutRef.current) {
+          window.clearTimeout(autoSaveTimeoutRef.current);
+        }
+        autoSaveTimeoutRef.current = window.setTimeout(() => {
+          void persistSnapshot(latestSnapshotRef.current, latestSnapshotKeyRef.current);
+        }, AUTOSAVE_DELAY_MS);
+      }
+    }
+  }, [medicationGroups, onSaved, userId]);
+
+  useEffect(() => {
+    if (!isOpen || !userId || isLoading || !hasLoadedSnapshotRef.current) {
+      return;
+    }
+
+    if (snapshotKey === lastSavedSnapshotKeyRef.current || failedSnapshotKeyRef.current === snapshotKey) {
+      return;
+    }
+
+    if (autoSaveTimeoutRef.current) {
+      window.clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    autoSaveTimeoutRef.current = window.setTimeout(() => {
+      void persistSnapshot(latestSnapshotRef.current, latestSnapshotKeyRef.current);
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        window.clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [failedSnapshotKey, isLoading, isOpen, persistSnapshot, snapshotKey, userId]);
 
   const sleepFactors = useMemo(
     () => snapshot.factors.filter((factor) => factor.categoryKey === 'sleep'),
@@ -446,6 +655,7 @@ export function QuickEntryPanel({
     () => snapshot.factors.filter((factor) => factor.categoryKey !== 'sleep'),
     [snapshot.factors]
   );
+  const isSavePending = snapshotKey !== lastSavedSnapshotKey;
 
   if (!isOpen) {
     return null;
@@ -455,7 +665,7 @@ export function QuickEntryPanel({
     <div
       className={
         isInline
-          ? 'flex min-h-0 flex-1 flex-col bg-bg-cream'
+          ? 'flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-bg-cream'
           : 'fixed inset-0 z-70 flex items-end justify-center sm:items-center'
       }
     >
@@ -466,29 +676,36 @@ export function QuickEntryPanel({
       <div
         className={
           isInline
-            ? 'flex min-h-0 flex-1 w-full flex-col bg-bg-cream'
+            ? 'flex h-full min-h-0 flex-1 w-full flex-col overflow-hidden'
             : 'relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-bg-cream shadow-xl sm:max-w-3xl sm:rounded-3xl'
         }
+        style={{
+          backgroundColor: '#fdf7ef',
+          backgroundImage: `radial-gradient(circle, rgba(32, 19, 46, 0.07) 1px, transparent 1px)`,
+          backgroundSize: '24px 24px',
+        }}
       >
-        <div className="flex items-center justify-between border-b border-primary/8 px-4 py-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <MaterialIcon name="add_circle" size="sm" className="text-primary/70" />
-              <h2 className="text-[15px] font-semibold text-primary">Quick Entry</h2>
+        {!isInline ? (
+          <div className="flex items-center justify-between border-b border-primary/8 px-4 py-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <MaterialIcon name="add_circle" size="sm" className="text-primary/70" />
+                <h2 className="text-[15px] font-semibold text-primary">Quick Entry</h2>
+              </div>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-text-muted">
+                Structured logging for low-energy days, without the chat overhead.
+              </p>
             </div>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-text-muted">
-              Structured logging for low-energy days, without the chat overhead.
-            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-primary/5 hover:text-primary"
+              aria-label="Close quick entry"
+            >
+              <MaterialIcon name="close" size="sm" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-primary/5 hover:text-primary"
-            aria-label={isInline ? 'Return to chat' : 'Close quick entry'}
-          >
-            <MaterialIcon name="close" size="sm" />
-          </button>
-        </div>
+        ) : null}
 
         <div className="flex-1 overflow-y-auto px-3 py-3">
           {!userId ? (
@@ -503,7 +720,21 @@ export function QuickEntryPanel({
           ) : (
             <div className="space-y-3">
               <MoodEntryCard mood={snapshot.mood} onChange={(nextMood) => setSnapshot((current) => ({ ...current, mood: nextMood }))} />
-              <MedicationEntryCard medications={snapshot.medications} onUpsert={upsertMedication} onRemove={removeMedication} />
+              <MedicationEntryCard
+                medications={snapshot.medications}
+                savedMedications={savedMedications}
+                medicationGroups={medicationGroups}
+                onMedicationGroupsChange={(nextGroups) => {
+                  const sanitizedGroups = sanitizeMedicationGroups(
+                    nextGroups,
+                    mergeSavedMedications(savedMedications, snapshot.medications)
+                  );
+                  setMedicationGroups(sanitizedGroups);
+                  writeStoredValue(MEDICATION_GROUPS_STORAGE_KEY, sanitizedGroups);
+                }}
+                onUpsert={upsertMedication}
+                onRemove={removeMedication}
+              />
               <SleepEntryCard
                 sleepFactors={sleepFactors}
                 visibleSleepItemKeys={visibleSleepItemKeys}
@@ -537,29 +768,35 @@ export function QuickEntryPanel({
               {errorMessage}
             </div>
           ) : null}
-          {savedSummary ? (
-            <div className="mb-3 rounded-2xl border border-accent-mint/40 bg-accent-mint/20 px-4 py-3 text-[12px] text-primary">
-              Saved: {savedSummary}
-            </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!hasAnyInput || isSaving || !userId}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-primary/92 disabled:cursor-not-allowed disabled:opacity-45"
+          <div
+            className={`flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold text-white ${
+              errorMessage ? 'bg-rose-500' : 'bg-primary'
+            }`}
+            role="status"
+            aria-live="polite"
           >
-            {isSaving ? (
+            {!userId ? (
+              <>
+                <MaterialIcon name="lock" size="sm" />
+                Sign in to save entries
+              </>
+            ) : errorMessage ? (
+              <>
+                <MaterialIcon name="error" size="sm" />
+                Autosave failed
+              </>
+            ) : isSaving || isSavePending ? (
               <>
                 <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
-                Saving quick entry...
+                Saving entries...
               </>
             ) : (
               <>
                 <MaterialIcon name="check" size="sm" />
-                Save structured entry
+                Entries saved
               </>
             )}
-          </button>
+          </div>
         </div>
       </div>
     </div>

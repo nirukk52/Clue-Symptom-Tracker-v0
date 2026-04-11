@@ -50,10 +50,33 @@ export interface QuickEntryMedicationDraft {
 }
 
 /**
+ * QuickEntrySavedMedication keeps reusable medication shortcuts separate from the
+ * current day's taken/skipped snapshot.
+ */
+export interface QuickEntrySavedMedication {
+  id: string;
+  medicationName: string;
+  dosage?: string;
+  timing?: string;
+  notes?: string;
+}
+
+/**
+ * QuickEntryMedicationGroup stores one reusable bundle of medication shortcuts
+ * so the meds card can add a commonly paired stack in one tap.
+ */
+export interface QuickEntryMedicationGroup {
+  id: string;
+  name: string;
+  medicationIds: string[];
+}
+
+/**
  * QuickEntryMoodDraft captures the daily mood card state.
  */
 export interface QuickEntryMoodDraft {
   rating: number;
+  time?: string;
   note?: string;
 }
 
@@ -183,7 +206,7 @@ export const QUICK_ENTRY_FACTOR_CATEGORIES: QuickEntryFactorCategoryDefinition[]
   {
     key: 'behavioural-patterns',
     label: 'Behavioural Patterns',
-    icon: 'cycles',
+    icon: 'psychology_alt',
     defaultVisible: true,
     items: [
       { key: 'stress', label: 'Stress', icon: 'psychology', supportsRating: true, defaultVisible: true },
@@ -336,4 +359,36 @@ export function buildQuickEntrySummary(snapshot: QuickEntrySnapshot): string {
   }
 
   return parts.length > 0 ? parts.join(' · ') : 'Nothing selected yet';
+}
+
+/**
+ * buildQuickEntryMedicationId keeps saved-medication identity deterministic so
+ * quick-add groups can survive reloads without depending on database UUIDs.
+ */
+export function buildQuickEntryMedicationId(params: {
+  medicationName: string;
+  dosage?: string;
+}): string {
+  const medicationName = params.medicationName.trim().toLowerCase();
+  const dosage = params.dosage?.trim().toLowerCase() ?? '';
+  return `${medicationName}::${dosage}`;
+}
+
+/**
+ * toQuickEntrySavedMedication strips a logged medication down to the reusable
+ * fields shown in the meds shortcut list.
+ */
+export function toQuickEntrySavedMedication(
+  medication: Pick<QuickEntryMedicationDraft, 'medicationName' | 'dosage' | 'timing' | 'notes'>
+): QuickEntrySavedMedication {
+  return {
+    id: buildQuickEntryMedicationId({
+      medicationName: medication.medicationName,
+      dosage: medication.dosage,
+    }),
+    medicationName: medication.medicationName.trim(),
+    dosage: medication.dosage?.trim() || undefined,
+    timing: medication.timing?.trim() || undefined,
+    notes: medication.notes?.trim() || undefined,
+  };
 }

@@ -133,8 +133,8 @@ export function TimelineView({ userId }: TimelineViewProps) {
   const groupedEntries = useMemo(() => groupEntriesByPeriod(filteredEntries), [filteredEntries]);
 
   return (
-    <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
-      <div className="px-3 pb-2 pt-4 flex items-end justify-between gap-3">
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="shrink-0 px-3 pb-2 pt-4 flex items-end justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted/70">
             {formatCalendarRange(calendarDays)}
@@ -151,7 +151,7 @@ export function TimelineView({ userId }: TimelineViewProps) {
 
       <div
         ref={calendarRef}
-        className="flex gap-1 px-3 pb-3 overflow-x-auto scrollbar-hide"
+        className="flex shrink-0 gap-1 px-3 pb-3 overflow-x-auto scrollbar-hide"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {calendarDays.map((day, index) => {
@@ -193,11 +193,11 @@ export function TimelineView({ userId }: TimelineViewProps) {
         })}
       </div>
 
-      <div className="px-3 pb-3">
+      <div className="shrink-0 px-3 pb-3">
         <TimelineSummaryCards summary={summary} />
       </div>
 
-      <div className="px-3 pb-3">
+      <div className="shrink-0 px-3 pb-3">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {FILTER_OPTIONS.map((option) => {
             const isActive = activeFilter === option.id;
@@ -221,7 +221,7 @@ export function TimelineView({ userId }: TimelineViewProps) {
         </div>
       </div>
 
-      <div className="flex-1 px-3 pb-4">
+      <div className="flex-1 overflow-y-auto px-3 pb-4 min-h-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="text-text-muted text-[13px]">Loading timeline...</div>
