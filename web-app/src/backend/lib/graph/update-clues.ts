@@ -171,7 +171,6 @@ async function generateClues(
   evidenceNodes: GraphNode[],
   existingClues: GraphNode[]
 ): Promise<GeneratedClue[]> {
-  const evidenceEntityNames = evidenceNodes.map((node) => node.label);
   const evidenceText = evidenceNodes
     .map((n) => {
       const details = n.subLabel ? `: ${n.subLabel}` : '';
@@ -190,7 +189,7 @@ async function generateClues(
     providerOptions: opusThinkingOptions,
   });
 
-  return selectBestClues(result.object.clues, evidenceEntityNames);
+  return selectBestClues(result.object.clues, evidenceNodes);
 }
 
 /**

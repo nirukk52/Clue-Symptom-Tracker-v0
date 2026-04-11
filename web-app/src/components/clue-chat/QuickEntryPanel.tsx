@@ -153,7 +153,9 @@ function readStoredMedicationGroups(storageKey: string): QuickEntryMedicationGro
         {
           id: group.id,
           name: group.name,
-          medicationIds: group.medicationIds.filter((medicationId): medicationId is string => typeof medicationId === 'string'),
+          medicationIds: group.medicationIds.filter(
+            (medicationId: unknown): medicationId is string => typeof medicationId === 'string'
+          ),
         },
       ];
     });

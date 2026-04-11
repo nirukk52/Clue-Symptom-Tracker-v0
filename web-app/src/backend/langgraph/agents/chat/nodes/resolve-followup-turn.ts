@@ -301,6 +301,14 @@ export async function resolveFollowupTurnNode(
       };
     }
 
+    if (rating === null) {
+      return {
+        modelMessages: state.messages,
+        turnResolution: null,
+        resolvedFollowupAction: null,
+      };
+    }
+
     const resolvedSymptomName =
       metric?.toLowerCase() === 'energy'
         ? 'Fatigue'

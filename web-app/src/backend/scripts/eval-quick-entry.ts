@@ -303,8 +303,12 @@ function evaluateMedicationStorage(
       pushIssue(issues, `Duplicate medication logs matched "${expectation.label}" (${matches.length} rows).`);
     }
 
-    if (expectation.dosage && !matches.some((log) => normalizeLabel(log.dosage ?? '') === normalizeLabel(expectation.dosage))) {
-      pushIssue(issues, `Medication log for "${expectation.label}" did not store dosage "${expectation.dosage}".`);
+    const expectedDosage = expectation.dosage;
+    if (
+      expectedDosage &&
+      !matches.some((log) => normalizeLabel(log.dosage ?? '') === normalizeLabel(expectedDosage))
+    ) {
+      pushIssue(issues, `Medication log for "${expectation.label}" did not store dosage "${expectedDosage}".`);
     }
   }
 }
@@ -331,8 +335,12 @@ function evaluateFactorStorage(
       pushIssue(issues, `Duplicate factor logs matched "${expectation.label}" (${matches.length} rows).`);
     }
 
-    if (expectation.categoryLabel && !matches.some((log) => normalizeLabel(log.categoryLabel) === normalizeLabel(expectation.categoryLabel))) {
-      pushIssue(issues, `Factor log for "${expectation.label}" did not store category "${expectation.categoryLabel}".`);
+    const expectedCategory = expectation.categoryLabel;
+    if (
+      expectedCategory &&
+      !matches.some((log) => normalizeLabel(log.categoryLabel) === normalizeLabel(expectedCategory))
+    ) {
+      pushIssue(issues, `Factor log for "${expectation.label}" did not store category "${expectedCategory}".`);
     }
 
     if (expectation.rating !== undefined && !matches.some((log) => log.rating === expectation.rating)) {
@@ -371,8 +379,9 @@ function evaluateMeasurementStorage(
       pushIssue(issues, `Measurement log for "${expectation.label}" did not store value ${expectation.value}.`);
     }
 
-    if (expectation.unit && !matches.some((log) => normalizeLabel(log.unit) === normalizeLabel(expectation.unit))) {
-      pushIssue(issues, `Measurement log for "${expectation.label}" did not store unit "${expectation.unit}".`);
+    const expectedUnit = expectation.unit;
+    if (expectedUnit && !matches.some((log) => normalizeLabel(log.unit) === normalizeLabel(expectedUnit))) {
+      pushIssue(issues, `Measurement log for "${expectation.label}" did not store unit "${expectedUnit}".`);
     }
 
     if (expectation.notes && !matches.some((log) => (log.notes ?? '') === expectation.notes)) {
@@ -420,8 +429,15 @@ function evaluateTimelineExpectation(
       pushIssue(issues, `Duplicate ${type} timeline entries matched "${expectation.label}" (${matches.length} rows).`);
     }
 
-    if (expectation.descriptionIncludes && !matches.some((entry) => (entry.description ?? '').includes(expectation.descriptionIncludes))) {
-      pushIssue(issues, `${type} timeline entry for "${expectation.label}" did not include "${expectation.descriptionIncludes}" in the description.`);
+    const expectedDescriptionSnippet = expectation.descriptionIncludes;
+    if (
+      expectedDescriptionSnippet &&
+      !matches.some((entry) => (entry.description ?? '').includes(expectedDescriptionSnippet))
+    ) {
+      pushIssue(
+        issues,
+        `${type} timeline entry for "${expectation.label}" did not include "${expectedDescriptionSnippet}" in the description.`
+      );
     }
   }
 }

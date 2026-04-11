@@ -172,7 +172,7 @@ export async function computeInfoGainNode(
       };
     }
 
-    const clue =
+    const clue: GeneratedClue =
       state.symptomNodes.length === 0
         ? {
             question: 'What symptoms have been bothering you most lately?',
