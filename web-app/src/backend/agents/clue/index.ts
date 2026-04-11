@@ -6,7 +6,7 @@
  */
 
 // Chat tools for Supabase-backed operations
-export { chatTools, setActiveUserId } from './tools/chat-tools';
+export { chatTools, withActiveUserId } from './tools/chat-tools';
 
 // System prompt builder
 export { buildSystemPrompt } from './prompts/system';

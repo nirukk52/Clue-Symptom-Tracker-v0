@@ -9,7 +9,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
-import { models } from '@/backend/lib/ai/providers';
+import { models, opusThinkingOptions } from '@/backend/lib/ai/providers';
 import { pickNextQuestion } from '@/backend/lib/graph/info-gain';
 
 import type { GraphEdge, GraphNode } from '@/backend/lib/graph';
@@ -105,6 +105,7 @@ async function generateFallbackClue(params: {
   const result = await generateObject({
     model: models.reasoner,
     schema: FallbackClueSchema,
+    providerOptions: opusThinkingOptions,
     prompt: `You are the clinical reasoning layer for Clue, a chronic illness symptom tracker.
 
 Choose exactly one follow-up question that would be the most clinically useful next clue.
@@ -136,6 +137,7 @@ Rules:
     reasoning: `LLM fallback: ${result.object.reasoning}`,
     priority: 1,
     relatedSymptom: null,
+    generationProvenance: { source: 'llm', modelKey: 'reasoner' },
   };
 }
 
@@ -165,6 +167,7 @@ export async function computeInfoGainNode(
           reasoning: infoGainQuestion.reasoning,
           priority: infoGainQuestion.priority,
           relatedSymptom: infoGainQuestion.relatedSymptom,
+          generationProvenance: { source: 'deterministic' },
         },
       };
     }
@@ -176,6 +179,7 @@ export async function computeInfoGainNode(
             reasoning: 'No symptom nodes exist yet, so the next clue should establish the core symptom picture.',
             priority: 1,
             relatedSymptom: null,
+            generationProvenance: { source: 'template' },
           }
         : await generateFallbackClue({
             symptomNodes: state.symptomNodes,

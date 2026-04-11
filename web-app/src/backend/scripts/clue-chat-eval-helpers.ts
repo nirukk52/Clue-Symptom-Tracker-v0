@@ -7,7 +7,7 @@
  */
 
 import type { UIMessage } from 'ai';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 
 import { deserializeStoredChatMessage, extractTextFromStoredChatMessage } from '@/lib/chat-ui-messages';
 
@@ -16,6 +16,7 @@ const SUPABASE_URL =
   'https://zvpudxinbcsrfyojrhhv.supabase.co';
 
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 /**
  * Stored chat message preview used by replay diagnostics.
@@ -109,6 +110,36 @@ export interface MoodLogSnapshot {
 }
 
 /**
+ * Factor log snapshot used during quick-entry state assertions.
+ * Why this exists: Structured quick entry writes factors into their own table,
+ * so regressions can hide there even when timeline and graph state look healthy.
+ */
+export interface FactorLogSnapshot {
+  categoryKey: string;
+  categoryLabel: string;
+  factorKey: string;
+  factorName: string;
+  rating: number | null;
+  scaleMax: number | null;
+  notes: string | null;
+  loggedAt: string;
+}
+
+/**
+ * Measurement log snapshot used during quick-entry state assertions.
+ * Why this exists: Measurements currently stay storage-plus-timeline only, so
+ * the regression runner needs direct visibility into their durable rows.
+ */
+export interface MeasurementLogSnapshot {
+  metricKey: string;
+  metricName: string;
+  unit: string;
+  value: number;
+  notes: string | null;
+  loggedAt: string;
+}
+
+/**
  * Timeline snapshot used during state assertions.
  * Why this exists: The user-facing timeline is one of the main proof points
  * that the logging tools persisted the turn in a useful format.
@@ -174,6 +205,8 @@ export interface UserStateSnapshot {
   symptomLogs: SymptomLogSnapshot[];
   medicationLogs: MedicationLogSnapshot[];
   moodLogs: MoodLogSnapshot[];
+  factorLogs: FactorLogSnapshot[];
+  measurementLogs: MeasurementLogSnapshot[];
   timelineEntries: TimelineEntrySnapshot[];
   insights: InsightSnapshot[];
   renderedGraph: RenderedGraphSnapshot;
@@ -217,6 +250,31 @@ export function getAdminSupabase(): SupabaseClient {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+}
+
+/**
+ * Creates the browser-equivalent Supabase client for password sign-in flows.
+ * Why this exists: The quick-entry browser regression needs a real user session
+ * that matches what the app reads from local storage in production.
+ */
+export function getAnonSupabase(): SupabaseClient {
+  if (!SUPABASE_ANON_KEY) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is missing from your env file.');
+  }
+
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+/**
+ * Builds the Supabase local-storage key used by the browser client.
+ * Why this exists: The quick-entry browser runner seeds a session into local
+ * storage before the page loads so ClueChat boots as an authenticated user.
+ */
+export function getSupabaseStorageKey(): string {
+  const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0];
+  return `sb-${projectRef}-auth-token`;
 }
 
 /**
@@ -347,6 +405,80 @@ export async function ensureExactUser(email: string): Promise<ResolvedUser> {
 }
 
 /**
+ * Resolves one exact test email and ensures it supports password sign-in.
+ * Why this exists: Browser-based quick-entry regression cannot depend on the
+ * Google-only UI flow, so the runner needs one deterministic password user.
+ */
+export async function ensureExactPasswordUser(
+  email: string,
+  password: string
+): Promise<ResolvedUser> {
+  const supabase = getAdminSupabase();
+  const { data, error } = await supabase.auth.admin.listUsers();
+
+  if (error) {
+    throw new Error(`Failed to list auth users: ${error.message}`);
+  }
+
+  const existingUser = (data.users ?? []).find((user) => user.email === email);
+
+  if (existingUser?.email) {
+    const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+      password,
+      email_confirm: true,
+    });
+
+    if (updateError) {
+      throw new Error(`Failed to update test auth user "${email}": ${updateError.message}`);
+    }
+
+    return {
+      userId: existingUser.id,
+      email: existingUser.email,
+      matchedBy: 'exact',
+    };
+  }
+
+  const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  if (createError || !createdUser.user?.email) {
+    throw new Error(`Failed to create test auth user "${email}": ${createError?.message ?? 'unknown error'}`);
+  }
+
+  return {
+    userId: createdUser.user.id,
+    email: createdUser.user.email,
+    matchedBy: 'exact',
+  };
+}
+
+/**
+ * Creates a browser-usable Supabase session for one password user.
+ * Why this exists: The quick-entry regression runner seeds this session into a
+ * Playwright browser context before opening the chat page.
+ */
+export async function createPasswordSession(
+  email: string,
+  password: string
+): Promise<Session> {
+  const supabase = getAnonSupabase();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in test user "${email}": ${error?.message ?? 'missing session'}`);
+  }
+
+  return data.session;
+}
+
+/**
  * Deletes rows from a user-owned table.
  * Why this exists: Scenario evals should start from clean state so graph and
  * insight assertions reflect only the replay that just ran.
@@ -418,6 +550,8 @@ export async function purgeUserState(userId: string): Promise<number> {
     'symptom_logs',
     'medication_logs',
     'mood_logs',
+    'factor_logs',
+    'health_measurement_logs',
     'timeline_entries',
     'insights',
     'agent_cursors',
@@ -549,7 +683,7 @@ export async function buildUserStateSnapshot(
   baseUrl: string
 ): Promise<UserStateSnapshot> {
   const supabase = getAdminSupabase();
-  const [conversationResult, nodeResult, edgeResult, symptomResult, medicationResult, moodResult, timelineResult, renderedGraph] =
+  const [conversationResult, nodeResult, edgeResult, symptomResult, medicationResult, moodResult, factorResult, measurementResult, timelineResult, renderedGraph] =
     await Promise.all([
       supabase
         .from('chat_conversations')
@@ -579,6 +713,16 @@ export async function buildUserStateSnapshot(
       supabase
         .from('mood_logs')
         .select('rating, note, logged_at')
+        .eq('user_id', userId)
+        .order('logged_at', { ascending: false }),
+      supabase
+        .from('factor_logs')
+        .select('category_key, category_label, factor_key, factor_name, rating, scale_max, notes, logged_at')
+        .eq('user_id', userId)
+        .order('logged_at', { ascending: false }),
+      supabase
+        .from('health_measurement_logs')
+        .select('metric_key, metric_name, unit, value_numeric, notes, logged_at')
         .eq('user_id', userId)
         .order('logged_at', { ascending: false }),
       supabase
@@ -642,6 +786,14 @@ export async function buildUserStateSnapshot(
     throw new Error(`Failed to load mood logs: ${moodResult.error.message}`);
   }
 
+  if (factorResult.error) {
+    throw new Error(`Failed to load factor logs: ${factorResult.error.message}`);
+  }
+
+  if (measurementResult.error) {
+    throw new Error(`Failed to load measurement logs: ${measurementResult.error.message}`);
+  }
+
   if (timelineResult.error) {
     throw new Error(`Failed to load timeline entries: ${timelineResult.error.message}`);
   }
@@ -688,6 +840,24 @@ export async function buildUserStateSnapshot(
     moodLogs: (moodResult.data ?? []).map((log) => ({
       rating: log.rating,
       note: log.note,
+      loggedAt: log.logged_at,
+    })),
+    factorLogs: (factorResult.data ?? []).map((log) => ({
+      categoryKey: log.category_key,
+      categoryLabel: log.category_label,
+      factorKey: log.factor_key,
+      factorName: log.factor_name,
+      rating: log.rating,
+      scaleMax: log.scale_max,
+      notes: log.notes,
+      loggedAt: log.logged_at,
+    })),
+    measurementLogs: (measurementResult.data ?? []).map((log) => ({
+      metricKey: log.metric_key,
+      metricName: log.metric_name,
+      unit: log.unit,
+      value: log.value_numeric,
+      notes: log.notes,
       loggedAt: log.logged_at,
     })),
     timelineEntries: (timelineResult.data ?? []).map((entry) => ({

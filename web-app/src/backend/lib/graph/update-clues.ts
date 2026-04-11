@@ -8,7 +8,7 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { models } from '../ai/providers';
+import { graphNodeLlmGenerationAudit, models, opusThinkingOptions } from '../ai/providers';
 import {
   getUserGraph,
   purgeDismissedNodesByType,
@@ -133,7 +133,10 @@ export async function updateClues(userId: string): Promise<void> {
         name: clue.insight,
         confidence: clue.confidence,
         confidenceScore: clue.confidenceScore,
-        data: { reasoning: clue.reasoning },
+        data: {
+          reasoning: clue.reasoning,
+          ...graphNodeLlmGenerationAudit('extractor'),
+        },
       });
 
       if (!clueNodeId) {
@@ -181,9 +184,10 @@ async function generateClues(
     : '';
 
   const result = await generateObject({
-    model: models.extractor, // Use extractor for speed, reasoner if needed for quality
+    model: models.extractor,
     schema: CluesSchema,
     prompt: `${CLUE_GENERATION_PROMPT}\n\nCURRENT GRAPH ENTITIES:\n${evidenceText}${existingCluesText}`,
+    providerOptions: opusThinkingOptions,
   });
 
   return selectBestClues(result.object.clues, evidenceEntityNames);

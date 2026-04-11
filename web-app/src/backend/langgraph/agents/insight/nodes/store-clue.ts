@@ -7,11 +7,38 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  graphNodeLlmGenerationAudit,
+  graphNodeNonLlmGenerationAudit,
+} from '@/backend/lib/ai/providers';
 import { purgeDismissedNodesByType, upsertGraphNode } from '@/backend/lib/graph';
 import { canonicalizeSymptomName } from '@/backend/lib/graph/health-kg';
-import type { InsightAgentStateType, InsightAgentStateUpdate } from '../state';
+import type {
+  GeneratedClue,
+  InsightAgentStateType,
+  InsightAgentStateUpdate,
+} from '../state';
 
 const MAX_ACTIVE_NEXT_QUESTIONS = 10;
+
+/**
+ * Maps Insight Agent provenance into `graph_nodes.data_json` audit fields.
+ * Why this exists: Persisted rows must record how the question was produced
+ * without the store step re-invoking LLMs or re-reading graph pickers.
+ */
+function generationAuditForStoredClue(clue: GeneratedClue): Record<string, unknown> {
+  const provenance = clue.generationProvenance;
+  if (!provenance) {
+    return graphNodeNonLlmGenerationAudit('deterministic_info_gain');
+  }
+  if (provenance.source === 'llm') {
+    return graphNodeLlmGenerationAudit(provenance.modelKey);
+  }
+  if (provenance.source === 'deterministic') {
+    return graphNodeNonLlmGenerationAudit('deterministic_info_gain');
+  }
+  return graphNodeNonLlmGenerationAudit('template');
+}
 
 /**
  * Creates a privileged Supabase client for clue persistence.
@@ -213,6 +240,7 @@ export async function storeClueNode(
         method: state.topConditions.length > 0 ? 'info_gain' : 'fallback',
         relatedSymptom: state.clue.relatedSymptom ?? null,
         reasoning: state.clue.reasoning,
+        ...generationAuditForStoredClue(state.clue),
       },
     });
 

@@ -162,6 +162,14 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
     return { reagraphNodes: nodes, reagraphEdges: edges };
   }, [graphData, isNarrowViewport]);
 
+  const accessibleNodeLabels = useMemo(
+    () =>
+      graphData?.nodes.map((node) =>
+        node.subLabel ? `${node.label} (${node.type}) — ${node.subLabel}` : `${node.label} (${node.type})`
+      ) ?? [],
+    [graphData]
+  );
+
   // Handle node click
   const handleNodeClick = useCallback(
     (node: ReagraphNode) => {
@@ -255,6 +263,12 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
         onNodeClick={handleNodeClick}
         edgeArrowPosition="end"
       />
+
+      <ul className="sr-only" aria-label="Canvas nodes">
+        {accessibleNodeLabels.map((label) => (
+          <li key={label}>{label}</li>
+        ))}
+      </ul>
 
       {/* Dotted grid overlay sits above the canvas so the pattern remains visible. */}
       <div

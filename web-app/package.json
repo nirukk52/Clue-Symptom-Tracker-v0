@@ -9,7 +9,8 @@
     "lint": "eslint",
     "purge-user": "npx tsx --env-file=.env.local src/backend/scripts/purge-test-user.ts",
     "analyze-user": "npx tsx --env-file=.env.local src/backend/scripts/analyze-test-user.ts",
-    "eval-clue-chat": "npx tsx --env-file=.env.local src/backend/scripts/eval-clue-chat.ts"
+    "eval-clue-chat": "npx tsx --env-file=.env.local src/backend/scripts/eval-clue-chat.ts",
+    "eval-quick-entry": "npx tsx --env-file=.env.local src/backend/scripts/eval-quick-entry.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.66",
@@ -32,6 +33,7 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

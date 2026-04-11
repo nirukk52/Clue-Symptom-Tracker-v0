@@ -37,7 +37,8 @@ import type {
  * accessible on both mobile and desktop:
  * - Chat and Insights nav tabs: bottom sub-tab layout (Chat | Quick Entry | Canvas).
  *   On desktop the primary panels stay visible side-by-side; on mobile the pill
- *   switches between them.
+ *   switches between them. Opening Insights from the sidebar selects the canvas
+ *   pane so it shows InsightsPanel (same rail as desktop), not the chat transcript.
  *   Chat and Insights share the same canvas panel.
  * - Timeline and Doctor Summary: full-width standalone views on all screen sizes.
  * - Quick Entry and Flare Mode: modal pop-ups triggered by FAB buttons.
@@ -149,6 +150,24 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
+}
+
+/**
+ * Determines whether an existing conversation should be reset for a fresh day.
+ * Why this exists: Returning users should not be dropped into very old transcript context.
+ */
+function isConversationStale(updatedAt: string | null | undefined): boolean {
+  if (!updatedAt) {
+    return false;
+  }
+
+  const updatedAtMs = new Date(updatedAt).getTime();
+  if (Number.isNaN(updatedAtMs)) {
+    return false;
+  }
+
+  const hoursSinceUpdate = (Date.now() - updatedAtMs) / (1000 * 60 * 60);
+  return hoursSinceUpdate > 24;
 }
 
 interface ClueChatProps {
@@ -510,8 +529,17 @@ export function ClueChat({
         if (supabaseUserId.current) {
           try {
             const res = await fetch(`/api/conversations?userId=${supabaseUserId.current}`);
-            const data = await res.json();
+            const data = (await res.json()) as { conversationId?: string; updatedAt?: string | null };
             if (data.conversationId) {
+              if (isConversationStale(data.updatedAt)) {
+                conversationId.current = null;
+                localStorage.removeItem('clue_conversation_id');
+                setAiMessages(initialMessages);
+                setInteractiveState({});
+                userMessageCount.current = 0;
+                setIsLoadingHistory(false);
+                return;
+              }
               convIdToLoad = data.conversationId as string;
               conversationId.current = convIdToLoad;
               localStorage.setItem('clue_conversation_id', convIdToLoad);
@@ -545,6 +573,7 @@ export function ClueChat({
         }
 
         if (!convIdToLoad) {
+          setAiMessages(initialMessages);
           setIsLoadingHistory(false);
           return;
         }
@@ -596,6 +625,10 @@ export function ClueChat({
           setAiMessages(loadedMessages);
           setInteractiveState(restoredInteractiveState);
           userMessageCount.current = loadedMessages.filter((m) => m.role === 'user').length;
+        } else {
+          setAiMessages(initialMessages);
+          setInteractiveState({});
+          userMessageCount.current = 0;
         }
       } catch (error) {
         console.error('Failed to load conversation history:', error);
@@ -605,11 +638,28 @@ export function ClueChat({
     }
 
     loadConversation();
-  }, [initialMessage, setAiMessages, isLoggedIn]);
+  }, [initialMessage, initialMessages, setAiMessages, isLoggedIn]);
 
   const handleMenuClick = useCallback(() => { setSidebarOpen(true); }, []);
   const handleCloseSidebar = useCallback(() => { setSidebarOpen(false); }, []);
 
+  /**
+   * Resets the active thread so the next send creates a fresh conversation.
+   * Why this exists: Users need an explicit way to start a clean chat context on demand.
+   */
+  const startNewConversation = useCallback(() => {
+    conversationId.current = null;
+    localStorage.removeItem('clue_conversation_id');
+    setAiMessages(initialMessages);
+    setInteractiveState({});
+    latestSuggestionMessageId.current = null;
+    userMessageCount.current = 0;
+  }, [initialMessages, setAiMessages]);
+
+  /**
+   * Applies primary nav from the sidebar and keeps mobile split-pane state aligned
+   * with desktop: Insights belongs in the canvas slot (InsightsPanel), not the chat column.
+   */
   const handleNavClick = useCallback((navItem: NavItem) => {
     // Quick Entry and Flare Mode open as modals — they don't change the active view
     if (navItem.id === 'quick-entry') {
@@ -624,8 +674,7 @@ export function ClueChat({
     }
     setActiveNavId(navItem.id);
     setSidebarOpen(false);
-    // Reset sub-tab to 'chat' when switching nav items
-    setActiveSubTab('chat');
+    setActiveSubTab(navItem.id === 'insights' ? 'canvas' : 'chat');
     setActiveDesktopPanel('canvas');
   }, []);
 
@@ -912,6 +961,7 @@ export function ClueChat({
           <div className="flex flex-col min-h-svh w-full lg:hidden">
             <ChatHeader
               onMenuClick={handleMenuClick}
+              onNewConversation={startNewConversation}
               showCanvasPattern={activeSubTab === 'canvas'}
             />
             {/* Content area: chat messages, quick entry, or canvas */}
@@ -944,6 +994,15 @@ export function ClueChat({
               activeSubTab={activeSubTab}
               onSubTabChange={setActiveSubTab}
               showSubTabPill={true}
+              subTabs={
+                activeNavId === 'insights'
+                  ? [
+                      { id: 'chat', label: 'Chat' },
+                      { id: 'quick-entry', label: 'Quick Entry' },
+                      { id: 'canvas', label: 'Insights' },
+                    ]
+                  : undefined
+              }
               modelProvider={modelProvider}
               onModelProviderChange={setModelProvider}
             />
@@ -951,7 +1010,7 @@ export function ClueChat({
 
           {/* Desktop: two-column layout (chat left, canvas right) */}
           <div className="hidden w-full flex-col lg:flex lg:h-svh lg:min-h-0 lg:max-w-[420px] lg:flex-none lg:overflow-hidden lg:border-r lg:border-primary/6">
-            <ChatHeader onMenuClick={handleMenuClick} />
+            <ChatHeader onMenuClick={handleMenuClick} onNewConversation={startNewConversation} />
             <ChatMessages
               messages={messages}
               user={activeUser}

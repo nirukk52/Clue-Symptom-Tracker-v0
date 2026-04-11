@@ -25,6 +25,7 @@ import { updateClues } from './update-clues';
 import { pickNextQuestion as pickNextQuestionInfoGain, type QuestionResult } from './info-gain';
 import { scoreConditions, type ScoredCondition } from './health-kg';
 import { pickNextQuestions as pickNextQuestionsLLM } from './pick-next-question-llm';
+import { graphNodeNonLlmGenerationAudit } from '../ai/providers';
 
 // =============================================================================
 // TYPES
@@ -219,6 +220,7 @@ export async function runPostResponsePipeline(
         data: {
           reasoning: preResult.nextQuestion.reasoning,
           relatedSymptom: preResult.nextQuestion.relatedSymptom,
+          ...graphNodeNonLlmGenerationAudit('deterministic_info_gain'),
         },
       });
     } else {

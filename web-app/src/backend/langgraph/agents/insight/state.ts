@@ -9,6 +9,17 @@ import { Annotation } from '@langchain/langgraph';
 
 import type { GraphEdge, GraphNode } from '@/backend/lib/graph';
 import type { ScoredCondition } from '@/backend/lib/graph/health-kg';
+import type { ModelKey } from '@/backend/lib/ai/providers';
+
+/**
+ * Describes how the Insight Agent chose a next question so persistence can
+ * record matching model audit fields on `graph_nodes`. Why this exists: The
+ * store step does not re-run LLMs, so provenance must travel with the clue.
+ */
+export type ClueGenerationProvenance =
+  | { source: 'llm'; modelKey: ModelKey }
+  | { source: 'deterministic' }
+  | { source: 'template' };
 
 /**
  * Stored clue payload produced by the Insight Agent.
@@ -20,6 +31,7 @@ export interface GeneratedClue {
   reasoning: string;
   priority: number;
   relatedSymptom?: string | null;
+  generationProvenance?: ClueGenerationProvenance;
 }
 
 /**

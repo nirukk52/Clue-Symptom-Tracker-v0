@@ -8,7 +8,7 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { models } from '../ai/providers';
+import { models, opusThinkingOptions } from '../ai/providers';
 import type { AtomicFact } from '../memory';
 import type { GraphNodeType } from '@/components/clue-chat/types';
 import { canonicalizeMedicationName } from '@/backend/lib/openmed/client';
@@ -103,6 +103,7 @@ export async function extractEntities(
       model: models.extractor,
       schema: EntitiesSchema,
       prompt: `${ENTITY_EXTRACTION_PROMPT}\n\nUSER MESSAGES:\n${conversationText}`,
+      providerOptions: opusThinkingOptions,
     });
 
     return (result.object.entities as ExtractedEntity[]).map((entity) =>

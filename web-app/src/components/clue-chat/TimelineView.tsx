@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { SpoonBurgerIcon } from '@/components/ui/SpoonBurgerIcon';
 import { supabase } from '@/lib/supabase';
 
 import type { TimelineEntry, TimelineEntryStatus, TimelineEntryType } from './types';
@@ -144,9 +145,18 @@ export function TimelineView({ userId }: TimelineViewProps) {
             Scan what changed, what is active now, and what may matter most today.
           </p>
         </div>
-        <p className="max-w-40 shrink-0 text-right text-[11px] text-text-muted leading-tight">
-          {formatSelectedDate(selectedDate)}
-        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary"
+            title="Spoon navigation icon"
+            aria-label="Spoon navigation icon"
+          >
+            <SpoonBurgerIcon size={16} />
+          </span>
+          <p className="max-w-40 text-right text-[11px] text-text-muted leading-tight">
+            {formatSelectedDate(selectedDate)}
+          </p>
+        </div>
       </div>
 
       <div

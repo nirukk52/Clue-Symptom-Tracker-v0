@@ -11,7 +11,7 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { models } from '../ai/providers';
+import { models, opusThinkingOptions } from '../ai/providers';
 
 // =============================================================================
 // TYPES
@@ -168,6 +168,7 @@ export async function extractAtomicFacts(
       model: models.extractor,
       schema: AtomicFactsSchema,
       prompt: `${EXTRACTION_PROMPT}\n\nCONVERSATION:\n${conversationText}`,
+      providerOptions: opusThinkingOptions,
     });
 
     return result.object.facts;

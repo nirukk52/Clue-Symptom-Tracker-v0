@@ -10,7 +10,7 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { models } from '../ai/providers';
+import { graphNodeLlmGenerationAudit, models, opusThinkingOptions } from '../ai/providers';
 import { getUserGraph, upsertGraphNode, upsertGraphEdge, getNodesByType } from './index';
 import type { GraphNode } from '@/components/clue-chat/types';
 
@@ -116,7 +116,10 @@ export async function pickNextQuestions(userId: string): Promise<void> {
         subLabel: 'Tap to answer',
         questionText: question.question,
         questionPriority: question.priority,
-        data: { reasoning: question.reasoning },
+        data: {
+          reasoning: question.reasoning,
+          ...graphNodeLlmGenerationAudit('extractor'),
+        },
       });
 
       if (!unknownNodeId) {
@@ -168,6 +171,7 @@ async function generateQuestions(nodes: GraphNode[]): Promise<GeneratedQuestion[
     model: models.extractor,
     schema: QuestionsSchema,
     prompt: `${QUESTION_GENERATION_PROMPT}\n\nCURRENT GRAPH:\n${graphText}${existingContext}`,
+    providerOptions: opusThinkingOptions,
   });
 
   // Sort by priority descending

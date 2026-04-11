@@ -4,17 +4,14 @@
  * Why this exists: Centralizes AI model configuration and provides
  * typed access to different providers for specific use cases.
  *
- * Model Strategy:
- * - Router decisions: OpenAI gpt-4o-mini (fast, accurate routing)
- * - Copy generation: Google Gemini (creative, empathetic copy)
- * - Widget selection: OpenAI gpt-4o-mini (deterministic)
- * - Structured extraction: OpenAI gpt-4o-mini (reliable JSON)
- * - Complex reasoning: OpenAI gpt-4o (when needed)
+ * Model Strategy: All agent models use Claude Opus 4.6 with extended
+ * thinking enabled for maximum reasoning quality across routing,
+ * extraction, and insight generation.
  */
 
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createAnthropic } from '@ai-sdk/anthropic';
+import { createAnthropic, type AnthropicLanguageModelOptions } from '@ai-sdk/anthropic';
 
 // =============================================================================
 // PROVIDER INITIALIZATION
@@ -42,37 +39,56 @@ export const anthropicProvider = createAnthropic({
 });
 
 // =============================================================================
+// THINKING CONFIGURATION
+// =============================================================================
+
+/**
+ * Canonical Anthropic model id string for persisted audit rows and provider wiring.
+ * Why this exists: Graph insight nodes and logs need a single source of truth for
+ * the API model id without duplicating string literals across call sites.
+ */
+export const opusModelId = 'claude-opus-4-6' as const;
+
+/**
+ * Extended-thinking token budget paired with `opusThinkingOptions`.
+ * Why this exists: Lets graph node audit metadata record the same budget the
+ * runtime request used, without parsing providerOptions at write time.
+ */
+export const opusThinkingBudgetTokens = 10_000 as const;
+
+/**
+ * Shared extended-thinking providerOptions for all Opus 4.6 generateObject /
+ * streamText calls. Import and spread into each call site.
+ */
+export const opusThinkingOptions = {
+  anthropic: {
+    thinking: { type: 'enabled', budgetTokens: opusThinkingBudgetTokens },
+  } satisfies AnthropicLanguageModelOptions,
+};
+
+// =============================================================================
 // MODEL SHORTCUTS
 // =============================================================================
 
 /**
- * Model configurations for different use cases
+ * Model configurations for different use cases.
+ * All slots use Opus 4.6 — pair with opusThinkingOptions at call sites.
  */
 export const models = {
-  /**
-   * Router model - fast, accurate routing decisions
-   */
-  router: openaiProvider('gpt-4o-mini'),
+  /** Router model — routing decisions */
+  router: anthropicProvider(opusModelId),
 
-  /**
-   * Copy generation - empathetic, creative copy
-   */
-  copywriter: googleProvider('gemini-3-flash-preview'),
+  /** Copy generation — empathetic, creative copy */
+  copywriter: anthropicProvider(opusModelId),
 
-  /**
-   * Widget selection - deterministic choices
-   */
-  widgetPlanner: openaiProvider('gpt-4o-mini'),
+  /** Widget selection — deterministic choices */
+  widgetPlanner: anthropicProvider(opusModelId),
 
-  /**
-   * Extraction model - reliable structured output
-   */
-  extractor: openaiProvider('gpt-4o-mini'),
+  /** Extraction model — structured output */
+  extractor: anthropicProvider(opusModelId),
 
-  /**
-   * Complex reasoning - for insight generation
-   */
-  reasoner: openaiProvider('gpt-4o'),
+  /** Complex reasoning — insight generation */
+  reasoner: anthropicProvider(opusModelId),
 } as const;
 
 // =============================================================================
@@ -80,6 +96,36 @@ export const models = {
 // =============================================================================
 
 export type ModelKey = keyof typeof models;
+
+/**
+ * Embeds LLM audit metadata on `graph_nodes.data_json` for support and regression
+ * checks. Why this exists: Product insights must be traceable to the exact
+ * model slot and thinking budget used when the row was written.
+ */
+export function graphNodeLlmGenerationAudit(modelKey: ModelKey) {
+  return {
+    generationSource: 'llm' as const,
+    generationModelId: opusModelId,
+    generationModelKey: modelKey,
+    thinkingBudgetTokens: opusThinkingBudgetTokens,
+  };
+}
+
+/**
+ * Embeds non-LLM provenance on `graph_nodes.data_json` when the row was produced
+ * by deterministic logic or static copy. Why this exists: Keeps the same audit
+ * field names as LLM rows so dashboards do not special-case missing keys.
+ */
+export function graphNodeNonLlmGenerationAudit(
+  source: 'deterministic_info_gain' | 'template'
+) {
+  return {
+    generationSource: source,
+    generationModelId: null as string | null,
+    generationModelKey: null as ModelKey | null,
+    thinkingBudgetTokens: null as number | null,
+  };
+}
 
 /**
  * Get a specific model by key

@@ -511,6 +511,117 @@
 ]
 }
 }
+},
+{
+"persona_id": "ms_reluctant_tracker",
+"test_user_email": "ms_reluctant_tracker@gmail.com",
+"persona_name": "MS Reluctant Tracker",
+"source": "r/MultipleSclerosis symptom tracking thread (reddit.com/r/MultipleSclerosis/comments/1seh7ji)",
+"profile": {
+"conditions": ["Multiple Sclerosis (RRMS)"],
+"medications": ["Zeposia (DMT)"],
+"traits": [
+  "skeptical that tracking changes treatment",
+  "tried journals and apps before — quit within a week each time",
+  "fears becoming hypervigilant / paranoid about every sensation",
+  "multiple providers (neuro resident, primary care, rheumatology)",
+  "tells the wrong doctor about the wrong symptom",
+  "forgets details before appointments",
+  "uses notes app or texts friends to offload thoughts"
+],
+"goal": "Neuro told her to 'keep track of it' — wants a low-friction way that doesn't make her obsessive, ideally something she can dump thoughts into and get patterns back"
+},
+"user_first_reply": "My neuro keeps telling me to track my symptoms but I've tried like 3 different apps and I always quit after a week. Today my legs feel tingly and I'm more fatigued than usual but I don't even know if that's worth writing down.",
+"expected_agent_sequence": [
+{
+  "speaker": "assistant",
+  "message": "That's completely worth noting — you don't have to decide what matters, that's my job. Let's just capture what's going on. Which feels more disruptive right now: the tingling or the fatigue?"
+},
+{
+  "speaker": "user",
+  "message": "The fatigue honestly. The tingling is annoying but the fatigue is what's ruining my day."
+},
+{
+  "speaker": "assistant",
+  "message": "Got it. How bad is the fatigue right now on a 0-10 scale?"
+},
+{
+  "speaker": "user",
+  "message": "7"
+},
+{
+  "speaker": "assistant",
+  "message": "Is this a normal-for-you day, or does this feel worse than your baseline?"
+},
+{
+  "speaker": "user",
+  "message": "Worse than normal. I slept fine but I still feel wrecked."
+},
+{
+  "speaker": "assistant",
+  "message": "Noted — fatigue at 7, worse than baseline despite decent sleep. Anything that might be behind it: activity yesterday, stress, weather, or medication timing?"
+},
+{
+  "speaker": "user",
+  "message": "I did go grocery shopping yesterday which doesn't sound like a lot but it wipes me out"
+},
+{
+  "speaker": "assistant",
+  "message": "That's exactly the kind of pattern worth watching — activity one day, crash the next. I've saved the fatigue, tingling, and the activity link. Over time I can help you see if grocery runs consistently predict a bad next day."
+}
+],
+"what_this_tests": [
+"Handling skepticism and tracking fatigue in first message",
+"Reassuring user that low-detail input is valuable",
+"Multi-symptom triage with priority selection",
+"Baseline comparison (worse than normal vs normal-for-you)",
+"Lag-effect pattern setup (activity yesterday → crash today)",
+"Not overwhelming a user who fears hypervigilance"
+],
+"expected_state": {
+"graph": {
+  "symptom": [
+    { "label": "Fatigue" },
+    { "label": "Tingling", "aliases": ["Tingly", "Pins and needles", "Numbness"] }
+  ],
+  "factor": [
+    { "label": "Physical Activity", "aliases": ["Activity", "Grocery shopping", "Exertion"] }
+  ]
+},
+"logs": {
+  "symptoms": [
+    { "label": "Fatigue", "severity": 7 }
+  ]
+},
+"timeline": {
+  "symptoms": [
+    { "label": "Fatigue", "severity": 7 }
+  ]
+},
+"insights": {
+  "requireNextQuestion": true,
+  "forbidAnsweredLabels": [
+    { "label": "Fatigue" },
+    { "label": "Physical Activity", "aliases": ["Activity"] }
+  ]
+}
+},
+"design_notes": {
+"thread_insights": [
+  "MS patients cycle through tracking methods and burn out fast — the agent must not feel like 'another app to maintain'",
+  "The hypervigilance line is real: asking too many questions makes them feel like they're catastrophizing every twitch",
+  "Lag effects (activity → next-day crash) are a core MS pattern and exactly what Clue's prediction engine should catch",
+  "Many MS patients see multiple specialists and lose track of which symptom goes to which doctor — graph nodes should eventually support provider tagging",
+  "The ChatGPT-as-tracker user (Monkberry) validates Clue's core UX: dump naturally, get structured patterns back",
+  "Several users only track when something is NEW or WORSE than baseline — the agent should respect this and not nag for daily entries"
+],
+"key_differences_from_existing_personas": [
+  "First persona with explicit tracking skepticism / burnout in the opening message",
+  "First persona testing lag-effect capture (yesterday's activity → today's crash)",
+  "First persona where the agent must convince the user that low-detail input has value",
+  "Tests baseline comparison framing (worse than your normal) instead of absolute severity only"
+]
+}
 }
 ],
 "design_rules_for_the_agent": [
@@ -531,8 +642,9 @@
 "Optional detail for doctor-ready summary"
 ],
 "source_basis": [
-"Personas adapted from chronic illness tracking personas including the Overwhelmed Spoonie, IBS Food Detective, Sleep-Deprived Tracker, Hormonal Balancer, and Fibro Fog Fighter. ",
-"Sequence structure follows Clue's onboarding, quick check-in, flare mode, and first 20 chat prompt logic.  ",
-"Low-energy, doctor-trust, and friction-reduction rules are aligned with the agent requirements and symptom-tracking research docs.   "
+"Personas adapted from chronic illness tracking personas including the Overwhelmed Spoonie, IBS Food Detective, Sleep-Deprived Tracker, Hormonal Balancer, and Fibro Fog Fighter.",
+"MS Reluctant Tracker sourced from r/MultipleSclerosis symptom tracking thread (reddit.com/r/MultipleSclerosis/comments/1seh7ji) — 14 commenters, RRMS patients on DMTs, ages 30-51. Key themes: tracking abandonment, hypervigilance fear, doctor-mandated tracking skepticism, lag-effect patterns, and natural language dumping as preferred method.",
+"Sequence structure follows Clue's onboarding, quick check-in, flare mode, and first 20 chat prompt logic.",
+"Low-energy, doctor-trust, and friction-reduction rules are aligned with the agent requirements and symptom-tracking research docs."
 ]
 }

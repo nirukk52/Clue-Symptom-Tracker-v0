@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from('chat_conversations')
-      .select('id')
+      .select('id, updated_at')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -82,7 +82,10 @@ export async function GET(req: Request) {
       );
     }
 
-    return Response.json({ conversationId: data?.id || null });
+    return Response.json({
+      conversationId: data?.id || null,
+      updatedAt: data?.updated_at || null,
+    });
   } catch (err) {
     console.error('[api/conversations] Unexpected error:', err);
     return Response.json(

@@ -10,7 +10,7 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { models } from '../ai/providers';
+import { models, opusThinkingOptions } from '../ai/providers';
 
 // =============================================================================
 // TYPES
@@ -144,6 +144,7 @@ export async function extractFactors(text: string): Promise<FactorValues> {
       model: models.extractor,
       schema: FactorSchema,
       prompt: `${FACTOR_EXTRACTION_PROMPT}\n\nUSER MESSAGE:\n${text}`,
+      providerOptions: opusThinkingOptions,
     });
 
     return result.object;
