@@ -100,7 +100,7 @@ export function ChatInput({
   const activeSubTabIndex = subTabs.findIndex((tab) => tab.id === activeSubTab);
 
   return (
-    <div className="sticky bottom-0 flex flex-col">
+    <div className="sticky bottom-0 z-20 flex flex-col">
       {/* White container attached to bottom with only top corners rounded */}
       <div className="bg-white rounded-t border-t-2 border-[#e8e8e8] px-4 pt-4 pb-5 flex flex-col gap-3">
         {/* Text input container — hidden when canvas is active */}

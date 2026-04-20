@@ -33,6 +33,8 @@ interface QuickEntryPanelProps {
   variant?: 'modal' | 'inline';
   userId?: string;
   onSaved?: () => void;
+  onRequestSignIn?: () => void;
+  isSignInLoading?: boolean;
 }
 
 const VISIBLE_FACTOR_CATEGORIES_STORAGE_KEY = 'clue_quick_entry_visible_factor_categories';
@@ -258,6 +260,8 @@ export function QuickEntryPanel({
   variant = 'modal',
   userId,
   onSaved,
+  onRequestSignIn,
+  isSignInLoading = false,
 }: QuickEntryPanelProps) {
   const isInline = variant === 'inline';
   const [snapshot, setSnapshot] = useState<QuickEntrySnapshot>(EMPTY_SNAPSHOT);
@@ -770,19 +774,34 @@ export function QuickEntryPanel({
               {errorMessage}
             </div>
           ) : null}
-          <div
-            className={`flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold text-white ${
-              errorMessage ? 'bg-rose-500' : 'bg-primary'
-            }`}
-            role="status"
-            aria-live="polite"
-          >
-            {!userId ? (
-              <>
-                <MaterialIcon name="lock" size="sm" />
-                Sign in to save entries
-              </>
-            ) : errorMessage ? (
+          {!userId ? (
+            <button
+              type="button"
+              onClick={onRequestSignIn}
+              disabled={!onRequestSignIn || isSignInLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSignInLoading ? (
+                <>
+                  <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <MaterialIcon name="lock" size="sm" />
+                  Sign in to save entries
+                </>
+              )}
+            </button>
+          ) : (
+            <div
+              className={`flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold text-white ${
+                errorMessage ? 'bg-rose-500' : 'bg-primary'
+              }`}
+              role="status"
+              aria-live="polite"
+            >
+              {errorMessage ? (
               <>
                 <MaterialIcon name="error" size="sm" />
                 Autosave failed
@@ -798,7 +817,8 @@ export function QuickEntryPanel({
                 Entries saved
               </>
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

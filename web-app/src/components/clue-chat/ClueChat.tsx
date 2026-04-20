@@ -865,6 +865,8 @@ export function ClueChat({
           variant="inline"
           userId={supabaseUserId.current ?? undefined}
           onSaved={() => setGraphRefreshTrigger((prev) => prev + 1)}
+          onRequestSignIn={handleGoogleSignIn}
+          isSignInLoading={isAuthLoading}
         />
       ) : (
         renderCanvas()
@@ -936,6 +938,8 @@ export function ClueChat({
         onClose={() => setShowQuickEntry(false)}
         userId={supabaseUserId.current ?? undefined}
         onSaved={() => setGraphRefreshTrigger((prev) => prev + 1)}
+        onRequestSignIn={handleGoogleSignIn}
+        isSignInLoading={isAuthLoading}
       />
 
       {/* Flare Mode modal */}
@@ -982,6 +986,8 @@ export function ClueChat({
                   variant="inline"
                   userId={supabaseUserId.current ?? undefined}
                   onSaved={() => setGraphRefreshTrigger((prev) => prev + 1)}
+                  onRequestSignIn={handleGoogleSignIn}
+                  isSignInLoading={isAuthLoading}
                 />
               ) : (
                 renderCanvas()

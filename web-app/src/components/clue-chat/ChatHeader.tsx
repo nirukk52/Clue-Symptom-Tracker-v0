@@ -16,7 +16,7 @@ interface ChatHeaderProps {
   showCanvasPattern?: boolean;
 }
 
-export function ChatHeader({ onMenuClick, onNewConversation, showCanvasPattern = false }: ChatHeaderProps) {
+export function ChatHeader({ onMenuClick, showCanvasPattern = false }: ChatHeaderProps) {
   return (
     <header className="sticky top-0 z-10 overflow-hidden bg-bg-cream lg:hidden">
       {showCanvasPattern && (
@@ -37,16 +37,6 @@ export function ChatHeader({ onMenuClick, onNewConversation, showCanvasPattern =
         >
           <SpoonBurgerIcon size={24} />
         </button>
-        {onNewConversation && (
-          <button
-            type="button"
-            className="ml-auto shrink-0 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/15 focus:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-cream"
-            onClick={onNewConversation}
-            aria-label="Start a new conversation"
-          >
-            New chat
-          </button>
-        )}
       </div>
     </header>
   );

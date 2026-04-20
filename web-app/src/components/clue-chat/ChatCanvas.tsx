@@ -3,28 +3,32 @@
 /**
  * ChatCanvas - Interactive Knowledge Graph Visualization
  *
- * Why this exists: Displays the user's health knowledge graph using Reagraph.
- * Shows symptoms, factors, medications, conditions as colored nodes,
- * AI-generated clues in the center, and unknown questions as tappable nodes.
- * Tapping an unknown node sends the question into the chat.
+ * Why this exists: Displays the user's health knowledge graph and keeps both
+ * canvas variants available so product testing can switch between the classic
+ * force/radial graph and the newer structured lane view without code churn.
  */
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { lightTheme, type Theme } from 'reagraph';
 import type { GraphCanvasRef } from 'reagraph';
+
+import { StructuredCanvas } from './chat-canvas/StructuredCanvas';
 import type { GraphData, GraphNode, GraphNodeType } from './types';
 import { GRAPH_NODE_COLORS, GRAPH_NODE_SIZES } from './types';
 
-// Dynamic import reagraph to avoid SSR issues with Three.js/R3F
+/**
+ * Why this exists: Dynamic loading avoids SSR mismatches from Three.js while
+ * preserving the original graph renderer users are used to.
+ */
 const GraphCanvas = dynamic(
   () => import('reagraph').then((mod) => mod.GraphCanvas),
   { ssr: false }
 );
 
 /**
- * Keeps the graph panel visually aligned with the surrounding cream surface.
- * Reagraph expects an opaque Three.js color here, so the dotted layer is drawn above it.
+ * Why this exists: Reagraph needs an opaque canvas color while the dotted
+ * texture layer is rendered above the scene.
  */
 const GRAPH_CANVAS_THEME: Theme = {
   ...lightTheme,
@@ -34,9 +38,9 @@ const GRAPH_CANVAS_THEME: Theme = {
   },
 };
 
-// =============================================================================
-// TYPES
-// =============================================================================
+const CANVAS_VARIANT_STORAGE_KEY = 'clue_canvas_variant';
+
+type CanvasVariant = 'classic' | 'structured';
 
 interface ChatCanvasProps {
   userId?: string;
@@ -49,8 +53,7 @@ interface ReagraphNode {
   label?: string;
   fill?: string;
   size?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any;
+  data?: GraphNode;
 }
 
 interface ReagraphEdge {
@@ -58,19 +61,33 @@ interface ReagraphEdge {
   source: string;
   target: string;
   label?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any;
 }
 
-// =============================================================================
-// COMPONENT
-// =============================================================================
+/**
+ * Why this exists: Canvas mode persistence lets product testing move back and
+ * forth between variants without re-editing code.
+ */
+function readStoredCanvasVariant(): CanvasVariant {
+  if (typeof window === 'undefined') {
+    return 'classic';
+  }
+
+  const queryVariant = new URLSearchParams(window.location.search).get('canvas');
+  if (queryVariant === 'classic' || queryVariant === 'structured') {
+    return queryVariant;
+  }
+
+  const storedVariant = window.localStorage.getItem(CANVAS_VARIANT_STORAGE_KEY);
+  return storedVariant === 'structured' ? 'structured' : 'classic';
+}
 
 export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvasProps) {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+  const [canvasVariant, setCanvasVariant] = useState<CanvasVariant>('classic');
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const graphCanvasRef = useRef<GraphCanvasRef | null>(null);
 
   useEffect(() => {
@@ -85,6 +102,10 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
     updateViewportFlag();
     window.addEventListener('resize', updateViewportFlag);
     return () => window.removeEventListener('resize', updateViewportFlag);
+  }, []);
+
+  useEffect(() => {
+    setCanvasVariant(readStoredCanvasVariant());
   }, []);
 
   // Fetch graph data
@@ -116,14 +137,15 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
     fetchGraph();
   }, [fetchGraph, refreshTrigger]);
 
-  // Convert our GraphData to Reagraph format with colors and sizes
-  // Uses clue-centric sizing: clue nodes are largest, unknown nodes are smallest
+  /**
+   * Why this exists: We map backend graph nodes into Reagraph's render format
+   * so the classic canvas keeps its original layout behavior.
+   */
   const { reagraphNodes, reagraphEdges } = useMemo(() => {
     if (!graphData) {
       return { reagraphNodes: [], reagraphEdges: [] };
     }
 
-    // Size hierarchy: clue=20, symptom/factor=12, medication/condition=10, unknown=8
     const sizeOverrides: Record<GraphNodeType, number> = {
       clue: isNarrowViewport ? 15 : 20,
       symptom: isNarrowViewport ? 9 : 12,
@@ -133,30 +155,19 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
       unknown: isNarrowViewport ? 7 : 8,
     };
 
-    const nodes: ReagraphNode[] = graphData.nodes.map((node) => {
-      // For unknown nodes, always show "Tap to answer" as sublabel
-      const subLabel = node.type === 'unknown'
-        ? 'Tap to answer'
-        : node.subLabel;
-
-      return {
-        id: node.id,
-        label: node.label + (subLabel ? `\n${subLabel}` : ''),
-        fill: GRAPH_NODE_COLORS[node.type],
-        size: sizeOverrides[node.type] ?? GRAPH_NODE_SIZES[node.type],
-        data: {
-          ...node,
-          nodeType: node.type,
-        },
-      };
-    });
+    const nodes: ReagraphNode[] = graphData.nodes.map((node) => ({
+      id: node.id,
+      label: node.label + (node.type === 'unknown' ? '\nTap to answer' : node.subLabel ? `\n${node.subLabel}` : ''),
+      fill: GRAPH_NODE_COLORS[node.type],
+      size: sizeOverrides[node.type] ?? GRAPH_NODE_SIZES[node.type],
+      data: node,
+    }));
 
     const edges: ReagraphEdge[] = graphData.edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
       label: edge.relationship.replace(/_/g, ' ').toLowerCase(),
-      data: edge,
     }));
 
     return { reagraphNodes: nodes, reagraphEdges: edges };
@@ -170,26 +181,33 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
     [graphData]
   );
 
-  // Handle node click
+  /**
+   * Why this exists: Unknown nodes remain tappable and every selected node can
+   * open a richer card overlay while staying in the classic graph view.
+   */
   const handleNodeClick = useCallback(
     (node: ReagraphNode) => {
-      const nodeData = node.data as GraphNode | undefined;
-      if (nodeData?.type === 'unknown' && nodeData.questionText && onAskQuestion) {
-        onAskQuestion(nodeData.questionText);
+      const nodeData = node.data;
+      if (!nodeData) {
+        return;
+      }
+
+      setSelectedNode(nodeData);
+      if (nodeData.type === 'unknown' && onAskQuestion) {
+        onAskQuestion(nodeData.questionText ?? nodeData.label);
       }
     },
     [onAskQuestion]
   );
 
   useEffect(() => {
-    if (!graphCanvasRef.current || reagraphNodes.length === 0) {
+    if (!graphCanvasRef.current || reagraphNodes.length === 0 || canvasVariant !== 'classic') {
       return;
     }
 
     /**
-     * Why this exists: Reagraph can finish layout with the camera still pointed
-     * at empty space on first paint, especially after mobile tab switches.
-     * Fitting the current nodes after mount keeps the actual graph in frame.
+     * Why this exists: Classic canvas occasionally settles with nodes partially
+     * off-screen on first paint, so we fit camera bounds after mount/update.
      */
     const fitGraphInView = () => {
       graphCanvasRef.current?.fitNodesInView(
@@ -200,7 +218,15 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
 
     const timeoutId = window.setTimeout(fitGraphInView, 80);
     return () => window.clearTimeout(timeoutId);
-  }, [reagraphNodes, reagraphEdges, refreshTrigger]);
+  }, [reagraphNodes, reagraphEdges, refreshTrigger, canvasVariant]);
+
+  const toggleCanvasVariant = useCallback(() => {
+    const nextVariant: CanvasVariant = canvasVariant === 'classic' ? 'structured' : 'classic';
+    setCanvasVariant(nextVariant);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(CANVAS_VARIANT_STORAGE_KEY, nextVariant);
+    }
+  }, [canvasVariant]);
 
   // Empty state - no user
   if (!userId) {
@@ -246,23 +272,53 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
 
   return (
     <div className="flex flex-1 bg-bg-cream relative overflow-hidden">
-      {/* Legend */}
-      <Legend />
+      {canvasVariant === 'structured' ? (
+        graphData ? (
+          <StructuredCanvas
+            graphData={graphData}
+            isNarrowViewport={isNarrowViewport}
+            onAskQuestion={(node) => {
+              setSelectedNode(node);
+              if (node.type === 'unknown' && onAskQuestion) {
+                onAskQuestion(node.questionText ?? node.label);
+              }
+            }}
+          />
+        ) : null
+      ) : (
+        <>
+          <Legend />
+          <GraphCanvas
+            ref={graphCanvasRef}
+            key={`${userId ?? 'anonymous'}:${reagraphNodes.length}:${reagraphEdges.length}:${refreshTrigger ?? 0}`}
+            nodes={reagraphNodes}
+            edges={reagraphEdges}
+            layoutType={isNarrowViewport ? 'forceDirected2d' : 'radialOut2d'}
+            labelType={isNarrowViewport ? 'nodes' : 'all'}
+            theme={GRAPH_CANVAS_THEME}
+            animated={false}
+            draggable
+            onNodeClick={handleNodeClick}
+            edgeArrowPosition="end"
+          />
+        </>
+      )}
 
-      {/* Graph canvas - remount on data changes so mobile refreshes do not keep a stale scene. */}
-      <GraphCanvas
-        ref={graphCanvasRef}
-        key={`${userId ?? 'anonymous'}:${reagraphNodes.length}:${reagraphEdges.length}:${refreshTrigger ?? 0}`}
-        nodes={reagraphNodes}
-        edges={reagraphEdges}
-        layoutType={isNarrowViewport ? 'forceDirected2d' : 'radialOut2d'}
-        labelType={isNarrowViewport ? 'nodes' : 'all'}
-        theme={GRAPH_CANVAS_THEME}
-        animated={false}
-        draggable
-        onNodeClick={handleNodeClick}
-        edgeArrowPosition="end"
-      />
+      <button
+        type="button"
+        onClick={toggleCanvasVariant}
+        className="absolute right-3 top-3 z-20 rounded-full border border-primary/12 bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm backdrop-blur-sm"
+      >
+        {canvasVariant === 'classic' ? 'Switch to structured' : 'Switch to classic'}
+      </button>
+
+      {canvasVariant === 'classic' && selectedNode ? (
+        <SelectedNodeCard
+          node={selectedNode}
+          onClose={() => setSelectedNode(null)}
+          onAskQuestion={onAskQuestion}
+        />
+      ) : null}
 
       <ul className="sr-only" aria-label="Canvas nodes">
         {accessibleNodeLabels.map((label) => (
@@ -270,7 +326,6 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
         ))}
       </ul>
 
-      {/* Dotted grid overlay sits above the canvas so the pattern remains visible. */}
       <div
         className="absolute inset-0 z-1 pointer-events-none"
         style={{
@@ -282,13 +337,8 @@ export function ChatCanvas({ userId, onAskQuestion, refreshTrigger }: ChatCanvas
   );
 }
 
-// =============================================================================
-// SUB-COMPONENTS
-// =============================================================================
-
 /**
  * Legend showing node type colors with visual hints.
- * Unknown nodes pulse to invite interaction.
  */
 function Legend() {
   const items: Array<{ type: GraphNodeType; label: string }> = [
@@ -321,6 +371,83 @@ function Legend() {
       </div>
     </div>
   );
+}
+
+/**
+ * Why this exists: Mirrors the new NodeCard visual treatment in classic mode
+ * so node content is testable without abandoning the old graph layout.
+ */
+function SelectedNodeCard({
+  node,
+  onClose,
+  onAskQuestion,
+}: {
+  node: GraphNode;
+  onClose: () => void;
+  onAskQuestion?: (question: string) => void;
+}) {
+  const description = node.type === 'unknown'
+    ? node.questionText ?? 'Tap to answer this question in chat.'
+    : node.subLabel ?? 'This is a working insight built from the signals Clue has seen so far.';
+  const confidence = node.type === 'clue' && node.confidence ? `${node.confidence} confidence` : 'Context node';
+
+  return (
+    <article className="absolute left-4 top-20 z-30 max-w-[280px] overflow-hidden rounded-2xl border border-white/80 bg-white/95 text-left shadow-[0_18px_28px_rgba(32,19,46,0.08)] transition">
+      <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: GRAPH_NODE_COLORS[node.type] }} />
+      <div className="flex h-full flex-col px-4 pb-4 pt-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#20132e]/40">
+              {getNodeTypeLabel(node.type)}
+            </p>
+            <h4 className="mt-1 text-[15px] font-semibold leading-snug text-[#20132e]">{node.label}</h4>
+          </div>
+          <button
+            type="button"
+            className="rounded-full border border-primary/18 bg-primary/8 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-primary"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+
+        <p className="mt-2 text-xs leading-relaxed text-[#20132e]/60">{description}</p>
+
+        <div className="mt-3 flex items-center justify-between gap-3 pt-2">
+          <span className="text-[11px] font-medium text-[#20132e]/45">{confidence}</span>
+          {node.type === 'unknown' ? (
+            <button
+              type="button"
+              className="rounded-full border border-primary/12 bg-primary/6 px-3 py-1.5 text-[11px] font-semibold text-primary"
+              onClick={() => onAskQuestion?.(node.questionText ?? node.label)}
+            >
+              Ask in chat
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Why this exists: Keeps the node type copy readable and user-facing.
+ */
+function getNodeTypeLabel(type: GraphNodeType): string {
+  switch (type) {
+    case 'clue':
+      return 'Insight';
+    case 'symptom':
+      return 'Symptom';
+    case 'factor':
+      return 'Factor';
+    case 'medication':
+      return 'Medication';
+    case 'condition':
+      return 'Condition';
+    case 'unknown':
+      return 'Question';
+  }
 }
 
 /**
