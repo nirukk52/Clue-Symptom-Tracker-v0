@@ -132,8 +132,8 @@ export async function getRelevantMemories(
     const { MemoryClient } = await import('mem0ai');
     const client = new MemoryClient({ apiKey });
 
-    const results = await client.search(query, {
-      user_id: userId,
+    const { results } = await client.search(query, {
+      filters: { user_id: userId },
     });
 
     if (!results || results.length === 0) {
@@ -142,7 +142,7 @@ export async function getRelevantMemories(
 
     return results
       .slice(0, 10)
-      .map((m: { memory?: string }) => `- ${m.memory ?? ''}`)
+      .map((m) => `- ${m.memory ?? ''}`)
       .filter((line: string) => line !== '- ')
       .join('\n');
   } catch (error) {
@@ -208,7 +208,7 @@ export async function storeMemory(
         await client.add(
           [{ role: 'user' as const, content: fact.fact }],
           {
-            user_id: userId,
+            userId,
             metadata: {
               category: fact.category,
               entities: fact.entities,
@@ -220,7 +220,7 @@ export async function storeMemory(
     }
 
     // Also store the raw exchange for full context
-    await client.add(messages, { user_id: userId });
+    await client.add(messages, { userId });
 
     return { success: true, facts };
   } catch (error) {
@@ -248,10 +248,8 @@ export async function getMemoriesByCategory(
     const client = new MemoryClient({ apiKey });
 
     // Search with category as part of the query for better relevance
-    const results = await client.search(`${category} information`, {
-      user_id: userId,
-      // Note: mem0 metadata filtering depends on their API support
-      // If not supported, we filter post-retrieval
+    const { results } = await client.search(`${category} information`, {
+      filters: { user_id: userId },
     });
 
     if (!results || results.length === 0) {
@@ -260,7 +258,7 @@ export async function getMemoriesByCategory(
 
     return results
       .slice(0, limit)
-      .map((m: { memory?: string }) => m.memory ?? '')
+      .map((m) => m.memory ?? '')
       .filter((memory: string) => memory !== '');
   } catch (error) {
     console.error('Category memory retrieval failed:', error);
