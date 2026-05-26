@@ -35,6 +35,9 @@ export const metadata: Metadata = {
   description:
     '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.',
   metadataBase: new URL('https://chroniclife.app'),
+  alternates: {
+    canonical: '/',
+  },
   icons: {
     icon: '/brand/clue-agent-mark.svg',
     apple: '/brand/clue-agent-mark.svg',
@@ -43,6 +46,23 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'Chronic Life',
+    url: 'https://chroniclife.app',
+    title: 'Chronic Life - Predict your next flare before it hits',
+    description:
+      '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.',
+    images: [
+      {
+        url: '/brand/clue-agent-mark.svg',
+        alt: 'Chronic Life',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Chronic Life - Predict your next flare before it hits',
+    description:
+      '20-second check-ins, flare mode on bad days, and a history that works when brain fog hits. Built for chronic life.',
+    images: ['/brand/clue-agent-mark.svg'],
   },
 };
 

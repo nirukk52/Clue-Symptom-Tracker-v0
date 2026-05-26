@@ -328,7 +328,7 @@ function selectRenderableEdges(
     })
     .sort((leftEdge, rightEdge) => getEdgePriority(rightEdge) - getEdgePriority(leftEdge))
     .flatMap((edge) => {
-      if (usageByNode.get(edge.source) >= perNodeCap || usageByNode.get(edge.target) >= perNodeCap) {
+      if ((usageByNode.get(edge.source) ?? 0) >= perNodeCap || (usageByNode.get(edge.target) ?? 0) >= perNodeCap) {
         return [];
       }
 
