@@ -176,9 +176,10 @@ export function DoctorSummaryPanel() {
             <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4">
               <MaterialIcon name="stethoscope" className="text-primary/30 text-[28px]" />
             </div>
-            <p className="text-[14px] text-text-muted mb-1">No report generated yet</p>
-            <p className="text-[12px] text-text-muted/70">
-              Choose a date range and generate a summary to share with your doctor.
+            <p className="text-[14px] text-text-muted mb-1">Nothing here yet.</p>
+            <p className="text-[12px] text-text-muted/80 max-w-xs leading-relaxed">
+              Pick a date range above when you&apos;re ready. We&apos;ll pull together a clean
+              summary you can hand to your clinician — no need to re-tell the story.
             </p>
           </div>
         ) : null}

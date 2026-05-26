@@ -722,9 +722,19 @@ export function QuickEntryPanel({
               </p>
             </div>
           ) : isLoading ? (
-            <div className="flex items-center justify-center py-12 text-[13px] text-text-muted">Loading quick entry...</div>
+            <div className="flex items-center justify-center py-12 text-[13px] text-text-muted">
+              Pulling up today&apos;s entry...
+            </div>
           ) : (
             <div className="space-y-3">
+              {/*
+                Compassionate empty-state hint at the top of the panel (May 26 review).
+                Cards below stay rendered so the user can fill what they want and
+                skip the rest — no minimum, no pressure.
+              */}
+              <p className="px-3 py-2 text-[12px] leading-relaxed text-text-muted/90 text-center">
+                Nothing here yet. Fill what feels easy — skip the rest.
+              </p>
               <MoodEntryCard mood={snapshot.mood} onChange={(nextMood) => setSnapshot((current) => ({ ...current, mood: nextMood }))} />
               <MedicationEntryCard
                 medications={snapshot.medications}

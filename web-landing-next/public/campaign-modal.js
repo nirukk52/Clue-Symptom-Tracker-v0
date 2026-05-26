@@ -20,8 +20,23 @@
   // ============================================
   // CONFIG
   // ============================================
-  const SUPABASE_URL = 'https://zvpudxinbcsrfyojrhhv.supabase.co';
+  // Tracking circuit breaker so a missing/unreachable analytics backend
+  // does not produce a wall of console errors (May 26 review).
+  let trackingFailed = false;
+  function markTrackingFailed() {
+    trackingFailed = true;
+  }
+  // Quiet logger: a single, label-only console.warn the first time tracking
+  // fails — replaces the previous flood of console.error logs.
+  function logTrackingError(label) {
+    if (typeof console !== 'undefined' && console.debug) {
+      console.debug('[chroniclife.tracking] disabled after ' + label);
+    }
+  }
+  const _OVR = (typeof window !== 'undefined' && window.__CHRONICLIFE_SUPABASE__) || {};
+  const SUPABASE_URL = _OVR.url || 'https://zvpudxinbcsrfyojrhhv.supabase.co';
   const SUPABASE_ANON_KEY =
+    _OVR.anonKey ||
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cHVkeGluYmNzcmZ5b2pyaGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTE3MjksImV4cCI6MjA4MjUyNzcyOX0.5vV65qusPzu7847VxbiodRU0DZG1AryUuoklX3qFAWk';
 
   const TOTAL_QUESTIONS = 4;
@@ -385,7 +400,7 @@
   // VISIT LOGGING
   // ============================================
   async function logVisit() {
-    if (!supabase) return;
+    if (!supabase || trackingFailed) return;
 
     const params = new URLSearchParams(window.location.search);
     const sessionId = sessionStorage.getItem('session_id') || generateId();
@@ -413,8 +428,9 @@
         .single();
 
       if (data) visitId = data.id;
-    } catch (err) {
-      console.error('Error logging visit:', err);
+    } catch {
+      markTrackingFailed();
+      logTrackingError('logVisit');
     }
   }
 
@@ -422,7 +438,7 @@
   // MODAL SESSION
   // ============================================
   async function startModalSession() {
-    if (!supabase) return;
+    if (!supabase || trackingFailed) return;
 
     startTime = Date.now();
     questionStartTime = Date.now();
@@ -446,13 +462,14 @@
         .single();
 
       if (data) modalSessionId = data.id;
-    } catch (err) {
-      console.error('Error starting modal session:', err);
+    } catch {
+      markTrackingFailed();
+      logTrackingError('startModalSession');
     }
   }
 
   async function updateModalSession(completed = false) {
-    if (!supabase || !modalSessionId) return;
+    if (!supabase || trackingFailed || !modalSessionId) return;
 
     try {
       const updateData = {
@@ -472,8 +489,9 @@
         .from('modal_sessions')
         .update(updateData)
         .eq('id', modalSessionId);
-    } catch (err) {
-      console.error('Error updating modal session:', err);
+    } catch {
+      markTrackingFailed();
+      logTrackingError('updateModalSession');
     }
   }
 
@@ -482,7 +500,7 @@
    * @param {Object} data - Response data object
    */
   async function logResponse(data) {
-    if (!supabase || !modalSessionId) return;
+    if (!supabase || trackingFailed || !modalSessionId) return;
 
     const timeToAnswer = Date.now() - questionStartTime;
     questionStartTime = Date.now();
@@ -500,8 +518,9 @@
         product_offering: currentProduct,
         time_to_answer_ms: timeToAnswer,
       });
-    } catch (err) {
-      console.error('Error logging response:', err);
+    } catch {
+      markTrackingFailed();
+      logTrackingError('logResponse');
     }
   }
 
