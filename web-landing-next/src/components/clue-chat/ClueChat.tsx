@@ -223,6 +223,43 @@ export function ClueChat({
   }, [modelProvider]);
 
   /**
+   * Marketing CTAs land here with intent params (e.g. /chat?mode=quick-entry,
+   * /chat?view=doctor-summary). The May 26 review flagged that this intent
+   * was being dropped on the floor. We honor it once on first mount and then
+   * clear the query string so it does not re-fire on later state changes.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const view = params.get('view');
+    if (!mode && !view) return;
+
+    if (mode === 'quick-entry') {
+      setShowQuickEntry(true);
+    } else if (mode === 'flare') {
+      setShowFlareMode(true);
+    }
+
+    if (view === 'doctor-summary' || view === 'doctor-pack') {
+      setActiveNavId('doctor-pack');
+    } else if (view === 'history' || view === 'timeline') {
+      setActiveNavId('timeline');
+    } else if (view === 'example-insight' || view === 'insights') {
+      setActiveNavId('insights');
+      setActiveSubTab('canvas');
+      setActiveDesktopPanel('canvas');
+    }
+
+    if (mode || view) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('mode');
+      url.searchParams.delete('view');
+      window.history.replaceState({}, '', url.pathname + url.hash);
+    }
+  }, []);
+
+  /**
    * applySuggestionPills keeps suggestion chips bound to only the latest
    * assistant turn so the rail does not accumulate stale prompts.
    */
