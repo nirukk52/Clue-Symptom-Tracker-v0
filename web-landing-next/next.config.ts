@@ -1,16 +1,6 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  async rewrites() {
-    return {
-      beforeFiles: [
-        {
-          source: '/',
-          destination: '/landing.html',
-        },
-      ],
-    };
-  },
-};
+/** Next.js config — landing is served by `src/app/page.tsx`, not static HTML. */
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
